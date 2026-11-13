@@ -1,0 +1,5 @@
+# After downloading, run from the project root:
+# ollama create qwen3.5:9b -f scripts/models/qwen3.5-9b.Modelfile
+# Reapply after pulling a fresh registry version of the same tag.
+FROM qwen3.5:9b
+PARAMETER num_ctx 8192

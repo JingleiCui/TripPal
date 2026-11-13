@@ -1,0 +1,10 @@
+.venv
+.reference
+frontend/node_modules
+frontend/dist
+integrations/node_modules
+data
+reports
+.git
+config.local.json
+**/__pycache__

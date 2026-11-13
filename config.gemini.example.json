@@ -1,0 +1,11 @@
+{
+  "model_provider": "gemini",
+  "model_name": "gemini-3.8-flash",
+  "model_api_key": "",
+  "model_enabled": true,
+  "amap_key": "",
+  "amap_js_key": "",
+  "amap_security_code": "",
+  "meituan_enabled": true,
+  "voice_enabled": false
+}

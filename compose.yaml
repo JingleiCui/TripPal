@@ -1,0 +1,40 @@
+name: travel-agent
+services:
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:11026:1025", "127.0.0.1:18026:8025"]
+    mem_limit: 128m
+  mysql:
+    image: mysql:8.4
+    ports: ["127.0.0.1:13316:3306"]
+    environment:
+      MYSQL_DATABASE: travel_agent
+      MYSQL_USER: travel
+      MYSQL_PASSWORD: travel_local_only
+      MYSQL_ROOT_PASSWORD: travel_root_local_only
+    volumes: ["mysql:/var/lib/mysql"]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "192mb", "--maxmemory-policy", "noeviction"]
+    ports: ["127.0.0.1:16389:6379"]
+    volumes: ["redis:/data"]
+    mem_limit: 256m
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports: ["127.0.0.1:19220:9200"]
+    volumes: ["elastic:/usr/share/elasticsearch/data"]
+    mem_limit: 1536m
+volumes:
+  mysql:
+  redis:
+  elastic:

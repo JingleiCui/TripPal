@@ -1,0 +1,1052 @@
+[
+  {
+    "id": "city-01",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-02",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-03",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-04",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-05",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-06",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-07",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-08",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-09",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "city-10",
+    "family": "city",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-01",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-02",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-03",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-04",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-05",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-06",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-07",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-08",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-09",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "park-10",
+    "family": "park",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "outdoor",
+      "indoor_only": false
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-01",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-02",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-03",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-04",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-05",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-06",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-07",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-08",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-09",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "locked-10",
+    "family": "locked",
+    "split": "development",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false,
+      "locked_ids": [
+        "fixture:0"
+      ]
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-01",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-02",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-03",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-04",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-05",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-06",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-07",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-08",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-09",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "indoor-10",
+    "family": "indoor",
+    "split": "validation",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": true
+    },
+    "expected_status": "completed",
+    "synthetic": true
+  },
+  {
+    "id": "missing-01",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": null,
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-02",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-03",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": null,
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-04",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-05",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": null,
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-06",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-07",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": null,
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-08",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-09",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": null,
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "missing-10",
+    "family": "missing",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "waiting_input",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-01",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-02",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-03",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-04",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-05",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-06",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-07",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-08",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 2,
+      "people": 2,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-09",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 3,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  },
+  {
+    "id": "version_conflict-10",
+    "family": "version_conflict",
+    "split": "heldout",
+    "message": "请根据条件安排北京行程，保留锁定项并明确未知费用。",
+    "requirements": {
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 1,
+      "people": 1,
+      "style": "city",
+      "indoor_only": false
+    },
+    "expected_status": "conflict",
+    "synthetic": true
+  }
+]

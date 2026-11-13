@@ -1,0 +1,55 @@
+name: travel-agent-server
+x-app: &app
+  image: travel-agent:local
+  build: .
+  env_file: .env.server
+  environment: &env
+    TRAVEL_REDIS_URL: redis://redis:6379/0
+    TRAVEL_BROKER_URL: redis://redis:6379/1
+    TRAVEL_ELASTIC_URL: http://elasticsearch:9200
+    TRAVEL_FIXTURE_ENABLED: "false"
+    TRAVEL_COOKIE_SECURE: "true"
+  volumes: ["files:/app/data", "models:/home/traveler/.cache/huggingface"]
+  mem_limit: 2g
+  depends_on:
+    mysql: {condition: service_healthy}
+    redis: {condition: service_started}
+    elasticsearch: {condition: service_started}
+services:
+  api:
+    <<: *app
+    ports: ["127.0.0.1:8808:8808"]
+  worker:
+    <<: *app
+    environment:
+      <<: *env
+      SERVICE_ROLE: worker
+  mysql:
+    image: mysql:8.4
+    env_file: .env.server
+    volumes: ["mysql:/var/lib/mysql"]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: ["redis:/data"]
+    mem_limit: 256m
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes: ["elastic:/usr/share/elasticsearch/data"]
+    mem_limit: 1536m
+volumes:
+  files:
+  models:
+  mysql:
+  redis:
+  elastic:

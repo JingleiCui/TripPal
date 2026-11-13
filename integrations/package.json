@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@meituan-travel/travel-cli": "1.0.16"
+  }
+}
