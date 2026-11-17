@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   Bookmark,
@@ -51,6 +51,18 @@ const categories = [
   ["art", "文化艺术"],
 ];
 
+// One real provider page at a time; edit here to tune browsing density.
+const DISCOVERY_PAGE_SIZE = 20;
+const PREFETCH_DISTANCE_PX = 280;
+type DiscoveryPage = {
+  items: DiscoveryPlace[];
+  notice: string;
+  fixture: boolean;
+  next_page: number | null;
+  has_more: boolean;
+  end_reason: "provider_limit" | "exhausted" | null;
+};
+
 function ErrorNotice({ error }: { error: unknown }) {
   return error ? (
     <p className="notice error" role="alert">
@@ -79,15 +91,46 @@ export function ExplorePage() {
   const [selected, setSelected] = useState<DiscoveryPlace | null>(null),
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
-  const results = useQuery({
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const results = useInfiniteQuery({
     queryKey: ["explore", params],
-    queryFn: () =>
-      api<{ items: DiscoveryPlace[]; notice: string; fixture: boolean }>(
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      api<DiscoveryPage>(
         "/explore?" +
-          new URLSearchParams({ ...params, fixture: String(params.fixture) }),
+          new URLSearchParams({
+            ...params,
+            fixture: String(params.fixture),
+            page: String(pageParam),
+            page_size: String(DISCOVERY_PAGE_SIZE),
+          }),
+        { signal },
       ),
+    getNextPageParam: (lastPage) => lastPage.next_page ?? undefined,
     retry: false,
   });
+  const { fetchNextPage, hasNextPage, isFetching, isFetchNextPageError } = results;
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (
+      !target ||
+      !hasNextPage ||
+      isFetching ||
+      isFetchNextPageError ||
+      typeof IntersectionObserver === "undefined"
+    )
+      return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void fetchNextPage({ cancelRefetch: false });
+        }
+      },
+      { rootMargin: `${PREFETCH_DISTANCE_PX}px 0px` },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetching, isFetchNextPageError]);
   const saved = useQuery({
     queryKey: ["saved-places"],
     queryFn: () => api<SavedPlace[]>("/saved-places"),
@@ -104,7 +147,40 @@ export function ExplorePage() {
       setBusy("");
     }
   }
-  const places = results.data?.items || [];
+  const places = useMemo(() => {
+    const unique = new Map<string, DiscoveryPlace>();
+    for (const page of results.data?.pages ?? []) {
+      for (const place of page.items) {
+        if (!unique.has(place.id)) unique.set(place.id, place);
+      }
+    }
+    return [...unique.values()];
+  }, [results.data]);
+  const lastPage = results.data?.pages.at(-1);
+  const mapDay = useMemo(
+    () => ({
+      day: 1,
+      date: "",
+      city: params.city,
+      stops: places
+        .filter(
+          (p) =>
+            typeof p.lon === "number" &&
+            typeof p.lat === "number" &&
+            (p.lon !== 0 || p.lat !== 0),
+        )
+        .map((p) => ({
+          ...p,
+          planned_start: "",
+          planned_end: "",
+          locked: false,
+        })) as Stop[],
+      routes: [],
+      known_route_walking_meters: 0,
+      walking_note: "",
+    }),
+    [places, params.city],
+  );
   return (
     <div className="page explore-page">
       <div className="page-heading">
@@ -149,7 +225,7 @@ export function ExplorePage() {
             placeholder="搜索景点、餐厅、酒店或街区"
           />
         </label>
-        <Button type="submit" disabled={results.isFetching}>
+        <Button type="submit" disabled={!city.trim()}>
           <Search size={17} />
           搜索地点
         </Button>
@@ -187,14 +263,16 @@ export function ExplorePage() {
           合成资料体验
         </label>
       </div>
-      <ErrorNotice error={error || results.error || saved.error} />
-      {results.isFetching ? (
+      <ErrorNotice error={error || (!results.data && results.error) || saved.error} />
+      {results.isPending ? (
         <div className="discovery-loading" role="status">
           <Loader2 className="spin" size={22} />
           正在寻找{params.city}的好去处…
         </div>
       ) : (
-        results.data && <p className="discovery-notice">{results.data.notice}</p>
+        results.data && (
+          <p className="discovery-notice">{results.data.pages[0].notice}</p>
+        )
       )}
       <div className="explore-layout">
         <div className="explore-results">
@@ -202,15 +280,19 @@ export function ExplorePage() {
             <h2>
               {params.city} · {categories.find((c) => c[0] === params.category)?.[1]}
             </h2>
-            <span>{places.length} 个地点</span>
+            <span aria-live="polite">已显示 {places.length} 个地点</span>
           </div>
-          {!results.isPending && !results.error && !places.length && (
-            <div className="discovery-empty">
-              <Search size={32} />
-              <h2>还没找到匹配的地点</h2>
-              <p>换一个关键词或地点类型，再试一次。</p>
-            </div>
-          )}
+          {!results.isPending &&
+            !results.error &&
+            !results.hasNextPage &&
+            !results.isFetching &&
+            !places.length && (
+              <div className="discovery-empty">
+                <Search size={32} />
+                <h2>还没找到匹配的地点</h2>
+                <p>换一个关键词或地点类型，再试一次。</p>
+              </div>
+            )}
           <div className="place-grid">
             {places.map((p) => {
               const isSaved = saved.data?.some((s) => s.place.id === p.id);
@@ -252,17 +334,19 @@ export function ExplorePage() {
                     <button onClick={() => setSelected(p)}>
                       <h3>{p.name}</h3>
                     </button>
-                    <p>{p.category || "地点"}</p>
+                    <p>{(p.category || "地点").split(";").at(-1)}</p>
                     <small>{p.address || "地址信息待核实"}</small>
+                    {p.price_text && (
+                      <span className="place-reference-price">
+                        参考费用：{p.price_text}
+                      </span>
+                    )}
                     <div>
                       <button className="text-link" onClick={() => setSelected(p)}>
                         地点详情 <ArrowRight size={13} />
                       </button>
                       <span>{p.source?.provider || p.source_label || "未知来源"}</span>
                     </div>
-                    {p.source_label === "美团" && p.price_text && (
-                      <span className="meituan-price">{p.price_text}</span>
-                    )}
                     {p.source_label === "美团" && safeHref(p.url) && (
                       <a
                         className="text-link meituan-link"
@@ -279,38 +363,46 @@ export function ExplorePage() {
               );
             })}
           </div>
+          <div className="discovery-pagination" ref={loadMoreRef} aria-live="polite">
+            {results.isFetchingNextPage ? (
+              <span role="status">
+                <Loader2 size={18} className="spin" /> 正在加载更多地点…
+              </span>
+            ) : results.isFetchNextPageError ? (
+              <>
+                <p>更多地点加载失败，已有结果已保留。</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => void results.fetchNextPage()}
+                >
+                  重试加载
+                </Button>
+              </>
+            ) : results.hasNextPage ? (
+              <Button
+                variant="secondary"
+                onClick={() => void results.fetchNextPage({ cancelRefetch: false })}
+              >
+                加载更多地点
+              </Button>
+            ) : places.length > 0 ? (
+              <p>
+                {lastPage?.end_reason === "provider_limit"
+                  ? "可浏览的结果已展示，换个关键词或地点类型继续发现。"
+                  : "已经到底了，换个关键词，发现更多好去处。"}
+              </p>
+            ) : null}
+          </div>
         </div>
         <aside className="explore-map">
           <MapPanel
-            day={
-              places.length
-                ? {
-                    day: 1,
-                    date: "",
-                    city: params.city,
-                    stops: places
-                      .filter(
-                        (p) =>
-                          typeof p.lon === "number" &&
-                          typeof p.lat === "number" &&
-                          (p.lon !== 0 || p.lat !== 0),
-                      )
-                      .map((p) => ({
-                        ...p,
-                        planned_start: "",
-                        planned_end: "",
-                        locked: false,
-                      })) as Stop[],
-                    routes: [],
-                    known_route_walking_meters: 0,
-                    walking_note: "",
-                  }
-                : undefined
-            }
+            day={mapDay}
+            kind="explore"
+            viewKey={JSON.stringify(params)}
+            highlightId={selected?.id}
             fixture={params.fixture}
             onSelect={(s) => setSelected(s)}
           />
-          <p>点选地点查看详情。地图仅展示地点位置。</p>
         </aside>
       </div>
       {selected && (
@@ -339,22 +431,30 @@ function PlaceDialog({
   saving: boolean;
   save: () => void;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    function key(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
-    }
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, [close]);
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      previouslyFocused?.focus();
+    };
+  }, []);
   return (
-    <div className="modal-scrim" onClick={close}>
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-label={place.name + "详情"}
-        className="modal discovery-detail"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <dialog
+      ref={dialogRef}
+      className="discovery-dialog"
+      aria-label={place.name + "详情"}
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) close();
+      }}
+    >
+      <section className="modal discovery-detail">
         <button className="modal-close" aria-label="关闭地点详情" onClick={close}>
           <X size={20} />
         </button>
@@ -412,7 +512,7 @@ function PlaceDialog({
           <p className="notice">这是合成资料，不可用于实际出游。</p>
         )}
       </section>
-    </div>
+    </dialog>
   );
 }
 

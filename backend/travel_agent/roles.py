@@ -1,7 +1,4 @@
-"""Adapted from Atlas (MIT), Dejan Žegarac, 2026.
-Upstream efebcd9371b2b66ed538f2e57d0b8fb17d388a15.
-See docs/upstream/Atlas-LICENSE and Atlas-NOTICE.md.
-"""
+"""行程协作中的成员角色判定：所有者、编辑者、查看者。"""
 
 OWNER = "owner"
 EDITOR = "editor"

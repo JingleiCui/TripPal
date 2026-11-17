@@ -1,11 +1,11 @@
 import uuid
 from fastapi.testclient import TestClient
-from travel_agent.vendor.atlas.interview import _merge_user_details, _next_question
+from travel_agent.interview import _merge_user_details, _next_question
 from travel_agent.conversation import extract, gate
 from travel_agent.worker import execute
 
 
-def test_atlas_merge_keeps_false_and_known_slots():
+def test_merge_keeps_false_and_known_slots():
     assert _merge_user_details(
         {"destination": "北京", "needs_accommodation": False},
         {"destination": "", "needs_accommodation": None},

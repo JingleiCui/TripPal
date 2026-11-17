@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 from sqlalchemy import select
 from ..db import Session, Task, Trip, Event, event, now
 from ..access import role_for
-from ..vendor.atlas.authz import role_can_edit
+from ..roles import role_can_edit
 from ..config import settings
 from ..providers.base import ProviderError
 from ..model_errors import classify

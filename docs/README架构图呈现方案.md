@@ -76,7 +76,7 @@ README 的 A 图使用 `accent` + `storage`，B 图使用 `human`，D 图使用 
 
 | 图中节点 | 源码位置 |
 |---|---|
-| 确定性访谈门控 | `backend/travel_agent/conversation.py`、`vendor/atlas/interview.py` |
+| 确定性访谈门控 | `backend/travel_agent/conversation.py`、`backend/travel_agent/interview.py` |
 | FastAPI 路由 | `backend/travel_agent/api.py`、`social_api.py` |
 | Celery 任务领取 | `backend/travel_agent/worker.py` |
 | LangGraph 节点与边 | `backend/travel_agent/agent/graph.py` |

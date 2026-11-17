@@ -1,7 +1,7 @@
-"""Atlas semantic-cache design adapted to ES/BGE and owner-scoped provider facts.
+"""基于 ES/BGE 与所有者隔离的语义研究缓存。
 
-Only POI research is cached here; never availability, booking status, hotel prices or private RAG.
-Failure is a cache miss. Similarity alone cannot override hard query constraints.
+这里只缓存 POI 查询结果；不缓存库存、预订状态、酒店价格或私人 RAG 内容。
+失败按缓存未命中处理；仅凭相似度不能覆盖硬性查询约束。
 """
 
 import hashlib

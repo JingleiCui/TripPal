@@ -1,7 +1,7 @@
-"""Chinese slot extraction around Atlas's deterministic anti-loop gate.
+"""中文槽位提取与确定性的防循环提问门控。
 
-Extraction suggests facts; only the vendored policy chooses the next question.
-Optional unanswered slots are asked once, mandatory slots never receive silent defaults.
+提取只给出候选事实；下一步提问由确定性策略决定。
+可选槽位只问一次，必填槽位不做静默默认值填充。
 """
 
 import re
@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from typing import Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
-from .vendor.atlas.interview import _merge_user_details, _next_question
+from .interview import _merge_user_details, _next_question
 from .agent.structured import generate
 from .models.registry import chat_ready
 from .schemas import Requirements, CityStay

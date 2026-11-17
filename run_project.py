@@ -36,7 +36,7 @@ def main():
                 data = json.load(response)
             if data.get("application") == "travel_agent":
                 print(
-                    f"travel_agent 已经运行：http://127.0.0.1:{PORT}。若刚修改密钥，先运行 stop_project.py，再重新运行本文件。"
+                    f"TripPal 已经运行：http://127.0.0.1:{PORT}。若刚修改密钥，先运行 stop_project.py，再重新运行本文件。"
                 )
                 return
         except Exception:
@@ -85,7 +85,9 @@ def main():
             run("npm", "run", "build", "--prefix", "frontend")
     children = []
     pidfile = ROOT / "data/run.json"
-    pidfile.parent.mkdir(exist_ok=True)
+    # 目录已存在时不再调用 mkdir：部分受限运行时会对已存在目录误抛 EEXIST。
+    if not pidfile.parent.is_dir():
+        pidfile.parent.mkdir(parents=True, exist_ok=True)
 
     def stop(*_):
         for process in reversed(children):
@@ -140,7 +142,7 @@ def main():
         pidfile.write_text(
             json.dumps({"launcher": os.getpid(), "children": [p.pid for p in children], "root": str(ROOT)})
         )
-        print(f"\ntravel_agent：http://127.0.0.1:{PORT}\n接口文档：http://127.0.0.1:{PORT}/docs\n")
+        print(f"\nTripPal：http://127.0.0.1:{PORT}\n接口文档：http://127.0.0.1:{PORT}/docs\n")
         while all(p.poll() is None for p in children):
             time.sleep(1)
         raise RuntimeError("某个子服务已退出，请检查上面的错误信息")

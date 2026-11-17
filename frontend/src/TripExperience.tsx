@@ -28,6 +28,7 @@ import { api, post } from "./api";
 import { Button } from "./components/ui/button";
 import { BudgetPanel, BudgetNotice } from "./BudgetPanel";
 import { MapPanel } from "./MapPanel";
+import { openMapViewer } from "./lib/mapScene";
 import type { Plan, Trip, Stop, Route, PendingChange } from "./types";
 
 type Place = Omit<Stop, "planned_start" | "planned_end" | "locked"> & {
@@ -189,8 +190,7 @@ export function TripExperience({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [market, setMarket] = useState(""),
-    [activeLeg, setActiveLeg] = useState<Leg | null>(null),
-    [mapOnly, setMapOnly] = useState(false);
+    [activeLeg, setActiveLeg] = useState<Leg | null>(null);
   const current = plan.days[dayIndex] || plan.days[0];
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -417,7 +417,7 @@ export function TripExperience({
       ? data?.hotels
       : data?.meals?.find((m) => m.slot === alternatives)?.alternatives;
   return (
-    <section className={"trip-experience " + (mapOnly ? "map-only" : "")}>
+    <section className="trip-experience">
       <div className="experience-days">
         {plan.days.map((d, i) => (
           <button
@@ -465,9 +465,19 @@ export function TripExperience({
         >
           <RefreshCw size={14} />
         </button>
-        <button onClick={() => setMapOnly(!mapOnly)} className="experience-map-toggle">
+        <button
+          onClick={() => {
+            openMapViewer();
+            requestAnimationFrame(() =>
+              document
+                .querySelector(".mf-map-viewer")
+                ?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+            );
+          }}
+          className="experience-map-toggle"
+        >
           <MapPin size={15} />
-          {mapOnly ? "返回安排" : "展开地图"}
+          查看地图
         </button>
       </div>
       {error && (
@@ -578,12 +588,14 @@ export function TripExperience({
                 <div className="day-context">
                   <span className="dc-item">
                     <Sun size={13} />
-                    {dayWeather(plan, current.date) || (plan.weather?.note ? "天气待核实" : "出行前查询预报")}
+                    {dayWeather(plan, current.date) ||
+                      (plan.weather?.note ? "天气待核实" : "出行前查询预报")}
                   </span>
                   <span className="dc-sep">｜</span>
                   <span className="dc-item dc-cost">
                     <Wallet size={13} />
-                    当日已知交通 {data.known_transport_cny_per_person > 0
+                    当日已知交通{" "}
+                    {data.known_transport_cny_per_person > 0
                       ? `¥${data.known_transport_cny_per_person}`
                       : "待核实"}
                   </span>

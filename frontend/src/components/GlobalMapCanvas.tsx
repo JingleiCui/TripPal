@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, KeyRound, Layers, MapPinned, X } from "lucide-react";
+import { ArrowUpRight, KeyRound, Layers, MapPinned, Maximize2, X } from "lucide-react";
 import { api } from "../api";
 import { loadAMap, type AMapConfig } from "../lib/amap";
 import {
@@ -14,17 +14,17 @@ import {
 
 type MapState = "loading" | "ready" | "no-key" | "error" | "fixture";
 
-/** 大地色系：墨绿主色 + 赭橙餐饮，与纸质地图书配色一致。 */
+/** Semantic route colors shared with Tripal's coral, mint and secondary accents. */
 const DAY_COLORS = [
-  "#234b42",
-  "#a6783f",
-  "#5a6b75",
+  "#b84830",
+  "#24745d",
+  "#6574ad",
   "#8a6f5b",
   "#6b7a5a",
   "#a05c48",
   "#707c86",
 ];
-const DINING_COLOR = "#c05f35";
+const DINING_COLOR = "#a16b20";
 
 /** 无 Key / fixture / 加载失败时的纸质地图书占位，避免白屏。 */
 function PaperMapBackdrop() {
@@ -36,75 +36,17 @@ function PaperMapBackdrop() {
       aria-hidden="true"
     >
       <defs>
-        <pattern id="mf-contour" width="96" height="96" patternUnits="userSpaceOnUse">
-          <path
-            d="M0 48 Q24 20 48 48 T96 48 M0 78 Q30 54 60 78 T120 78"
-            fill="none"
-            stroke="rgba(107,122,90,.16)"
-            strokeWidth="1"
-          />
+        <pattern
+          id="map-waiting-grid"
+          width="80"
+          height="80"
+          patternUnits="userSpaceOnUse"
+        >
+          <path d="M80 0H0V80" fill="none" stroke="#e1e5e8" strokeWidth="1" />
         </pattern>
       </defs>
-      <rect width="1440" height="900" fill="#eee9dc" />
-      <path
-        d="M0 150 Q280 210 460 130 T900 170 T1440 90 L1440 0 L0 0Z"
-        fill="#e3ebdd"
-        opacity=".75"
-      />
-      <path
-        d="M980 560 Q1100 500 1260 580 T1440 620 L1440 900 L900 900Z"
-        fill="#e3ebdd"
-        opacity=".6"
-      />
-      <path
-        d="M-40 700 Q220 620 400 700 T820 660 T1200 760 T1500 700"
-        fill="none"
-        stroke="#dbe6e4"
-        strokeWidth="86"
-        opacity=".95"
-      />
-      <path
-        d="M0 0 L1440 900 M0 900 L1440 0"
-        stroke="rgba(185,179,163,.45)"
-        strokeWidth="2"
-      />
-      <path
-        d="M120 0 V900 M420 0 V900 M760 0 V900 M1080 0 V900 M1320 0 V900"
-        stroke="rgba(185,179,163,.35)"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M0 220 H1440 M0 470 H1440 M0 720 H1440"
-        stroke="rgba(185,179,163,.35)"
-        strokeWidth="1.5"
-      />
-      <rect width="1440" height="900" fill="url(#mf-contour)" />
-      <path
-        d="M280 620 Q420 520 560 560 T860 420 T1120 330"
-        fill="none"
-        stroke="rgba(192,95,53,.42)"
-        strokeWidth="2.5"
-        strokeDasharray="8 9"
-      />
-      <g
-        fill="rgba(90,107,117,.62)"
-        fontFamily="Georgia, 'Songti SC', serif"
-        fontSize="15"
-        letterSpacing="2"
-      >
-        <text x="318" y="300">
-          旧城街区
-        </text>
-        <text x="900" y="250">
-          河岸步道
-        </text>
-        <text x="1080" y="720">
-          南岸
-        </text>
-        <text x="560" y="800">
-          中轴线
-        </text>
-      </g>
+      <rect width="1440" height="900" fill="#edf0f2" />
+      <rect width="1440" height="900" fill="url(#map-waiting-grid)" />
     </svg>
   );
 }
@@ -139,8 +81,12 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
     new Map(),
   );
   const readyRef = useRef(false);
+  const lastFitScope = useRef("");
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
   const [state, setState] = useState<MapState>("loading");
   const [message, setMessage] = useState("");
+  const [reloadNonce, setReloadNonce] = useState(0);
   // 地图默认显示；首次进入「有场景的旅行页」才加载高德 SDK，此后 DOM 与实例常驻。
   const [everOpened, setEverOpened] = useState(false);
   const hasScene = !!(
@@ -151,12 +97,14 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
   const viewerVisible = viewerOpen && mode === "travel" && hasScene;
 
   useEffect(() => {
-    if (viewerVisible) setEverOpened(true);
-  }, [viewerVisible]);
+    if (viewerVisible && !scene?.fixture) setEverOpened(true);
+  }, [viewerVisible, scene?.fixture]);
 
   // 只创建一次 AMap 实例：跨路由、跨天常驻，不随页面组件卸载而 destroy。
   useEffect(() => {
     if (!everOpened) return;
+    readyRef.current = false;
+    setState("loading");
     let dead = false;
     let map: any;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -218,8 +166,9 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
       mapRef.current = null;
       overlaysRef.current = [];
       markersRef.current.clear();
+      lastFitScope.current = "";
     };
-  }, [everOpened]);
+  }, [everOpened, reloadNonce]);
 
   const effectiveState: MapState = scene?.fixture ? "fixture" : state;
 
@@ -243,7 +192,9 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
         const element = document.createElement("div");
         element.className = "mf-amap-pin";
         element.style.background = dining ? DINING_COLOR : color;
-        element.textContent = dining ? "食" : String(index + 1);
+        const label = document.createElement("span");
+        label.textContent = dining ? "食" : String(index + 1);
+        element.append(label);
         element.classList.toggle("is-active", stop.id === scene?.highlightId);
         const marker = new window.AMap.Marker({
           position: [stop.lon, stop.lat],
@@ -251,14 +202,7 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
           offset: new window.AMap.Pixel(-15, -15),
         });
         marker.on("click", () => {
-          scene?.onSelect?.(stop);
-          const detail = document.createElement("div");
-          detail.className = "mf-amap-info";
-          detail.textContent = `第 ${activeDay.day} 天 · ${stop.name}`;
-          new window.AMap.InfoWindow({
-            content: detail,
-            offset: new window.AMap.Pixel(0, -26),
-          }).open(map, [stop.lon, stop.lat]);
+          sceneRef.current?.onSelect?.(stop);
         });
         map.add(marker);
         overlaysRef.current.push(marker);
@@ -308,8 +252,20 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
         overlaysRef.current.push(marker);
       });
 
-    if (scene?.day?.stops?.length) map.setFitView();
-  }, [scene, showAll, effectiveState]);
+    const scope = `${scene?.kind}:${scene?.viewKey ?? `${scene?.day?.city}:${scene?.day?.day}:${scene?.day?.date}`}:${showAll}`;
+    if (scene?.day?.stops?.length && scope !== lastFitScope.current) {
+      map.setFitView();
+      lastFitScope.current = scope;
+    }
+  }, [
+    scene?.day,
+    scene?.allDays,
+    scene?.hotels,
+    scene?.kind,
+    scene?.viewKey,
+    showAll,
+    effectiveState,
+  ]);
 
   // 高亮只改 class 与视角，不重建任何 overlay。
   useEffect(() => {
@@ -330,16 +286,19 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
       const map = mapRef.current;
       if (!map) return;
       map.resize?.();
-      if (scene?.day?.stops?.length) map.setFitView?.();
     }, 120);
     return () => clearTimeout(timer);
-  }, [viewerVisible, state, scene]);
+  }, [viewerVisible, state]);
 
   // 地图是常驻面板而非模态框：不锁页面滚动，Esc 只做「收起」。
   useEffect(() => {
     if (!viewerVisible) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeMapViewer();
+      if (
+        event.key === "Escape" &&
+        !document.querySelector('dialog[open], [aria-modal="true"]')
+      )
+        closeMapViewer();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -382,14 +341,22 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
         className={"mf-map-viewer" + (viewerVisible ? " is-open" : "")}
         aria-hidden={!viewerVisible}
       >
-        <section className="mf-map-dialog" role="region" aria-label="行程地图">
+        <section
+          className="mf-map-dialog"
+          role="region"
+          aria-label={scene?.kind === "explore" ? "地点地图" : "行程地图"}
+        >
           <header className="mf-map-dialog-bar">
             <div className="mf-map-dialog-heading">
               <span className="mf-map-dialog-icon" aria-hidden="true">
                 <MapPinned size={18} />
               </span>
               <div>
-                <b>行程地图</b>
+                <b>
+                  {scene?.kind === "explore"
+                    ? "好去处，都在地图上"
+                    : "每一天，连成一条路线"}
+                </b>
                 <small>
                   {scene?.fixture
                     ? "合成流程验证视图 · 不代表真实地点"
@@ -398,6 +365,15 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
               </div>
             </div>
             <div className="mf-map-dialog-tools">
+              <button
+                type="button"
+                className="mf-map-fit"
+                aria-label="显示全部地点"
+                disabled={effectiveState !== "ready"}
+                onClick={() => mapRef.current?.setFitView?.()}
+              >
+                <Maximize2 size={17} />
+              </button>
               {(scene?.allDays?.length ?? 0) > 1 && (
                 <label className="mf-map-switch">
                   <input
@@ -437,6 +413,15 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
                   </span>
                   <b>{copy.title}</b>
                   <p>{effectiveState === "error" && message ? message : copy.body}</p>
+                  {effectiveState === "error" && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setReloadNonce((value) => value + 1)}
+                    >
+                      重新加载地图
+                    </button>
+                  )}
                   {effectiveState === "no-key" && (
                     <Link to="/settings" className="mf-btn mf-btn-outline">
                       查看配置指南 →
@@ -447,30 +432,37 @@ export function GlobalMapCanvas({ mode }: { mode: "travel" | "manage" }) {
             )}
 
             <div className="mf-map-controls">
-              {days.length > 0 && effectiveState === "ready" && (
-                <div className="mf-map-legend">
-                  {days.map((day) => (
-                    <span key={day.day}>
-                      <i
-                        style={{
-                          background: DAY_COLORS[(day.day - 1) % DAY_COLORS.length],
-                        }}
-                      />
-                      第 {day.day} 天{day.city ? " · " + day.city : ""}
-                    </span>
-                  ))}
-                  {scene?.hotels?.length ? <span>住宿地点 · 尚未预订</span> : null}
-                </div>
-              )}
+              {days.length > 0 &&
+                effectiveState === "ready" &&
+                scene?.kind !== "explore" && (
+                  <div className="mf-map-legend">
+                    {days.map((day) => (
+                      <span key={day.day}>
+                        <i
+                          style={{
+                            background: DAY_COLORS[(day.day - 1) % DAY_COLORS.length],
+                          }}
+                        />
+                        第 {day.day} 天{day.city ? " · " + day.city : ""}
+                      </span>
+                    ))}
+                    {scene?.hotels?.length ? <span>住宿地点 · 尚未预订</span> : null}
+                  </div>
+                )}
             </div>
 
             {scene?.day && effectiveState === "ready" && (
               <div className="mf-map-day mf-glass">
                 <span className="mf-eyebrow">当前查看</span>
                 <b>
-                  第 {scene.day.day} 天 · {scene.day.date}
+                  {scene.kind === "explore"
+                    ? scene.day.city
+                    : `第 ${scene.day.day} 天 · ${scene.day.date}`}
                 </b>
-                <small>{scene.day.stops.length} 处安排</small>
+                <small>
+                  {scene.day.stops.length}{" "}
+                  {scene.kind === "explore" ? "个地点" : "处安排"}
+                </small>
               </div>
             )}
             <span className="mf-map-caption">

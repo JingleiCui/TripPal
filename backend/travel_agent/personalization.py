@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from sqlalchemy import select
 from .db import Signal, User
-from .vendor.atlas.signals import aggregate_signals, render_learned_context, classify_edit_intent
+from .signals import aggregate_signals, render_learned_context, classify_edit_intent
 
 
 def descriptors(requirements):

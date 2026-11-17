@@ -76,7 +76,7 @@ def test_live_failure_never_falls_back_to_synthetic(account, monkeypatch):
     def unavailable(*args, **kwargs):
         raise ProviderError("credentials", "test")
 
-    monkeypatch.setattr(amap, "search_places", unavailable)
+    monkeypatch.setattr(amap, "search_places_page", unavailable)
     response = search(account, fixture=False)
     assert response.status_code == 503
     assert "items" not in response.json()

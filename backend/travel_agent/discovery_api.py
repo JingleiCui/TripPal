@@ -16,6 +16,7 @@ from .providers.base import ProviderError
 # User-editable runtime limits. Search candidates expire; saved snapshots persist in SQL.
 CANDIDATE_TTL_SECONDS = 1800
 MAX_SAVED_PLACES = 300
+DISCOVERY_PAGE_SIZE = 20
 # 关键词用用户会说的词，而不是行业分类名。「餐饮服务」这类词会被高德
 # 文本检索按名称匹配到「XX 餐饮管理有限公司」等企业条目。
 CATEGORY_QUERIES = {
@@ -95,35 +96,40 @@ def saved_view(row):
     }
 
 
+
+
 @router.get("/explore")
 def explore(
     city: str = Query(min_length=1, max_length=40),
     query: str = Query(default="", max_length=100),
     category: Literal["all", "sights", "food", "stays", "nature", "art"] = "all",
     fixture: bool = False,
+    page: int = Query(default=1, ge=1, le=amap.SEARCH_MAX_RESULTS),
+    page_size: int = Query(default=DISCOVERY_PAGE_SIZE, ge=1, le=amap.SEARCH_MAX_PAGE_SIZE),
     actor=Depends(require_user),
 ):
     city, query = city.strip(), query.strip()
     if not city:
         raise HTTPException(422, "请输入目的地城市")
+    start = (page - 1) * page_size
+    if start >= amap.SEARCH_MAX_RESULTS:
+        raise HTTPException(422, "已超出可浏览范围，请细化关键词或地点类型")
     if fixture and not settings.fixture_enabled:
         raise HTTPException(403, "当前环境不提供合成资料")
     try:
         if fixture:
-            items = fixtures.places(city)[:6]
-            if category in {"food", "stays"}:
-                noun = "餐厅" if category == "food" else "酒店"
-                items = [
-                    {
-                        **p,
-                        "id": p["id"] + ":" + category,
-                        "name": f"演示·{city}{noun} {i + 1}",
-                        "category": "合成测试" + noun,
-                    }
-                    for i, p in enumerate(items)
-                ]
+            catalogue = fixtures.discovery_places(city, category)
+            items = catalogue[start : start + page_size]
+            has_more = start + page_size < len(catalogue)
+            pagination = {
+                "page": page,
+                "page_size": page_size,
+                "has_more": has_more,
+                "next_page": page + 1 if has_more else None,
+                "end_reason": None if has_more else "exhausted",
+            }
         else:
-            items = amap.search_places(
+            pagination = amap.search_places_page(
                 city,
                 " ".join(
                     filter(
@@ -131,8 +137,11 @@ def explore(
                     )
                 ),
                 types=CATEGORY_TYPES.get(category),
+                page=page,
+                page_size=page_size,
             )
-            if category == "food":
+            items = pagination.pop("items")
+            if category == "food" and page == 1:
                 items, _meituan_merged = _merge_meituan_food(items, city, query)
         client = cache()
         for item in items:
@@ -144,6 +153,7 @@ def explore(
     except redis.RedisError:
         raise HTTPException(503, "地点暂存服务不可用，请稍后重试")
     return {
+        **pagination,
         "items": items,
         "city": city,
         "fixture": fixture,

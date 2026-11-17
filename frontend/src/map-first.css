@@ -51,7 +51,7 @@ body:has(.mf-shell) {
   min-height: 100vh;
 }
 body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view {
-  grid-template-columns: minmax(0, 1fr) minmax(0, clamp(420px, 44vw, 860px));
+  grid-template-columns: minmax(400px, 42fr) minmax(0, 58fr);
 }
 .mf-shell.mf-travel-view > .app-main {
   grid-column: 1;
@@ -750,7 +750,7 @@ body:has(.consent-banner) .mf-map-fab {
 /* ---------- 响应式 ---------- */
 @media (max-width: 1250px) {
   body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view {
-    grid-template-columns: minmax(0, 1fr) minmax(0, clamp(380px, 46vw, 720px));
+    grid-template-columns: minmax(400px, 42fr) minmax(0, 58fr);
   }
 }
 

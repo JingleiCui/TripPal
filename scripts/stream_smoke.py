@@ -92,7 +92,7 @@ def main():
         "rows": rows,
         "scope": "real local model stream; not planning quality",
     }
-    target = ROOT / "reports/atlas-stream-smoke.json"
+    target = ROOT / "reports/stream-smoke.json"
     target.write_text(json.dumps(report, ensure_ascii=False, indent=2))
     print(json.dumps(report, ensure_ascii=False))
 

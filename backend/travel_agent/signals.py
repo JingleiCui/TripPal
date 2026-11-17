@@ -1,9 +1,4 @@
-"""Adapted from Atlas (MIT), Dejan Žegarac, 2026.
-Upstream efebcd9371b2b66ed538f2e57d0b8fb17d388a15.
-See docs/upstream/Atlas-LICENSE and Atlas-NOTICE.md.
-"""
-
-# Original module documentation retained in .reference/Atlas/core/signals.py.
+"""行为信号聚合：把有界的用户行为归纳为个性化画像，并渲染为安全的提示块。"""
 
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -126,7 +121,7 @@ _INTEREST_VOCAB = {
     "history": ["history", "historical", "historic"],
     "art": ["art", "gallery", "galleries"],
     "museums": ["museum"],
-    "outdoors": ["outdoor", "hiking", "hike", "trek"],
+    "outdoors": ["outdoor", "hiking", "hike", "trails"],
     "nature": ["nature", "park", "wildlife", "scenery", "scenic"],
     "shopping": ["shopping", "shop", "market", "boutique"],
     "beaches": ["beach", "coast", "seaside"],

@@ -27,7 +27,7 @@ from .access import get_trip, role_for, safe_plan
 from .security import require_user, password_hash, password_valid, new_session, hash_token
 from .schemas import Credentials, RunRequest, ResumeRequest, TripPatch
 from .worker import dispatch_pending
-from . import knowledge, exports
+from . import knowledge, exports, route_map
 from .social_api import router as social_router
 from .db import AccountProfile, DailyDetailSnapshot
 from .mailer import queue_token, deliver_pending
@@ -549,6 +549,7 @@ def export(ident: str, kind: str, owner=Depends(require_user)):
     with Session() as db:
         trip = owned(db, Trip, ident, owner)
         plan = json.loads(json.dumps(trip.plan))
+        version = trip.version
         snapshots = db.scalars(
             select(DailyDetailSnapshot)
             .where(DailyDetailSnapshot.trip_id == ident)
@@ -569,12 +570,35 @@ def export(ident: str, kind: str, owner=Depends(require_user)):
             headers={"Content-Disposition": 'attachment; filename="travel-roadbook.md"'},
         )
     if kind == "pdf":
+        # 导出物始终是 PDF；真实地图不可用时仍在 PDF 内如实说明，绝不改交付 HTML。
+        image = route_map.route_map_png(
+            plan, ident=ident, version=version, size="640*900"
+        )
         return Response(
-            exports.pdf(plan),
+            exports.pdf(plan, map_png=image),
             media_type="application/pdf",
             headers={"Content-Disposition": 'attachment; filename="travel-roadbook.pdf"'},
         )
     raise HTTPException(404, "不支持的格式")
+
+
+@app.get("/api/v1/trips/{ident}/route-map.png")
+def trip_route_map(ident: str, owner=Depends(require_user)):
+    """路书预览用的真实地图：高德静态图，带真实站点标记与 polyline 路线。"""
+    with Session() as db:
+        trip = owned(db, Trip, ident, owner)
+        plan = json.loads(json.dumps(trip.plan))
+        version = trip.version
+    if not plan.get("days"):
+        raise HTTPException(409, "尚无可展示的行程")
+    image = route_map.route_map_png(plan, ident=ident, version=version, size="640*900")
+    if not image:
+        raise HTTPException(503, route_map.budget_notice(plan))
+    return Response(
+        image,
+        media_type="image/png",
+        headers={"Cache-Control": "private, max-age=300"},
+    )
 
 
 @app.post("/api/v1/trips/{ident}/shares")

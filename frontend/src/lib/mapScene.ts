@@ -9,6 +9,8 @@
 import type { Day, Hotel, Stop } from "../types";
 
 export type MapScene = {
+  kind?: "explore" | "itinerary";
+  viewKey?: string;
   day?: Day;
   allDays?: Day[];
   hotels?: (Hotel & { user_selected?: boolean })[];

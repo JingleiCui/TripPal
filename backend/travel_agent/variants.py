@@ -1,7 +1,4 @@
-"""Adapted from Atlas (MIT), Dejan Žegarac, 2026.
-Upstream efebcd9371b2b66ed538f2e57d0b8fb17d388a15.
-See docs/upstream/Atlas-LICENSE and Atlas-NOTICE.md.
-"""
+"""候选方案对比与事件标记的纯函数。"""
 
 
 def _should_compare(compare: bool, produced_itinerary: bool, is_edit: bool) -> bool:

@@ -37,7 +37,7 @@ ollama create qwen3.5:9b -f scripts/models/qwen3.5-9b.Modelfile
 
 ```bash
 .venv/bin/python scripts/check_local_model.py
-.venv/bin/python scripts/atlas_stream_smoke.py
+.venv/bin/python scripts/stream_smoke.py
 .venv/bin/python scripts/evaluate.py --mode local-model-smoke
 ```
 

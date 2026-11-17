@@ -10,7 +10,7 @@ from .observability import logger
 from .config import settings
 from .db import Session, Task, Trip, Revision, Document, Message, Conversation, User, uid, now, event, PendingChange
 from .access import role_for
-from .vendor.atlas.authz import role_can_edit
+from .roles import role_can_edit
 from .agent.harness import Harness, Cancelled
 from .agent.graph import build_graph
 from .providers.base import ProviderError

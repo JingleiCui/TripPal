@@ -17,6 +17,8 @@ export function MapPanel({
   allDays,
   hotels,
   highlightId,
+  kind = "itinerary",
+  viewKey,
 }: {
   day?: Day;
   onSelect: (s: Stop) => void;
@@ -24,6 +26,8 @@ export function MapPanel({
   allDays?: Day[];
   hotels?: (Hotel & { user_selected?: boolean })[];
   highlightId?: string;
+  kind?: "explore" | "itinerary";
+  viewKey?: string;
 }) {
   const id = useId();
   const onSelectRef = useRef(onSelect);
@@ -36,10 +40,12 @@ export function MapPanel({
       hotels,
       highlightId,
       fixture,
+      kind,
+      viewKey,
       onSelect: (stop) => onSelectRef.current(stop),
     });
-    return () => publishMapScene(id, null);
-  }, [id, day, allDays, hotels, highlightId, fixture]);
+  }, [id, day, allDays, hotels, highlightId, fixture, kind, viewKey]);
+  useEffect(() => () => publishMapScene(id, null), [id]);
 
   const stopCount = allDays?.length
     ? allDays.reduce((total, item) => total + (item?.stops?.length ?? 0), 0)
@@ -51,7 +57,7 @@ export function MapPanel({
         <MapPinned size={16} />
       </span>
       <div className="mf-map-entry-text">
-        <b>地图已同步</b>
+        <b>{kind === "explore" ? "地点与地图同步" : "行程与地图同步"}</b>
         <small>
           {fixture
             ? "合成流程验证视图，不代表真实地点"
@@ -60,10 +66,6 @@ export function MapPanel({
               : "点选标记查看地点详情"}
         </small>
       </div>
-      <span className="mf-map-entry-live" aria-hidden="true">
-        <i />
-        实时
-      </span>
     </div>
   );
 }

@@ -173,42 +173,39 @@ export const post = <T>(path: string, body?: unknown) =>
   });
 
 /**
- * 下载导出的路书。服务端 PDF 失败时（缺字体、历史行程数据异常等）自动改用
- * 传入的设计版 HTML 兜底，保证「下载路书」始终可用，而不是点下去毫无反应。
+ * 下载路书，交付物恒为 PDF。服务端 PDF 生成有纯文本兜底，因此这里只认
+ * `%PDF-` 开头的响应；非 PDF 一律报错，不再降级成 HTML 文件。
  */
 export async function downloadRouteBook(
   path: string,
-  fallbackHtml: () => string,
   pdfFilename = "travel-roadbook.pdf",
-): Promise<"pdf" | "html"> {
-  let blob: Blob | null = null;
+): Promise<void> {
+  const headers = new Headers();
+  if (csrf) headers.set("X-CSRF-Token", csrf);
+  headers.set("X-Request-Id", newRequestId());
+  let response: Response;
   try {
-    const headers = new Headers();
-    if (csrf) headers.set("X-CSRF-Token", csrf);
-    headers.set("X-Request-Id", newRequestId());
-    const response = await fetch("/api/v1" + path, {
+    response = await fetch("/api/v1" + path, {
       headers,
       credentials: "same-origin",
     });
-    if (response.ok) {
-      const candidate = await response.blob();
-      // 只认真正的 PDF：后端偶尔会以 200 返回错误页，不能把它存成 .pdf。
-      const magic = new TextDecoder().decode(await candidate.slice(0, 5).arrayBuffer());
-      if (candidate.size > 100 && magic === "%PDF-") blob = candidate;
-    }
   } catch {
-    // 下面统一走兜底。
+    throw new Error("暂时无法连接服务，请检查网络后重试");
   }
-  const isPdf = blob !== null;
-  const finalBlob = blob ?? new Blob([fallbackHtml()], { type: "text/html;charset=utf-8" });
-  const filename = isPdf ? pdfFilename : pdfFilename.replace(/\.pdf$/i, ".html");
-  const url = URL.createObjectURL(finalBlob);
+  if (!response.ok) {
+    throw new Error(`路书导出失败（${response.status}），请稍后重试`);
+  }
+  const blob = await response.blob();
+  const magic = new TextDecoder().decode(await blob.slice(0, 5).arrayBuffer());
+  if (blob.size < 100 || magic !== "%PDF-") {
+    throw new Error("服务未返回有效的 PDF，请重试或使用「打印」另存为 PDF");
+  }
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = filename;
+  anchor.download = pdfFilename;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return isPdf ? "pdf" : "html";
 }

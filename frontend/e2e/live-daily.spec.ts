@@ -17,7 +17,7 @@ test("opt-in real daily dining, lodging and map", async ({ page }) => {
   await page.getByLabel("用户名", { exact: true }).fill(data.name);
   await page.getByLabel("密码", { exact: true }).fill(LIVE_CASE_PASSWORD);
   await page.getByRole("button", { name: "登录", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "一句话，安排好下一程。" })).toBeVisible();
   const consent = page.getByRole("button", { name: "不参与统计", exact: true });
   if (await consent.isVisible()) await consent.click();
   await page.goto("/explore");

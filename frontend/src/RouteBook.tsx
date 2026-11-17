@@ -13,8 +13,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import { api, downloadRouteBook } from "./api";
 import { TripalMark } from "./components/TripalLogo";
-import { routeBookFallbackHtml } from "./lib/routeBookHtml";
-import type { Day, Plan, Stop, Trip } from "./types";
+import type { Plan, Stop, Trip } from "./types";
 
 type BudgetDay = {
   day: number;
@@ -37,71 +36,40 @@ function weatherFor(plan: Plan, date?: string) {
   return `${hit.dayweather || "天气"}${temp ? " " + temp : ""}`;
 }
 
-/** 由行程生成插画式路线图：每天一段彩色虚线 + 编号站点。 */
-function RouteIllustration({ days }: { days: Day[] }) {
+/**
+ * 真实路线地图：直接展示后端用高德静态图渲染的 PNG（真实坐标 + polyline）。
+ * 不用 SVG 插画示意图冒充地图；服务不可用时如实说明，而不是画一张假图。
+ */
+function RealRouteMap({ tripId, version, days }: { tripId: string; version: number; days: Plan["days"] }) {
+  const [failed, setFailed] = useState(false);
+  const src = `/api/v1/trips/${tripId}/route-map.png?v=${version}`;
   const colors = ["#FF8A6B", "#5FC9AC", "#7B8BD8", "#E8A93C", "#B98CD8"];
-  const all = days.flatMap((d) => d.stops);
-  const H = Math.max(560, all.length * 96 + 120);
-  const points = all.map((_, i) => ({
-    x: 70 + (i % 2 === 0 ? 40 : 190) + ((i * 37) % 70),
-    y: 70 + i * ((H - 140) / Math.max(1, all.length - 1 || 1)),
-  }));
-  let idx = 0;
-  const segments = days.map((d, dayIndex) => {
-    const pts = d.stops.map(() => points[idx++]);
-    return { day: d, dayIndex, pts };
-  });
   return (
-    <svg
-      className="rb-map-canvas"
-      viewBox={`0 0 408 ${H}`}
-      xmlns="http://www.w3.org/2000/svg"
-      role="img"
-      aria-label="行程路线示意图"
-    >
-      <rect x="0" y="0" width="408" height={H} fill="#EAF2EC" rx="14" />
-      <ellipse cx="70" cy="120" rx="105" ry="90" fill="#DCECDF" />
-      <ellipse cx="350" cy={H * 0.45} rx="110" ry="130" fill="#DCECDF" />
-      <ellipse cx="80" cy={H * 0.8} rx="120" ry="140" fill="#DCECDF" />
-      {segments.map(({ day, dayIndex, pts }) => {
-        if (!pts.length) return null;
-        const path = pts
-          .map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`)
-          .join(" ");
-        const color = colors[dayIndex % colors.length];
-        return (
-          <g key={day.day}>
-            <path
-              d={path}
-              fill="none"
-              stroke={color}
-              strokeWidth="3"
-              strokeDasharray="6 7"
-            />
-            {pts.map((p, i) => {
-              const n = dayIndex > 0
-                ? days.slice(0, dayIndex).reduce((s, x) => s + x.stops.length, 0) + i + 1
-                : i + 1;
-              return (
-                <g key={i}>
-                  <circle cx={p.x} cy={p.y} r="17" fill="#FFFFFF" stroke={color} strokeWidth="2" />
-                  <text
-                    x={p.x}
-                    y={p.y + 4}
-                    fontSize="12"
-                    fontWeight="bold"
-                    fill={color}
-                    textAnchor="middle"
-                  >
-                    {n}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        );
-      })}
-    </svg>
+    <div className="rb-map-card">
+      <h4>全程路线 / REAL ROUTE MAP</h4>
+      {failed ? (
+        <div className="rb-map-unavailable" role="status">
+          <b>地图暂不可用</b>
+          <p>真实底图需要高德 Web 服务 Key 与网络；行程中的坐标与路线数据仍完整保留。</p>
+        </div>
+      ) : (
+        <img
+          className="rb-map-image"
+          src={src}
+          alt="高德地图：行程真实地点标记与路线"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <div className="rb-map-legend">
+        {days.map((d, i) => (
+          <span key={d.day}>
+            <i style={{ background: colors[i % colors.length] }} />
+            DAY {String(d.day).padStart(2, "0")}
+          </span>
+        ))}
+      </div>
+      <p className="rb-map-caption">高德地图 · GCJ-02 坐标 · 真实地点与路线</p>
+    </div>
   );
 }
 
@@ -157,13 +125,7 @@ export function RouteBook() {
     setDownloading(true);
     setDownloadNote("");
     try {
-      const kind = await downloadRouteBook(
-        `/trips/${id}/export/pdf`,
-        () => routeBookFallbackHtml(plan!, ledger.data, id),
-      );
-      setDownloadNote(
-        kind === "html" ? "PDF 生成失败，已下载设计版 HTML（可用浏览器打印为 PDF）。" : "",
-      );
+      await downloadRouteBook(`/trips/${id}/export/pdf`);
     } catch (error) {
       setDownloadNote("下载失败：" + (error as Error).message);
     } finally {
@@ -174,8 +136,21 @@ export function RouteBook() {
   return (
     <div className="rb-page">
       <header className="rb-header">
+        {/* 高密度页眉：Logo 与右侧标题/元信息同一行，不额外占一整行 */}
         <div className="rb-header-top">
           <span className="rb-mark-badge"><TripalMark size={40} title="Tripal 旅伴" /></span>
+          <div className="rb-header-copy">
+            <h1>{plan.title}</h1>
+            <p>
+              <span className="rb-header-doc">ROUTE BOOK / 路书</span>
+              <span className="rb-header-dot">·</span>
+              {plan.requirements.start_date || "日期待定"}
+              <span className="rb-header-dot">·</span>
+              由 Tripal AI 生成
+              <span className="rb-header-dot">·</span>
+              {days.length} 天 {knownStops} 站
+            </p>
+          </div>
           <div className="rb-actions">
             <Link to={"/trips/" + id} className="rb-btn"><ArrowLeft size={14} /> 返回行程</Link>
             <button className="rb-btn" onClick={() => window.print()}><Printer size={14} /> 打印</button>
@@ -185,11 +160,6 @@ export function RouteBook() {
           </div>
         </div>
         {downloadNote && <p className="rb-download-note" role="status">{downloadNote}</p>}
-        <div className="rb-header-doc">ROUTE BOOK / 路书</div>
-        <h1>{plan.title}</h1>
-        <p>
-          {plan.requirements.start_date || "日期待定"} · 由 Tripal AI 生成 · {days.length} 天 {knownStops} 站
-        </p>
       </header>
 
       <div className="rb-stats">
@@ -263,18 +233,7 @@ export function RouteBook() {
         </div>
 
         <div className="rb-right">
-          <div className="rb-map-card">
-            <h4>全程路线 / ROUTE MAP</h4>
-            <RouteIllustration days={days} />
-            <div className="rb-map-legend">
-              {days.map((d, i) => (
-                <span key={d.day}>
-                  <i style={{ background: ["#FF8A6B", "#5FC9AC", "#7B8BD8", "#E8A93C"][i % 4] }} />
-                  DAY {String(d.day).padStart(2, "0")}
-                </span>
-              ))}
-            </div>
-          </div>
+          <RealRouteMap tripId={id!} version={trip.data?.version ?? 0} days={days} />
           <div className="rb-card rb-info-card">
             <h4>打包清单 / PACKING</h4>
             <p>身份证件 · 充电宝 · 舒适步行鞋</p>

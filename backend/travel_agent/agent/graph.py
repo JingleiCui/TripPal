@@ -16,7 +16,7 @@ from .. import knowledge
 from .. import research_cache
 from .harness import model
 from .structured import generate
-from ..vendor.atlas.variants import _should_compare
+from ..variants import _should_compare
 
 
 class State(TypedDict, total=False):

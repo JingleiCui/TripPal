@@ -233,7 +233,7 @@ def main():
 
             status("verifying_local_model")
             run(PYTHON, ROOT / "scripts/check_local_model.py", timeout=900, env=env)
-            run(PYTHON, ROOT / "scripts/atlas_stream_smoke.py", timeout=600, env=env)
+            run(PYTHON, ROOT / "scripts/stream_smoke.py", timeout=600, env=env)
             medical_probe = (
                 "from llm_config import build_model; "
                 "m=build_model(); r=m.invoke('只回答：好'); "

@@ -15,7 +15,6 @@ COPY requirements.lock.txt requirements.txt pyproject.toml ./
 RUN pip install --no-cache-dir -r requirements.lock.txt
 COPY backend/ ./backend/
 COPY migrations/ ./migrations/
-COPY docs/upstream/ ./docs/upstream/
 COPY alembic.ini config.example.json ./
 COPY scripts/server.py ./scripts/server.py
 COPY --from=web /usr/local/bin/node /usr/local/bin/node

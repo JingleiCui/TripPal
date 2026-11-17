@@ -1,4 +1,4 @@
-"""Atlas-inspired conversations, collaboration and personalization; additive migration."""
+"""会话、协作与个性化相关的数据表；增量迁移。"""
 
 from alembic import op
 from travel_agent.db import TripMember, Conversation, Message, Signal

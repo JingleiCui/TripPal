@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-17",
+  "scope": "Tripal implemented core UI, paginated discovery and accommodation selection",
+  "backend": {
+    "passed": 39,
+    "command": ".venv/bin/python -m pytest backend/tests/test_discovery_pagination.py backend/tests/test_contracts.py backend/tests/test_daily_services.py backend/tests/test_providers_tools.py backend/tests/test_discovery.py backend/tests/test_discovery_mcp_food.py backend/tests/test_place_photos.py -q"
+  },
+  "browser": {
+    "passed": 7,
+    "command": "npm run test:e2e --prefix frontend -- e2e/explore-pagination.spec.ts e2e/discovery.spec.ts",
+    "cases": [
+      "Discovery detail, saved collections and preferences survive refresh",
+      "Booking attachment, edit and removal",
+      "Broken photo recovery and trusted URL normalization",
+      "Append pages, filter reset, map width and sticky position",
+      "Failed page retry and duplicate ID suppression",
+      "Mobile overflow, collapsed map persistence and Escape dialog dismissal",
+      "Accommodation picker appends and saves a second-page candidate"
+    ]
+  },
+  "frontend_build": "TypeScript check and Vite production build passed",
+  "static_checks": "Scoped Ruff, node script syntax and git diff --check passed",
+  "capture": "No API mocks; synthetic planning and real sample document indexing/retrieval",
+  "live_discovery": {
+    "city": "杭州",
+    "category": "sights",
+    "visible_cards": 20,
+    "map_markers": 20,
+    "desktop_width": 1440,
+    "map_width": 835,
+    "evidence": "../ui/explore-live.png",
+    "map_sdk": "Real AMap SDK and tiles; headless Chrome software rendering enabled for capture"
+  },
+  "limitations": [
+    "No live-model quality benchmark or payment flow was exercised.",
+    "The complete repository-wide test suite was not rerun for this UI change.",
+    "AMap exposes a bounded search window; pagination stops at the provider limit."
+  ]
+}

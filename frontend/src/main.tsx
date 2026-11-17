@@ -12,6 +12,9 @@ import "./map-first.css";
 import "./agent-capabilities.css";
 // Tripal 品牌视觉最后引入，覆盖旧品牌样式；统一 Logo 来自 components/TripalLogo。
 import "./tripal.css";
+import "./travel-workspace.css";
+// 每日规划模块视觉精修层最后引入，统一五个视图的排版、间距与动效。
+import "./daily-planner.css";
 
 const client = new QueryClient({
   defaultOptions: {

@@ -2,6 +2,9 @@
 
 from .base import source
 
+# Finite synthetic catalogue used only when fixture mode is explicitly selected.
+FIXTURE_DISCOVERY_COUNT = 36
+
 
 def places(city="北京", query=""):
     names = [
@@ -51,3 +54,22 @@ def route(a, b, mode, city):
         "instructions": ["合成测试线路"],
         "source": source("合成测试夹具", None, "2026-11-12T00:00:00Z", synthetic=True),
     }
+
+
+def discovery_places(city, category="all"):
+    """A finite, explicitly synthetic catalogue for exercising multi-page browsing."""
+    base = places(city)
+    noun = {"food": "餐厅", "stays": "酒店", "nature": "公园", "art": "展馆"}.get(category, "景点")
+    items = []
+    for index in range(FIXTURE_DISCOVERY_COUNT):
+        original = base[index % len(base)]
+        first_catalogue = index < len(base) and category not in {"food", "stays"}
+        items.append({
+            **original,
+            "id": original["id"] if first_catalogue else f"fixture:discovery:{city}:{category}:{index}",
+            "name": original["name"] if first_catalogue else f"演示·{city}{noun} {index + 1}",
+            "category": "合成测试" + noun,
+            "lon": original["lon"] + (index // len(base)) * 0.003,
+            "lat": original["lat"] + (index // len(base)) * 0.002,
+        })
+    return items

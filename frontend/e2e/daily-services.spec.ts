@@ -13,7 +13,7 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
   await expect(page.getByLabel("旅行想法", { exact: true })).toBeVisible();
   await expect(page.getByLabel("出发位置", { exact: true })).not.toBeVisible();
-  await page.getByRole("link", { name: "对话规划", exact: true }).click();
+  await page.getByRole("link", { name: "新建旅行", exact: true }).click();
   await page.getByLabel(/使用合成资料体验/).check();
   await page
     .getByLabel("旅行对话输入")
@@ -110,9 +110,8 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
-  await page.getByRole("button", { name: "展开地图", exact: true }).click();
-  await expect(page.locator(".experience-map")).toBeVisible();
-  await page.getByRole("button", { name: "返回安排", exact: true }).click();
+  // 地图已改为默认可见的常驻列（不再需要点「展开地图」）。
+  await expect(page.locator(".mf-map-viewer.is-open")).toBeVisible();
   await page.screenshot({
     path: "../reports/daily-workspace-mobile.png",
     fullPage: true,

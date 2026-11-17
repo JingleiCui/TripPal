@@ -1,8 +1,8 @@
 """逐变更卡片确认 + 撤销窗口的 HTTP 端点。
 
-与 TREK 的「逐变更卡片 + 撤销窗口」对齐：Agent 提交修改后生成 PendingChange 卡片，
-用户在时间窗内可一键撤销（回到上一版本），超时后卡片淡出但历史仍可恢复。
-比 interrupt 阻塞更顺滑，Agent 提交后不阻断自身，控制权交还用户。
+Agent 提交修改后生成 PendingChange 卡片，用户在时间窗内可一键撤销（回到上一版本），
+超时后卡片淡出但历史仍可恢复。比 interrupt 阻塞更顺滑，Agent 提交后不阻断自身，
+控制权交还用户。
 """
 
 from fastapi import APIRouter, Depends, HTTPException

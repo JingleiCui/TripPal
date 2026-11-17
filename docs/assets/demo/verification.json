@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-17",
+  "source": "Running local app; no API mocks",
+  "fixturePlanning": true,
+  "retrieval": "Real document upload, indexing and search using self-authored sample-guide.md",
+  "pageErrors": [],
+  "responsive": [
+    {
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "overflow": false
+    }
+  ],
+  "reducedMotion": true,
+  "radii": {
+    ".app-header": "12px",
+    ".category-chip": "12px",
+    ".home-composer": "12px",
+    ".travel-home-postcard": "12px",
+    ".destination-card": "12px"
+  }
+}

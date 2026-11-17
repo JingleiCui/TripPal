@@ -187,6 +187,8 @@ export function AppHeader({
   const isManagePath = ["/documents", "/runs", "/assistant", "/settings"].some((p) =>
     pathname.startsWith(p),
   );
+  const showPlanningSteps =
+    pathname === "/" || pathname.startsWith("/chat") || pathname.startsWith("/trips/");
   // 用「我在第几步」替代并列入口，减少首次使用的选择成本。
   const stepIndex =
     pathname.startsWith("/trips/") || pathname === "/archive"
@@ -226,6 +228,7 @@ export function AppHeader({
           </span>
           <b>
             Tripal<span className="app-brand-cn">旅伴</span>
+            <small className="app-brand-role">AI 旅行规划</small>
           </b>
         </Link>
 
@@ -374,7 +377,7 @@ export function AppHeader({
             <span aria-current="page">{section?.label ?? "我的旅行"}</span>
           </div>
           {section?.hint && <span className="app-context-hint">{section.hint}</span>}
-          {!isManagePath && (
+          {!isManagePath && showPlanningSteps && (
             <div
               className="mf-steps"
               aria-label="当前规划阶段"

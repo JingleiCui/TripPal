@@ -10,7 +10,7 @@ test("desktop: register, plan, version, export, share, archive and documents", a
   await page.getByLabel("密码", { exact: true }).fill("travel-browser-test-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "一句话，安排好下一程。" })).toBeVisible();
   await page.screenshot({
     path: "../reports/home-desktop.png",
     fullPage: true,
@@ -46,16 +46,21 @@ test("desktop: register, plan, version, export, share, archive and documents", a
   await expect(
     page.getByRole("heading", { name: "留住每一次出发的想法" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "旅行资料", exact: true }).click();
+  // 桌面端把「旅行资料 / 执行记录 / 平台与设置」收进「更多页面」下拉。
+  const gotoSecondary = async (name: string) => {
+    await page.getByRole("button", { name: "更多页面" }).click();
+    await page.getByRole("link", { name, exact: true }).click();
+  };
+  await gotoSecondary("旅行资料");
   await page.getByLabel("上传旅行资料").setInputFiles({
     name: "我的攻略.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("这是一份合成旅行资料。测试景区需要提前三天预约。"),
   });
   await expect(page.getByText("我的攻略.txt", { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "执行记录", exact: true }).click();
+  await gotoSecondary("执行记录");
   await expect(page.getByRole("heading", { name: "每一步，都有来处" })).toBeVisible();
-  await page.getByRole("link", { name: "平台与设置", exact: true }).click();
+  await gotoSecondary("平台与设置");
   await expect(page.getByRole("heading", { name: "平台与运行设置" })).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -67,7 +72,7 @@ test("mobile: navigation, form and overflow", async ({ page }) => {
   await page.getByLabel("密码", { exact: true }).fill("travel-mobile-test-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "一句话，安排好下一程。" })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

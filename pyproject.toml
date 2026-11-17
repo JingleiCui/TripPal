@@ -3,8 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "travel-agent"
+name = "tripal"
 version = "0.1.0"
+license = {text = "AGPL-3.0-only"}
 requires-python = ">=3.11,<3.12"
 dynamic = ["dependencies"]
 

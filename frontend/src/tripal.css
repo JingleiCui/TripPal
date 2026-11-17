@@ -6,15 +6,226 @@
    ========================================================================== */
 
 :root {
-  --tp-cream: #fff7f1;
+  --tp-cream: #f4f5f6;
   --tp-coral: #ff8a6b;
   --tp-coral-deep: #ea6e4e;
+  --tp-action: #ad5a47;
+  --tp-action-hover: #914936;
   --tp-mint: #5fc9ac;
   --tp-butter: #ffce73;
-  --tp-ink: #3b3432;
-  --tp-muted: #8a817c;
-  --tp-line: #f0e3d9;
+  --tp-ink: #293032;
+  --tp-muted: #646d70;
+  --tp-line: rgba(42, 51, 55, 0.12);
+  --tp-soft: rgba(255, 255, 255, 0.66);
+  --tp-selected: rgba(173, 90, 71, 0.07);
   --tp-card: #ffffff;
+  --tp-radius: 12px;
+}
+
+/* 产品界面使用同一组语义色。浅珊瑚用于插画，深珊瑚承担白字按钮。 */
+:root,
+.mf-shell {
+  font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ui-bg: var(--tp-cream);
+  --ui-surface: var(--tp-card);
+  --ui-surface-2: #eef0f1;
+  --ui-surface-3: #e7eaec;
+  --ui-text: var(--tp-ink);
+  --ui-text-2: #625853;
+  --ui-text-3: var(--tp-muted);
+  --ui-line: var(--tp-line);
+  --ui-line-strong: #c8ced0;
+  --ui-brand: var(--tp-action);
+  --ui-brand-hover: var(--tp-action-hover);
+  --ui-brand-soft: var(--tp-selected);
+  --ui-success: #24745d;
+  --ui-radius-sm: var(--tp-radius);
+  --ui-radius: var(--tp-radius);
+  --ui-radius-lg: var(--tp-radius);
+  --green: var(--tp-action);
+  --muted: var(--tp-muted);
+  --line: var(--tp-line);
+  --paper: var(--tp-card);
+  --accent: #eef0f1;
+  --mf-paper: var(--tp-cream);
+  --mf-paper-light: #fafbfc;
+  --mf-paper-deep: #e7eaec;
+  --mf-ink-1: var(--tp-ink);
+  --mf-ink-2: #625853;
+  --mf-ink-3: var(--tp-muted);
+  --mf-brand: var(--tp-action);
+  --mf-brand-deep: var(--tp-action-hover);
+  --mf-brand-soft: var(--tp-selected);
+  --mf-accent: var(--tp-action);
+  --mf-accent-deep: var(--tp-action-hover);
+  --mf-accent-soft: #eef0f1;
+  --mf-moss: #24745d;
+  --mf-glass-fill: rgba(255, 255, 255, 0.72);
+  --mf-glass-fill-strong: rgba(255, 255, 255, 0.86);
+  --mf-glass-border: var(--tp-line);
+  --mf-glass-shadow: 0 8px 28px rgba(35, 44, 49, 0.06);
+  --mf-r-card: var(--tp-radius);
+  --mf-r-lg: var(--tp-radius);
+  --mf-r-md: var(--tp-radius);
+  --mf-r-pill: var(--tp-radius);
+  --mf-map-route: var(--tp-action);
+  color: var(--tp-ink);
+}
+body:has(.mf-shell),
+.mf-shell {
+  background: var(--tp-cream);
+  color: var(--tp-ink);
+}
+.app-brand-role {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--tp-muted);
+  line-height: 1.3;
+}
+.mf-shell .page-heading h1 {
+  color: var(--tp-ink);
+}
+.mf-shell .page-heading p {
+  color: var(--tp-muted);
+}
+.new-planner > .page-heading {
+  align-items: center;
+  gap: 20px;
+}
+.new-planner > .page-heading h1 {
+  font-size: clamp(28px, 3.2vw, 44px);
+  font-weight: 750;
+}
+.home-agent-badge {
+  display: grid;
+  justify-items: center;
+  flex: 0 0 auto;
+}
+.home-agent-badge span {
+  color: var(--tp-muted);
+  font-size: 11px;
+}
+.discovery-home .category-chip {
+  background: var(--tp-card);
+  border-color: var(--tp-line);
+  min-height: 44px;
+}
+.discovery-home .category-chip:hover,
+.discovery-home .category-chip.selected {
+  border-color: var(--tp-action);
+  background: var(--tp-selected);
+}
+.discovery-home .home-composer {
+  border-color: #dfc8ba;
+  box-shadow: 0 8px 30px rgba(91, 56, 39, 0.04);
+}
+.discovery-home .home-composer:focus-within {
+  border-color: var(--tp-action);
+}
+.discovery-home .home-composer textarea::placeholder {
+  color: var(--tp-muted);
+}
+.discovery-home .home-composer-bottom > span {
+  color: var(--tp-muted);
+}
+.discovery-home .home-composer-bottom > button {
+  background: var(--tp-action);
+  width: 44px;
+  height: 44px;
+}
+.discovery-home .home-ideas button,
+.discovery-home .home-ideas > a {
+  background: var(--tp-selected);
+  color: #705347;
+  min-height: 36px;
+}
+.discovery-home .discovery-action {
+  color: var(--tp-ink);
+  min-height: 158px;
+  border: 1px solid var(--tp-line);
+  box-shadow: none;
+}
+.discovery-home .discovery-action:hover {
+  transform: none;
+  border-color: #cbb5a8;
+}
+.discovery-home .action-plan {
+  background: #ffede3;
+}
+.discovery-home .action-chat {
+  background: #eaf6f0;
+}
+.discovery-home .action-save {
+  background: #fff3d7;
+}
+.discovery-home .discovery-action small {
+  color: #625853;
+}
+.discovery-home .mini-chat {
+  color: #24745d;
+  background: #d3ebdf;
+  border-color: #c3e1d2;
+}
+.discovery-home .mini-book {
+  color: #8c6428;
+  filter: none;
+}
+.discovery-home .mini-itinerary {
+  box-shadow: 6px 6px 0 #f0d8ca;
+}
+.mf-shell .btn-primary {
+  background: var(--tp-action);
+  color: #fff;
+  border-color: var(--tp-action);
+}
+.mf-shell .btn-primary:hover {
+  background: var(--tp-action-hover);
+}
+.mf-shell :is(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid var(--tp-action);
+  outline-offset: 3px;
+}
+.mf-shell .explore-search {
+  border-color: var(--tp-line);
+  border-radius: 20px;
+}
+.mf-shell .explore-filters button {
+  min-height: 44px;
+}
+.mf-shell .explore-filters button.selected {
+  background: var(--tp-selected);
+  color: var(--tp-action);
+  border-color: var(--tp-action);
+}
+.mf-shell .retrieval-hit {
+  border-left: 3px solid #24745d;
+  background: #edf7f2;
+  border-radius: 0 12px 12px 0;
+  padding: 14px;
+}
+@media (max-width: 760px) {
+  .home-agent-badge {
+    display: none;
+  }
+  .new-planner > .page-heading h1 {
+    font-size: 28px;
+    line-height: 1.45;
+  }
+  .discovery-home .discovery-action {
+    min-height: 132px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ---------- 统一品牌字标：全站 Logo 均来自 TripalLogo.tsx ---------- */
@@ -186,24 +397,30 @@
 .rb-header {
   background: linear-gradient(135deg, #ff8a6b 0%, #fa7a58 100%);
   color: #fff;
-  padding: 26px 40px 30px;
+  /* 高密度：Logo 与右侧文字同一行，页眉纵向压缩 */
+  padding: 14px 40px 16px;
 }
 .rb-header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  min-width: 0;
+}
+.rb-header-copy {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 /* 珊瑚色箱体不能直接压在橙色页眉上：加一块奶油白底托，Logo 本身保持全局唯一版本 */
 .rb-mark-badge {
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   background: #fffdf9;
   border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 17px;
+  border-radius: 15px;
   box-shadow: 0 7px 18px rgba(120, 48, 30, 0.2);
 }
 .rb-download-note {
@@ -216,21 +433,32 @@
   font-size: 12px;
 }
 .rb-header-doc {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  color: #ffe4da;
-  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: #fff1ea;
+  font-weight: 800;
+}
+.rb-header-dot {
+  margin: 0 7px;
+  opacity: 0.6;
 }
 .rb-header h1 {
-  margin: 18px 0 6px;
-  font-size: 34px;
+  margin: 0 0 3px;
+  font-size: 25px;
+  line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .rb-header p {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #ffe4da;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .rb-actions {
   display: flex;
@@ -280,10 +508,18 @@
   font-size: 11px;
   color: var(--rb-muted);
 }
-.rb-stat:nth-child(1) b { color: var(--rb-coral-deep); }
-.rb-stat:nth-child(2) b { color: var(--rb-mint); }
-.rb-stat:nth-child(3) b { color: #e8a93c; }
-.rb-stat:nth-child(4) b { color: var(--rb-blue); }
+.rb-stat:nth-child(1) b {
+  color: var(--rb-coral-deep);
+}
+.rb-stat:nth-child(2) b {
+  color: var(--rb-mint);
+}
+.rb-stat:nth-child(3) b {
+  color: #e8a93c;
+}
+.rb-stat:nth-child(4) b {
+  color: var(--rb-blue);
+}
 
 .rb-grid {
   display: grid;
@@ -341,20 +577,43 @@
   margin-bottom: 10px;
   font-size: 12px;
 }
-.rb-day.d0 .rb-day-context { background: #fff3ec; color: #8a6e2e; }
-.rb-day.d1 .rb-day-context { background: #ecf8f4; color: #5e7a72; }
-.rb-day.d2 .rb-day-context { background: #f0f2fc; color: #5d6796; }
-.rb-day.d0 .rb-day-head b { color: var(--rb-coral-deep); }
-.rb-day.d1 .rb-day-head b { color: var(--rb-mint); }
-.rb-day.d2 .rb-day-head b { color: var(--rb-blue); }
+.rb-day.d0 .rb-day-context {
+  background: #fff3ec;
+  color: #8a6e2e;
+}
+.rb-day.d1 .rb-day-context {
+  background: #ecf8f4;
+  color: #5e7a72;
+}
+.rb-day.d2 .rb-day-context {
+  background: #f0f2fc;
+  color: #5d6796;
+}
+.rb-day.d0 .rb-day-head b {
+  color: var(--rb-coral-deep);
+}
+.rb-day.d1 .rb-day-head b {
+  color: var(--rb-mint);
+}
+.rb-day.d2 .rb-day-head b {
+  color: var(--rb-blue);
+}
 .rb-day-context .rb-cost {
   font-weight: 800;
   margin-left: auto;
 }
-.rb-day.d0 .rb-cost { color: var(--rb-coral-deep); }
-.rb-day.d1 .rb-cost { color: #2e9e82; }
-.rb-day.d2 .rb-cost { color: var(--rb-blue); }
-.rb-day-context .rb-sep { color: #d8cec8; }
+.rb-day.d0 .rb-cost {
+  color: var(--rb-coral-deep);
+}
+.rb-day.d1 .rb-cost {
+  color: #2e9e82;
+}
+.rb-day.d2 .rb-cost {
+  color: var(--rb-blue);
+}
+.rb-day-context .rb-sep {
+  color: #d8cec8;
+}
 
 .rb-stop {
   display: grid;
@@ -365,21 +624,47 @@
   border-top: 1px dashed #f0e6de;
   font-size: 12px;
 }
-.rb-stop:first-of-type { border-top: 0; }
-.rb-stop .rb-time { color: var(--rb-coral-deep); font-weight: 700; }
-.rb-stop.d1 .rb-time { color: #2e9e82; }
-.rb-stop.d2 .rb-time { color: var(--rb-blue); }
-.rb-stop .rb-place b { display: block; color: var(--rb-ink); }
-.rb-stop .rb-place small { color: var(--rb-muted); }
-.rb-stop .rb-price { color: var(--rb-mint); font-weight: 700; white-space: nowrap; }
+.rb-stop:first-of-type {
+  border-top: 0;
+}
+.rb-stop .rb-time {
+  color: var(--rb-coral-deep);
+  font-weight: 700;
+}
+.rb-stop.d1 .rb-time {
+  color: #2e9e82;
+}
+.rb-stop.d2 .rb-time {
+  color: var(--rb-blue);
+}
+.rb-stop .rb-place b {
+  display: block;
+  color: var(--rb-ink);
+}
+.rb-stop .rb-place small {
+  color: var(--rb-muted);
+}
+.rb-stop .rb-price {
+  color: var(--rb-mint);
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 .rb-notes {
   background: #fff4de;
   border-radius: 14px;
   padding: 14px 16px;
 }
-.rb-notes b { font-size: 12px; color: #8a6e2e; }
-.rb-notes p { margin: 6px 0 0; font-size: 12px; color: #7a6540; line-height: 1.7; }
+.rb-notes b {
+  font-size: 12px;
+  color: #8a6e2e;
+}
+.rb-notes p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #7a6540;
+  line-height: 1.7;
+}
 
 .rb-info-card h4 {
   margin: 0 0 8px;
@@ -393,7 +678,9 @@
   color: #6b625e;
   line-height: 1.65;
 }
-.rb-info-card .rb-muted { color: var(--rb-muted); }
+.rb-info-card .rb-muted {
+  color: var(--rb-muted);
+}
 .rb-budget-row {
   display: grid;
   grid-template-columns: 52px 1fr auto;
@@ -426,11 +713,34 @@
   font-weight: 800;
   color: var(--rb-ink);
 }
-.rb-map-canvas {
+/* 真实高德静态图：页面与下载 PDF 共用同一张真实地图 */
+.rb-map-image {
   width: 100%;
-  border-radius: 14px;
+  height: auto;
   display: block;
+  border-radius: 14px;
   background: #eaf2ec;
+}
+.rb-map-unavailable {
+  padding: 26px 18px;
+  border-radius: 14px;
+  background: #f6f3ee;
+  text-align: center;
+  color: var(--rb-ink);
+}
+.rb-map-unavailable b {
+  font-size: 13px;
+}
+.rb-map-unavailable p {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--rb-muted);
+  line-height: 1.7;
+}
+.rb-map-caption {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--rb-muted);
 }
 .rb-map-legend {
   display: flex;
@@ -439,8 +749,16 @@
   font-size: 10.5px;
   color: var(--rb-muted);
 }
-.rb-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.rb-map-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.rb-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.rb-map-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
 
 .rb-footer {
   display: flex;
@@ -455,8 +773,130 @@
 }
 
 @media (max-width: 900px) {
-  .rb-grid { grid-template-columns: 1fr; padding: 18px; }
-  .rb-header, .rb-stats, .rb-footer { padding-left: 20px; padding-right: 20px; }
-  .rb-stats { margin-left: 20px; margin-right: 20px; grid-template-columns: repeat(2, 1fr); }
-  .rb-header h1 { font-size: 26px; }
+  .rb-grid {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .rb-header,
+  .rb-stats,
+  .rb-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .rb-stats {
+    margin-left: 20px;
+    margin-right: 20px;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rb-header h1 {
+    font-size: 26px;
+  }
+}
+
+/* 可审查的几何规范：界面容器统一 12px；角色造型、头像和地图标记保留本义。 */
+.mf-shell
+  :is(
+    .app-header,
+    .app-popover,
+    .app-nav-link,
+    .app-dropdown-trigger,
+    .app-cta,
+    .app-avatar,
+    .app-service-status,
+    .app-mobile-panel,
+    .mf-step,
+    .mf-map-viewer,
+    .mf-map-fab,
+    .mf-map-notice,
+    .card,
+    .btn,
+    .category-chip,
+    .home-composer,
+    .home-composer-bottom > button,
+    .home-ideas > button,
+    .home-ideas > a,
+    .discovery-action,
+    .destination-card,
+    .planning-details,
+    .explore-search,
+    .explore-filters > button,
+    .explore-card,
+    .place-card,
+    .discovery-detail,
+    .status-pill,
+    .notice,
+    .conversation-chat,
+    .conversation-canvas,
+    .conversation-input,
+    .variant-card,
+    .canvas-day,
+    .day-context,
+    .day-cost-detail,
+    .meal-detail-card,
+    .stay-detail-card,
+    .service-candidate,
+    .upload-zone,
+    .document-list,
+    .retrieval,
+    .retrieval-hit,
+    .rb-page,
+    .rb-card,
+    .rb-day,
+    .rb-stats,
+    .rb-map-card,
+    .rb-map-canvas,
+    .rb-notes,
+    .rb-mark-badge,
+    .rb-btn,
+    .rb-day-context,
+    input,
+    textarea,
+    select
+  ) {
+  border-radius: var(--tp-radius);
+}
+.mf-shell .app-avatar {
+  border-radius: 50%;
+}
+.mf-shell .retrieval :is(p, small),
+.mf-shell .document-row small {
+  color: #625853;
+}
+.mf-shell .retrieval-hit p {
+  line-height: 1.8;
+}
+@media (max-width: 760px) {
+  .discovery-home {
+    min-width: 0;
+  }
+  .discovery-home .discovery-categories {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .discovery-home .discovery-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+  .discovery-home .discovery-action {
+    min-width: 0;
+    width: 100%;
+    min-height: 100px;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .discovery-home .action-illustration {
+    width: 80px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .discovery-home .discovery-action > span:nth-child(2) {
+    flex: 1;
+  }
+  .discovery-home .discovery-action > svg {
+    position: static;
+    flex-shrink: 0;
+  }
 }

@@ -31,7 +31,7 @@ while time.monotonic() < deadline:
         if status.returncode == 0 and status.stdout.strip() and not status.stdout.strip().startswith("Z"):
             active.append(child)
     if not active:
-        print("travel_agent 已停止；Docker 数据和其他项目保留。")
+        print("TripPal 已停止；Docker 数据和其他项目保留。")
         break
     time.sleep(0.2)
 else:

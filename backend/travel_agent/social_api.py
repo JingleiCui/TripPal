@@ -11,7 +11,7 @@ from .security import require_user
 from .access import get_trip, role_for, safe_plan
 from .schemas import RunRequest
 from .conversation import extract, gate, seed_slots, to_requirements
-from .vendor.atlas.signals import render_learned_context
+from .signals import render_learned_context
 from .personalization import descriptors
 
 router = APIRouter(prefix="/api/v1")

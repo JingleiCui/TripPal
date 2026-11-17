@@ -51,6 +51,7 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
     /演示·北京餐厅 1/,
   );
   await expect(page.getByRole("checkbox", { name: /合成流程体验/ })).toBeChecked();
+  await page.getByRole("button", { name: "更多页面", exact: true }).click();
   await page.getByRole("link", { name: "旅行偏好", exact: true }).click();
   await page.getByLabel("默认目的地", { exact: true }).fill("上海");
   await page.getByLabel("默认旅行天数", { exact: true }).selectOption("4");

@@ -12,7 +12,7 @@ test("opt-in real Amap SDK, markers and hotel location", async ({ page }) => {
   await page.getByLabel("密码", { exact: true }).fill("Map-browser-check-123");
   await page.getByRole("button", { name: "已有账户？登录", exact: true }).click();
   await page.getByRole("button", { name: "登录", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "一句话，安排好下一程。" })).toBeVisible();
   const consent = page.getByRole("button", { name: "不参与统计", exact: true });
   if (await consent.isVisible()) await consent.click();
   await page.goto("/trips/" + data.trip_id);

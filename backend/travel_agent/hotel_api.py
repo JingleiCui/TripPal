@@ -1,7 +1,7 @@
 import hashlib
 import json
 import redis
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from .db import Session, Trip, Revision, now
 from .security import require_user
@@ -9,6 +9,9 @@ from .access import get_trip
 from .schemas import Requirements, day_cities
 from .config import settings
 from .providers import amap, fixtures
+from .providers.base import ProviderError
+
+HOTEL_PAGE_SIZE = 20
 
 router = APIRouter(prefix="/api/v1")
 
@@ -20,9 +23,17 @@ def choice_key(actor, trip, city, ident):
 
 
 @router.get("/trips/{ident}/hotels")
-def hotels(ident: str, query: str, city: str = "", actor=Depends(require_user)):
+def hotels(
+    ident: str, query: str, city: str = "",
+    page: int = Query(default=1, ge=1, le=amap.SEARCH_MAX_RESULTS),
+    page_size: int = Query(default=HOTEL_PAGE_SIZE, ge=1, le=amap.SEARCH_MAX_PAGE_SIZE),
+    actor=Depends(require_user),
+):
     if not query.strip() or len(query) > 100:
         raise HTTPException(422, "请输入简短的酒店名称或区域")
+    start = (page - 1) * page_size
+    if start >= amap.SEARCH_MAX_RESULTS:
+        raise HTTPException(422, "已超出可浏览范围，请细化酒店名称或区域")
     with Session() as db:
         trip = get_trip(db, ident, actor)
         if not trip.plan:
@@ -39,16 +50,16 @@ def hotels(ident: str, query: str, city: str = "", actor=Depends(require_user)):
                     "name": f"演示·{city}旅居酒店 {i + 1}",
                     "category": "合成测试酒店",
                 }
-                for i, p in enumerate(fixtures.places(city)[:3])
+                for i, p in enumerate(fixtures.discovery_places(city, "stays"))
             ]
+            has_more = start + page_size < len(candidates)
+            candidates = candidates[start : start + page_size]
+            pagination = {"next_page": page + 1 if has_more else None, "has_more": has_more}
         else:
             try:
-                candidates = [
-                    p
-                    for p in amap.search_places(city, query + " 酒店")
-                    if "酒店" in str(p.get("category", "")) or "宾馆" in str(p.get("category", ""))
-                ]
-            except Exception:
+                pagination = amap.search_places_page(city, query.strip(), types="100000", page=page, page_size=page_size)
+                candidates = pagination.pop("items")
+            except ProviderError:
                 raise HTTPException(503, "酒店地点查询暂不可用，请检查高德配置")
     client = redis.Redis.from_url(settings.redis_url, socket_timeout=3)
     try:
@@ -58,7 +69,7 @@ def hotels(ident: str, query: str, city: str = "", actor=Depends(require_user)):
             )
     except redis.RedisError:
         raise HTTPException(503, "候选保存暂不可用，请稍后再试")
-    return {"items": candidates, "notice": "选择只用于行程与地图，不代表已预订；价格仍以预订平台为准"}
+    return {**pagination, "items": candidates, "page": page, "page_size": page_size, "notice": "选择只用于行程与地图，不代表已预订；价格仍以预订平台为准"}
 
 
 class HotelChoice(BaseModel):

@@ -1,9 +1,9 @@
-"""DB boundary around Atlas's vendored, pure role policy."""
+"""行程数据的数据库访问边界与成员角色校验。"""
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from .db import Trip, TripMember
-from .vendor.atlas.authz import access_role, role_can_edit
+from .roles import access_role, role_can_edit
 
 
 def role_for(db, trip, user_id):

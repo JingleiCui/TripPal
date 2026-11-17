@@ -1,7 +1,4 @@
-"""Amap Web Service adapter. All coordinates remain GCJ-02 end to end.
-
-Mode endpoint mapping references JourneyPilot, MIT; see docs/upstream/NOTICE.md.
-"""
+"""高德 Web 服务适配器。所有坐标端到端保持 GCJ-02。"""
 
 import math
 from urllib.parse import urlencode, urlparse
@@ -13,6 +10,12 @@ MODE_PATHS = {
     "walk": "/v3/direction/walking",
     "drive": "/v3/direction/driving",
 }
+
+# Discovery uses real upstream pagination; agent tool calls retain a small default.
+# AMap POI text search exposes at most 200 results for one set of search parameters.
+SEARCH_MAX_RESULTS = 200
+SEARCH_MAX_PAGE_SIZE = 25
+AGENT_SEARCH_PAGE_SIZE = 8
 
 
 def request(path, params, ttl=900):
@@ -63,6 +66,11 @@ def _is_dining_outlet(place):
 
 
 def search_places(city, query, types=None):
+    """Bounded first-page lookup for planning agents and existing tools."""
+    return search_places_page(city, query, types, page_size=AGENT_SEARCH_PAGE_SIZE)["items"]
+
+
+def search_places_page(city, query, types=None, *, page=1, page_size=20):
     """按关键词检索城市 POI。
 
     ``types`` 是高德 POI 大类码（如 050000 餐饮服务）。文本检索即使带
@@ -70,17 +78,31 @@ def search_places(city, query, types=None):
     typecode 属于 170000 公司企业），因此在规范化之后按返回的 typecode
     再兜一层，只保留目标大类，避免把企业条目当成可以吃饭的门店。
     """
+    if not 1 <= page_size <= SEARCH_MAX_PAGE_SIZE or page < 1:
+        raise ValueError("Invalid POI pagination")
+    start = (page - 1) * page_size
+    if start >= SEARCH_MAX_RESULTS:
+        raise ValueError("POI search page exceeds provider result window")
     params = {
         "keywords": query,
         "city": city,
         "citylimit": "true",
-        "offset": 8,
+        "offset": page_size,
+        "page": page,
         "extensions": "all",
     }
     if types:
         params["types"] = types
     raw = request("/v3/place/text", params, 3600)
-    places = normalize_places(raw, city)
+    # Stop from raw upstream pagination, not from the filtered display count:
+    # a page of rejected companies must not hide restaurants on the next page.
+    if not isinstance(raw["data"].get("pois"), list):
+        raise ProviderError("schema", "地点查询缺少地点列表")
+    raw_count = len(raw["data"]["pois"])
+    visible_raw = {**raw, "data": {**raw["data"], "pois": raw["data"]["pois"][: SEARCH_MAX_RESULTS - start]}}
+    places = normalize_places(visible_raw, city)
+    count_value = number(raw["data"].get("count"))
+    total = int(count_value) if count_value is not None else None
     if types:
         if types.startswith("05"):
             # 餐饮大类里混入餐饮管理公司/中央厨房/食材配送/股份公司等，
@@ -93,7 +115,23 @@ def search_places(city, query, types=None):
                 for place in places
                 if str(place.get("typecode") or "").startswith(prefix)
             ]
-    return places
+    places = list({place["id"]: place for place in places}.values())
+    # Keep the upstream offset stable on the last page, even for uneven page sizes.
+    places = places[: max(0, SEARCH_MAX_RESULTS - start)]
+    reached_limit = start + raw_count >= SEARCH_MAX_RESULTS
+    has_more = (
+        raw_count >= page_size
+        and not reached_limit
+        and (total is None or start + raw_count < total)
+    )
+    return {
+        "items": places,
+        "page": page,
+        "page_size": page_size,
+        "next_page": page + 1 if has_more else None,
+        "has_more": has_more,
+        "end_reason": None if has_more else "provider_limit" if reached_limit else "exhausted",
+    }
 
 
 def search_nearby(city, lon, lat, category="food", query=""):

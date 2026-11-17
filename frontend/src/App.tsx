@@ -80,7 +80,7 @@ import {
 import { BookingManager } from "./Bookings";
 import { TripExperience } from "./TripExperience";
 import { RouteBook } from "./RouteBook";
-import { routeBookFallbackHtml } from "./lib/routeBookHtml";
+import { HomeDiscovery } from "./HomeDiscovery";
 import { MapPanel } from "./MapPanel";
 import { HotelSelector } from "./HotelSelector";
 import { VoiceControls } from "./VoiceControls";
@@ -802,13 +802,7 @@ function Planner() {
     setRouteDownloading(true);
     setRouteDownloadNote("");
     try {
-      const kind = await downloadRouteBook(
-        `/trips/${id}/export/pdf`,
-        () => routeBookFallbackHtml(plan, undefined, id),
-      );
-      setRouteDownloadNote(
-        kind === "html" ? "PDF 生成失败，已下载设计版 HTML（可用浏览器打印为 PDF）。" : "",
-      );
+      await downloadRouteBook(`/trips/${id}/export/pdf`);
     } catch (e) {
       setRouteDownloadNote("下载失败：" + (e as Error).message);
     } finally {
@@ -819,273 +813,91 @@ function Planner() {
   const canEdit = !!plan && !active && !busy && trip.data?.role !== "viewer";
   return (
     <div className={"planner " + (!id ? "new-planner" : "")}>
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">{id ? "你的旅程，你的节奏" : "从这里出发"}</span>
-          <h1>{plan?.title || (id ? "正在准备你的行程" : "下一程，想去哪里？")}</h1>
-          <p>
-            {id
-              ? "把地点连成路线，把想法变成可调整的安排。"
-              : "每一个好旅程，都从一点好奇开始。"}
-          </p>
-        </div>
-        {id && (
-          <div className="heading-actions">
-            {trip.data && (
-              <>
-                {trip.data.role === "owner" && <BookingManager tripId={trip.data.id} />}
-                <MemberManager tripId={trip.data.id} />
-                <HotelSelector trip={trip.data} />
-              </>
-            )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowForm(!showForm)}
-            >
-              <Settings size={15} />
-              行程条件
-            </Button>
-            {plan && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowHistory(!showHistory)}
-                >
-                  <History size={15} />
-                  版本 {trip.data?.version}
-                </Button>
-                <Button variant="secondary" size="sm" asChild>
-                  <Link to={`/trips/${id}/routebook`}>
-                    <BookOpen size={15} />
-                    路书预览
-                  </Link>
-                </Button>
-                <Button variant="secondary" size="sm" asChild>
-                  <a
-                    href={`/api/v1/trips/${id}/export/pdf`}
-                    aria-disabled={routeDownloading}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      void downloadTripRouteBook();
-                    }}
+      {id && (
+        <div className="page-heading">
+          <div>
+            <span className="eyebrow">{id ? "你的旅程，你的节奏" : "从这里出发"}</span>
+            <h1>
+              {plan?.title || (id ? "正在准备你的行程" : "一句话，安排好下一程。")}
+            </h1>
+            <p>
+              {id
+                ? "把地点连成路线，把想法变成可调整的安排。"
+                : "AI 旅行规划智能体助手 · 说出目的地、时间和偏好，生成可调整的每日行程。"}
+            </p>
+          </div>
+          {id && (
+            <div className="heading-actions">
+              {trip.data && (
+                <>
+                  {trip.data.role === "owner" && (
+                    <BookingManager tripId={trip.data.id} />
+                  )}
+                  <MemberManager tripId={trip.data.id} />
+                  <HotelSelector trip={trip.data} />
+                </>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowForm(!showForm)}
+              >
+                <Settings size={15} />
+                行程条件
+              </Button>
+              {plan && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowHistory(!showHistory)}
                   >
-                    <Download size={15} />
-                    {routeDownloading ? "下载中…" : "路书"}
-                  </a>
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={trip.data?.role !== "owner"}
-                  onClick={makeShare}
-                >
-                  <Share2 size={15} />
-                  分享
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+                    <History size={15} />
+                    版本 {trip.data?.version}
+                  </Button>
+                  <Button variant="secondary" size="sm" asChild>
+                    <Link to={`/trips/${id}/routebook`}>
+                      <BookOpen size={15} />
+                      路书预览
+                    </Link>
+                  </Button>
+                  <Button variant="secondary" size="sm" asChild>
+                    <a
+                      href={`/api/v1/trips/${id}/export/pdf`}
+                      aria-disabled={routeDownloading}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void downloadTripRouteBook();
+                      }}
+                    >
+                      <Download size={15} />
+                      {routeDownloading ? "下载中…" : "路书"}
+                    </a>
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={trip.data?.role !== "owner"}
+                    onClick={makeShare}
+                  >
+                    <Share2 size={15} />
+                    分享
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {!id && (
-        <section className="discovery-home" aria-label="旅行灵感">
-          <div className="discovery-categories">
-            {[
-              {
-                icon: Compass,
-                title: "随心探索",
-                value: "历史文化、公园与街区",
-              },
-              {
-                icon: BedDouble,
-                title: "住得舒服",
-                value: "舒适住宿、休闲街区",
-              },
-              {
-                icon: Utensils,
-                title: "寻找美食",
-                value: "当地美食、街头小吃",
-              },
-              {
-                icon: Mountain,
-                title: "走进自然",
-                value: "自然风景、公园与徒步",
-              },
-              {
-                icon: BookOpen,
-                title: "人文与艺术",
-                value: "博物馆、历史文化与艺术",
-              },
-            ].map(({ icon: Icon, title, value }, i) => (
-              <button
-                key={title}
-                className={
-                  "category-chip tone-" +
-                  i +
-                  (req.interests === value ? " selected" : "")
-                }
-                aria-pressed={req.interests === value}
-                onClick={() =>
-                  navigate(
-                    "/explore?" +
-                      new URLSearchParams({
-                        city: req.city,
-                        category: ["all", "stays", "food", "nature", "art"][i],
-                      }),
-                  )
-                }
-              >
-                <span>
-                  <Icon size={17} />
-                </span>
-                {title}
-              </button>
-            ))}
-          </div>
-          <form className="home-composer" onSubmit={startChat}>
-            <textarea
-              aria-label="旅行想法"
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              rows={3}
-              maxLength={4000}
-              required
-              placeholder="比如：五一去北京玩三天，两个人，想吃当地菜、逛胡同，住地铁附近。"
-            />
-            <div className="home-composer-bottom">
-              <span>景点、美食、住宿和路线，一起安排。</span>
-              <button
-                type="submit"
-                aria-label="开始聊我的旅行"
-                disabled={starting || !idea.trim()}
-              >
-                {starting ? (
-                  <Loader2 size={20} className="spin" />
-                ) : (
-                  <ArrowRight size={20} />
-                )}
-              </button>
-            </div>
-            <ErrorBox message={error} />
-          </form>
-          <div className="home-ideas">
-            <button
-              onClick={() =>
-                setIdea("周末去上海两天，想吃本地美食，找一家交通方便的酒店。")
-              }
-            >
-              周末两天，吃好住好
-            </button>
-            <button
-              onClick={() =>
-                setIdea("想去北京玩三天，带父母，少走路，景点之间交通方便，直接规划。")
-              }
-            >
-              带父母轻松走走
-            </button>
-            <Link to="/saved">
-              从收藏里找灵感 <ArrowUpRight size={13} />
-            </Link>
-          </div>
-          <div className="discovery-actions">
-            <button className="discovery-action action-plan" onClick={openBrief}>
-              <span className="action-illustration mini-itinerary">
-                <span>我的旅行计划</span>
-                <i />
-                <i />
-                <i />
-              </span>
-              <span>
-                <b>计划一次旅行</b>
-                <small>从目的地到每天的安排</small>
-              </span>
-              <ArrowUpRight size={20} />
-            </button>
-            <Link to="/chat" className="discovery-action action-chat">
-              <span className="action-illustration mini-chat">
-                <MessageSquare size={42} />
-                <Sparkles size={21} />
-              </span>
-              <span>
-                <b>和旅行助手聊聊</b>
-                <small>一句话，也能开启旅程</small>
-              </span>
-              <ArrowUpRight size={20} />
-            </Link>
-            <Link to="/assistant" className="discovery-action action-save">
-              <span className="action-illustration mini-book">
-                <BookOpen size={45} />
-              </span>
-              <span>
-                <b>设定我的旅行偏好</b>
-                <small>让每次推荐，更合心意</small>
-              </span>
-              <ArrowUpRight size={20} />
-            </Link>
-          </div>
-          <div className="discovery-section-title">
-            <div>
-              <h2>下一站，去发现</h2>
-              <p>选一个心动的地方，开始安排。</p>
-            </div>
-            <Link to="/explore" className="text-link">
-              探索更多 <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="destination-grid">
-            {[
-              {
-                city: "北京",
-                en: "古都漫游",
-                image: "beijing",
-                copy: "在胡同与古迹之间，慢慢走",
-                days: 3,
-              },
-              {
-                city: "杭州",
-                en: "湖山与茶香",
-                image: "hangzhou",
-                copy: "沿着西湖走走，喝一杯龙井",
-                days: 4,
-              },
-              {
-                city: "上海",
-                en: "城市新发现",
-                image: "shanghai",
-                copy: "沿着江岸，遇见城市的另一面",
-                days: 3,
-              },
-            ].map((d) => (
-              <button
-                className="destination-card"
-                key={d.city}
-                onClick={() => {
-                  navigate(
-                    "/explore?" +
-                      new URLSearchParams({ city: d.city, category: "all" }),
-                  );
-                }}
-                aria-label={"规划" + d.city + "旅行"}
-              >
-                <img
-                  src={"/images/" + d.image + ".jpg"}
-                  alt={d.city + "旅行风景"}
-                  loading="lazy"
-                />
-                <span className="destination-shade" />
-                <span className="destination-name">
-                  <small>{d.en}</small>
-                  <b>{d.city}</b>
-                  <span>{d.copy}</span>
-                </span>
-                <span className="destination-arrow">
-                  <ArrowUpRight size={19} />
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <HomeDiscovery
+          idea={idea}
+          setIdea={setIdea}
+          onPlan={startChat}
+          starting={starting}
+          error={error}
+          city={req.city}
+          onOpenBrief={openBrief}
+        />
       )}
       {!id && (
         <details className="planning-details" id="trip-brief" open={!!savedId}>

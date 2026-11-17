@@ -139,6 +139,7 @@ export function ConversationWorkspace() {
     [streamed, setStreamed] = useState<Record<string, string>>({});
   const bottom = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const revealedPlan = useRef<string | undefined>(undefined);
   const [attachments, setAttachments] = useState<Attachment[]>([]),
     [attaching, setAttaching] = useState(false),
     [attachError, setAttachError] = useState("");
@@ -195,6 +196,16 @@ export function ConversationWorkspace() {
   const stage = stages[conv?.task?.id || ""];
   const plan = (staged?.[variant] ||
     (trip.data?.plan?.days ? trip.data.plan : null)) as Plan | null;
+  useEffect(() => {
+    if (
+      conversationId &&
+      plan?.days?.length &&
+      revealedPlan.current !== conversationId
+    ) {
+      revealedPlan.current = conversationId;
+      setMobile("canvas");
+    }
+  }, [conversationId, !!plan?.days?.length]);
   const editable = !trip.data?.role || ["owner", "editor"].includes(trip.data.role);
   useEffect(() => {
     setStreamed({});
@@ -347,9 +358,13 @@ export function ConversationWorkspace() {
           </Link>
         </Button>
       </div>
-      <div className="mobile-canvas-toggle">
+      <div
+        className="mobile-canvas-toggle workspace-view-switch"
+        aria-label="规划工作区视图"
+      >
         <button
           className={mobile === "chat" ? "active" : ""}
+          aria-pressed={mobile === "chat"}
           onClick={() => setMobile("chat")}
         >
           <MessageSquare size={16} />
@@ -357,6 +372,7 @@ export function ConversationWorkspace() {
         </button>
         <button
           className={mobile === "canvas" ? "active" : ""}
+          aria-pressed={mobile === "canvas"}
           onClick={() => setMobile("canvas")}
         >
           <Map size={16} />
@@ -570,6 +586,11 @@ export function ConversationWorkspace() {
         </section>
         <section className="conversation-canvas">
           <div className="canvas-toolbar">
+            {trip.data?.plan?.days?.length && !waiting && !running ? (
+              <span className="canvas-save-status" role="status">
+                <Check size={15} /> 行程已保存 · 版本 {trip.data.version}
+              </span>
+            ) : null}
             <h2>
               <Map size={18} />
               行程画布

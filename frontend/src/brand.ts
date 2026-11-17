@@ -5,5 +5,5 @@ export const BRAND = {
   fullName: "Tripal 旅伴",
   slogan: "一句话，安排好下一程。",
   sloganEn: "Say it. Plan it. Go.",
-  role: "AI 旅行规划助手",
+  role: "AI 旅行规划智能体助手",
 } as const;
