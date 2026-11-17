@@ -1,8 +1,10 @@
 <div align="center">
 
-# travel_agent
+# Tripal 旅伴
 
-> **一个拒绝编造事实的旅行规划智能体。** 用一句话说清期待，生成的行程里每个地点、路线与价格都带来源；查不到时写「未知」，而不是猜一个。
+> **一句话，安排好下一程。** / *Say it. Plan it. Go.*
+
+> **一个拒绝编造事实的旅行规划智能体。** 用一句话说清期待，生成的行程里每个地点、路线与价格都带来源；查不到时写「未知」，而不是猜一个。Tripal（旅伴）是产品名，`travel_agent` 是仓库与 Python 包名。
 
 </div>
 
@@ -16,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="./README.md">English</a> · <strong>简体中文</strong>
+  <strong>简体中文 · 默认</strong> · <a href="./README.md">English</a>
 </p>
 
 ---
@@ -40,10 +42,32 @@ tts 能力槽位分配。
 
 ---
 
+## 品牌
+
+| | |
+|---|---|
+| **产品名** | **Tripal**（英文）· **旅伴**（中文）——*trip* + *pal*：陪你把行程安排好的 AI 旅行规划助手 |
+| **Slogan** | **一句话，安排好下一程。** / *Say it. Plan it. Go.* |
+| **定位** | **AI 旅行规划智能体**，不是旅游找搭子 / 交友 App——一句话说的是行程，智能体产出的是计划 |
+| **吉祥物 / Logo** | Jellycat 风格毛绒行李箱：方中带软的箱体、刺绣五官，头顶**黄色四角星光**（`#FFCE73`）。星光必须是黄色，不使用薄荷绿 |
+| **配色** | 奶油 `#FFF7F1` · 珊瑚 `#FF8A6B` · 深珊瑚 `#EA6E4E` · 薄荷 `#5FC9AC` · 奶油黄 `#FFCE73` · 墨色 `#3B3432` |
+| **字体** | Outfit + Noto Sans SC |
+
+唯一官方 Logo 是 React SVG 组件
+[`frontend/src/components/TripalLogo.tsx`](./frontend/src/components/TripalLogo.tsx)
+（`TripalMark` 与 `TripalBrand`）。全站每处 Logo——页眉、加载态、助手头像、路书封面，以及下载的
+HTML 兜底文件——都由这个组件渲染，因此箱体造型、居中五官与黄色星光不会各自跑偏。品牌常量见
+[`frontend/src/brand.ts`](./frontend/src/brand.ts)，视觉覆盖层见
+[`frontend/src/tripal.css`](./frontend/src/tripal.css)。可编辑设计源是 Ardot 文件
+`748410942732274`（*Tripal 旅伴 · 品牌与界面视觉升级 v2*）；它是设计工具文件，不是已提交的图片。
+
+---
+
 ## 首屏运行证据
 
-> **需补充素材**：仓库目前没有录制好的 Demo GIF、Logo 与界面截图（`git ls-files` 中被跟踪的图片
-> 只有 `frontend/public/images/` 下 4 张装饰性城市照片）。下面没有编造任何图片或视频链接。
+> **需补充素材**：仓库目前没有录制好的 Demo GIF 与界面截图（`git ls-files` 中被跟踪的图片
+> 只有 `frontend/public/images/` 下 4 张装饰性城市照片）。Logo 已按上文实现为 `TripalMark`
+> SVG 组件，但仓库里仍没有独立的 logo 图片文件。下面没有编造任何图片或视频链接。
 > 在补录之前，这一节给出**真实可复现**的首屏证据：受治理的 MCP server 通过 stdio 暴露的
 > 10 个工具，以及产生它们的命令。
 
@@ -97,6 +121,10 @@ PYTHONPATH=backend .venv/bin/python -m travel_agent.mcp.server
 | 🧩 | 智能体能力层 | 能力门控把 `maps / weather / dining / meituan / lodging / knowledge` 映射到工具集；逐变更**撤销窗口**卡片（15 分钟）基于 `Revision` 回退；订单 / GPX / 截图附件驱动建议；预订只生成结构化**意图**，不执行支付 |
 | 🧠 | 可插拔模型网关 | 9 个内置供应商预设 + 自定义 `model_providers`；按 `chat / structured / vision / asr / tts` 槽位分配；结构化输出用 `json_schema` 或 `function_calling`，只允许**一次**有界纠正，没有编造兜底 |
 | 👥 | 账户与协作 | 注册、密码哈希、持久会话、CSRF、可撤销 JWT、按用户隔离、owner/editor/viewer 成员、只读分享、PDF/Markdown 导出、隐私导出与账户注销 |
+| 🎨 | Tripal 品牌系统 | 唯一 SVG Logo 组件复用于页眉、加载态与助手头像；奶油/珊瑚/薄荷/奶油黄配色通过最后引入的 CSS 覆盖层生效，旧样式无法把上一版品牌带回来 |
+| 📖 | 路书页 | `/trips/:id/routebook` 左侧为每日卡片、右侧为大幅插画路线图；**每天的天气与已知花费放在当天块内**，有高德预报时用真实数据，查不到则明确标注待核实 |
+| 🗺️ | 地图优先工作台 | 高德画布是默认可见、处于文档流中的右侧列（不是浮层），左侧的地点详情卡与经典信息卡都不会被盖住；收起后页面回到单栏 |
+| 📄 | 路书下载 | 导出走 `fetch` + Blob 并校验 PDF 文件头；PDF 生成失败时改为下载自包含、可打印的 HTML 路书，而不是点了没反应 |
 | ✅ | 已验证工程 | 25 个后端测试模块（153 个测试函数）、6 个 Playwright spec、前端 `tsc --noEmit` 与 Vite 构建、依赖与平台自检脚本 |
 
 ---
@@ -111,8 +139,9 @@ PYTHONPATH=backend .venv/bin/python -m travel_agent.mcp.server
 ```mermaid
 flowchart TB
   subgraph L1["1 · 客户端"]
-    UI["React 18 工作台<br/>App / ConversationWorkspace / TripExperience"]
-    MAP["高德 JS 地图画布<br/>GlobalMapCanvas"]
+    UI["React 18 工作台<br/>App / ConversationWorkspace / TripExperience / RouteBook"]
+    MAP["高德 JS 地图画布<br/>GlobalMapCanvas · 右侧常驻列"]
+    BRAND["TripalMark / TripalBrand<br/>唯一 SVG Logo"]
   end
   subgraph L2["2 · 接口与会话"]
     GATE["确定性访谈门控<br/>conversation.py"]
@@ -139,6 +168,7 @@ flowchart TB
   end
   UI -->|HTTP| API
   UI -.->|场景| MAP
+  BRAND -.->|渲染于| UI
   API --> GATE
   GATE -->|Task 记录| MY
   GATE -.->|入队| RD
@@ -310,7 +340,21 @@ travel_agent/
 │       └── *_api.py               # discovery / bookings / services / budget / hotel / …
 │   └── tests/                     # 25 个 pytest 模块
 ├── frontend/
-│   ├── src/                       # React 18 工作台、地图画布、面板
+│   ├── src/
+│   │   ├── App.tsx                # 路由、应用外壳、规划工作台
+│   │   ├── RouteBook.tsx          # /trips/:id/routebook 路书页
+│   │   ├── TripExperience.tsx     # 每日行程 + 天气/花费上下文条
+│   │   ├── MapPanel.tsx           # 把地图场景发布到共享 store
+│   │   ├── components/
+│   │   │   ├── TripalLogo.tsx     # 唯一 TripalMark / TripalBrand SVG
+│   │   │   ├── AppHeader.tsx      # 品牌页眉
+│   │   │   └── GlobalMapCanvas.tsx # 右侧文档流中的高德画布
+│   │   ├── lib/
+│   │   │   ├── mapScene.ts        # 共享地图场景 store
+│   │   │   └── routeBookHtml.ts   # 可打印 HTML 导出兜底
+│   │   ├── brand.ts               # 产品名 / slogan 常量
+│   │   ├── tripal.css             # 品牌视觉覆盖层
+│   │   └── map-first.css          # 左内容 + 右地图两栏布局
 │   ├── e2e/                       # 6 个 Playwright spec
 │   └── public/images/             # 装饰性城市照片（已被跟踪）
 ├── migrations/                    # Alembic 迁移
@@ -336,6 +380,8 @@ travel_agent/
 > 但被 `.gitignore` 排除；4 张已跟踪的 `frontend/public/images/*.jpg` 是装饰照片，不是证据。
 > 因此下面以可复现的命令与已记录观测呈现，不冒充图片。发布前建议把「来源」面板截图
 > （显示 `provider · retrieved_at · url`）补到 `docs/assets/`。
+> 品牌与界面 QA 环节补充了路书下载、珊瑚页眉上的 Logo 底托、地图右栏不遮挡卡片等浏览器核验；
+> 这些本机截图同样未提交，不在 README 中链接。
 
 ### 后端可核对的结论
 
@@ -344,6 +390,8 @@ travel_agent/
 | 后端测试 | 收集 158 项，本机 156 项通过；其余 2 项依赖运行中的 Elasticsearch，容器未启动时报 `Connection refused` | `backend/tests/`、`.venv/bin/python -m pytest -q` |
 | 前端 | `tsc --noEmit` 与 `vite build` 通过 | `frontend/package.json` |
 | 浏览器 | 桌面、移动端、刷新恢复，以及对话对比、多城市用例 | `frontend/e2e/`、`docs/验收结果.md` |
+| 路书导出 | PDF 接口返回 `%PDF`；浏览器下载得到 `travel-roadbook.pdf`；拦截该接口时改为下载自包含的 `travel-roadbook.html` 兜底 | `frontend/src/api.ts`、`backend/tests/test_api.py::test_exports_are_real_pdf_and_text` |
+| 品牌与布局 QA | 统一 Logo 星光为黄色，在珊瑚页眉的奶油底托上清晰可辨；地图默认显示在独立右栏，地点详情卡始终在上层 | `frontend/src/components/TripalLogo.tsx`、`frontend/src/map-first.css` |
 | 文档检索 | 真实 BGE 编码、ES 召回、两用户隔离、旧版本不可见、删除后不可见 | `docs/验收结果.md` |
 | 工程回归 | 60/60 合成状态匹配——无模型的工程校验，不是质量基准 | `reports/regression-*.json` |
 | 模型冒烟 | 本机 Ollama `qwen3:4b-instruct` 完成纯模型 / 单 Agent / 按需多 Agent 各一例；后续一次运行也如实保留两次失败，未补成成功 | `reports/local-model-smoke-*.json` |
@@ -402,9 +450,11 @@ flowchart LR
 
 1. **Demo GIF / 短视频**——首屏「一句话到行程」的录屏（`## 首屏运行证据` 即其占位处），
    建议放 `docs/assets/demo.gif`。
-2. **Logo / 字标**——页首居中图片，可选 `<picture>` 明暗双版本；仓库目前没有 logo 文件。
-3. **界面截图**——对话工作台、带高德画布的行程画布、探索页网格、撤销窗口卡片。现有本机
-   采集在 `reports/`（已被 git-ignore）。
+2. **独立 Logo 图片**——Logo 已实现为唯一的 `TripalMark` SVG 组件并在全站使用，但仓库里没有
+   独立的图片资源供 GitHub 页首使用，也没有 `<picture>` 明暗双版本。需要图片时可从组件或
+   Ardot 设计文件导出一份。
+3. **界面截图**——对话工作台、带右侧高德列的行程画布、路书页、探索页网格、撤销窗口卡片。
+   现有本机采集（含品牌 QA 轮次）在 `reports/` 或 `/tmp`，均被 git-ignore。
 4. **检索溯源截图**——RAG 行程的「来源」面板，显示 `provider · retrieved_at · url`，
    为 `🧪 效果与证据` 一节所需。
 5. **根 `LICENSE`**——选定并添加许可证后，替换占位许可证 badge 与 `📄 License` 章节。

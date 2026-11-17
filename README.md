@@ -1,8 +1,10 @@
 <div align="center">
 
-# travel_agent
+# Tripal 旅伴
 
-> **A travel-planning agent that refuses to invent facts.** Describe a trip in one sentence; every place, route and price in the resulting itinerary carries its source — and when a source is missing, the plan says *unknown* instead of guessing.
+> **Say it. Plan it. Go.** — *一句话，安排好下一程。*
+
+> **A travel-planning agent that refuses to invent facts.** Describe a trip in one sentence; every place, route and price in the resulting itinerary carries its source — and when a source is missing, the plan says *unknown* instead of guessing. Tripal (旅伴) is the product name; `travel_agent` is the repository and Python package name.
 
 </div>
 
@@ -16,7 +18,7 @@
 </p>
 
 <p align="center">
-  <strong>English</strong> · <a href="./README.zh-CN.md">简体中文</a>
+  <a href="./README.zh-CN.md"><strong>简体中文 · 默认</strong></a> · English
 </p>
 
 ---
@@ -46,13 +48,37 @@ per-capability slots for chat, structured output, vision, ASR and TTS.
 
 ---
 
+## Brand
+
+| | |
+|---|---|
+| **Product name** | **Tripal** (English) · **旅伴** (Chinese) — *trip* + *pal*: the AI travel planner that goes with you |
+| **Slogan** | **一句话，安排好下一程。** / *Say it. Plan it. Go.* |
+| **Positioning** | An **AI travel-planning agent**, not a travel-buddy / meet-up app — the sentence describes the trip, the agent produces the plan |
+| **Mascot / logo** | A Jellycat-style plush suitcase: soft-square body, embroidered face, and a **yellow four-point sparkle** (`#FFCE73`). The sparkle is deliberately yellow, never mint green |
+| **Palette** | Cream `#FFF7F1` · Coral `#FF8A6B` · Deep coral `#EA6E4E` · Mint `#5FC9AC` · Butter yellow `#FFCE73` · Ink `#3B3432` |
+| **Type** | Outfit + Noto Sans SC |
+
+The canonical logo is a single React SVG component,
+[`frontend/src/components/TripalLogo.tsx`](./frontend/src/components/TripalLogo.tsx)
+(`TripalMark` and `TripalBrand`). Every logo on every screen — header, loading state, assistant
+avatar, route-book cover and the downloadable HTML fallback — renders from this component, so
+the shape, the centred face and the yellow sparkle cannot drift apart. Brand constants live in
+[`frontend/src/brand.ts`](./frontend/src/brand.ts) and the visual overrides in
+[`frontend/src/tripal.css`](./frontend/src/tripal.css). The editable design source is the Ardot
+file `748410942732274` (*Tripal 旅伴 · 品牌与界面视觉升级 v2*); it is a design tool file, not a
+committed image.
+
+---
+
 ## Run it, in one screen
 
-> **Media to supply:** this repository does not yet contain a recorded demo GIF, a logo, or
-> UI screenshots (the only tracked images are four decorative city photos in
-> `frontend/public/images/`). No image or video URL is fabricated below. Until a recording is
-> added, the following is the **actual, reproducible first-screen evidence**: the ten governed
-> MCP tools served over stdio, and the real command that produces them.
+> **Media to supply:** no demo GIF or UI screenshot is committed yet (the only tracked images
+> are four decorative city photos in `frontend/public/images/`). The logo is implemented in
+> code as the `TripalMark` SVG component above, but there is still no standalone logo image file
+> in the repository. No image or video URL is fabricated below. Until a recording is added, the
+> following is the **actual, reproducible first-screen evidence**: the ten governed MCP tools
+> served over stdio, and the real command that produces them.
 
 One command starts the governed MCP server; an `initialize` + `tools/list` exchange returns
 the scoped tool surface:
@@ -105,6 +131,10 @@ The same governance runs inside the agent: a single task emits an append-only `E
 | 🧩 | Agent-capability layer | Capability gating maps `maps / weather / dining / meituan / lodging / knowledge` to tool sets; per-change **undo window** cards (15-minute TTL) with `Revision`-based restore; attachment-driven suggestions for orders, GPX tracks and screenshots; structured booking *intents* only — no payment |
 | 🧠 | Pluggable model gateway | 9 built-in provider presets plus custom `model_providers`; per-slot `chat / structured / vision / asr / tts` assignment; structured output via `json_schema` or `function_calling` with **one** bounded correction and no invented fallback |
 | 👥 | Account & collaboration | Registration, password hashing, persistent sessions, CSRF, JWT with revocation, per-user isolation, owner/editor/viewer trip membership, read-only sharing, PDF/Markdown export, privacy export and account deletion |
+| 🎨 | Tripal brand system | One canonical SVG logo component reused in the header, loading state and assistant avatar; cream/coral/mint/butter palette applied through a final CSS override layer so older styles cannot reintroduce the previous brand |
+| 📖 | Route book page | `/trips/:id/routebook` lays out day cards on the left and a large illustrated route map on the right; each day's weather and known spend travel **inside that day's block**, using real AMap forecast data when available and explicit “unverified” copy otherwise |
+| 🗺️ | Map-first workspace | The AMap canvas is a default-visible, in-flow right-hand column (not a floating overlay), so place-detail cards and the classic info cards on the left are never covered; collapsing it returns the page to a single column |
+| 📄 | Route book download | Export uses `fetch` + Blob and validates the PDF signature; if PDF generation fails it downloads a self-contained, printable HTML route book instead of silently doing nothing |
 | ✅ | Verified engineering | 25 backend test modules (153 test functions), 6 Playwright spec files, frontend `tsc --noEmit` and Vite build, dependency and platform self-check scripts |
 
 ---
@@ -120,8 +150,9 @@ tokens, arrow semantics, source traceability checklist) are documented in
 ```mermaid
 flowchart TB
   subgraph L1["1 · Client"]
-    UI["React 18 workspace<br/>App / ConversationWorkspace / TripExperience"]
-    MAP["AMap JS canvas<br/>GlobalMapCanvas"]
+    UI["React 18 workspace<br/>App / ConversationWorkspace / TripExperience / RouteBook"]
+    MAP["AMap JS canvas<br/>GlobalMapCanvas · in-flow right column"]
+    BRAND["TripalMark / TripalBrand<br/>canonical SVG logo"]
   end
   subgraph L2["2 · API & conversation"]
     GATE["Deterministic interview gate<br/>conversation.py"]
@@ -148,6 +179,7 @@ flowchart TB
   end
   UI -->|HTTP| API
   UI -.->|scene| MAP
+  BRAND -.->|rendered by| UI
   API --> GATE
   GATE -->|Task row| MY
   GATE -.->|enqueue| RD
@@ -325,7 +357,21 @@ travel_agent/
 │       └── *_api.py               # discovery / bookings / services / budget / hotel / …
 │   └── tests/                     # 25 pytest modules
 ├── frontend/
-│   ├── src/                       # React 18 workspace, map canvas, panels
+│   ├── src/
+│   │   ├── App.tsx                # routes, app shell, planner workspace
+│   │   ├── RouteBook.tsx          # /trips/:id/routebook page
+│   │   ├── TripExperience.tsx     # daily itinerary + weather/cost context
+│   │   ├── MapPanel.tsx           # publishes the map scene to the store
+│   │   ├── components/
+│   │   │   ├── TripalLogo.tsx     # canonical TripalMark / TripalBrand SVG
+│   │   │   ├── AppHeader.tsx      # brand header
+│   │   │   └── GlobalMapCanvas.tsx # in-flow AMap canvas
+│   │   ├── lib/
+│   │   │   ├── mapScene.ts        # shared map scene store
+│   │   │   └── routeBookHtml.ts   # printable HTML export fallback
+│   │   ├── brand.ts               # product name / slogan constants
+│   │   ├── tripal.css             # brand visual override layer
+│   │   └── map-first.css          # two-column content + right map layout
 │   ├── e2e/                       # 6 Playwright spec files
 │   └── public/images/             # decorative city photos (tracked)
 ├── migrations/                    # Alembic migrations
@@ -353,6 +399,9 @@ travel_agent/
 > The items below are therefore stated as reproducible commands and recorded observations,
 > not as images. A retrieval-traceability screenshot (Sources panel showing
 > `provider · retrieved_at · url`) should be added to `docs/assets/` before publishing.
+> The brand/UI QA round added browser checks for the route-book download, the logo badge on
+> the coral header, and the non-overlapping right-hand map column; their local captures are
+> likewise uncommitted and are not linked here.
 
 ### What the backend guarantees
 
@@ -361,6 +410,8 @@ travel_agent/
 | Backend tests | 158 collected; 156 pass locally. The 2 remaining cases require a live Elasticsearch and fail with `Connection refused` when containers are down | `backend/tests/`, `.venv/bin/python -m pytest -q` |
 | Frontend | `tsc --noEmit` and `vite build` pass | `frontend/package.json` |
 | Browser | Desktop, mobile and refresh-recovery flows, plus conversation compare and multi-city cases | `frontend/e2e/`, `docs/验收结果.md` |
+| Route book export | PDF endpoint returns `%PDF`; browser download keeps `travel-roadbook.pdf`; with the endpoint blocked, a self-contained `travel-roadbook.html` fallback downloads instead | `frontend/src/api.ts`, `backend/tests/test_api.py::test_exports_are_real_pdf_and_text` |
+| Brand & layout QA | Unified logo renders with the yellow sparkle, readable on a cream badge over the coral header; map is visible by default in its own right column and place-detail cards stay on top | `frontend/src/components/TripalLogo.tsx`, `frontend/src/map-first.css` |
 | Document retrieval | Real BGE encoding, ES recall, two-user isolation, stale-version invisibility, delete invisibility | `docs/验收结果.md` |
 | Engineering regression | 60/60 synthetic state matches — an engineering check with no model, not a quality benchmark | `reports/regression-*.json` |
 | Model smoke | Local Ollama `qwen3:4b-instruct` completed pure-model / single-agent / on-demand multi-agent runs; a later run also recorded two failures without patching them into successes | `reports/local-model-smoke-*.json` |
@@ -425,10 +476,13 @@ publishing, the following need to be supplied by the maintainer:
 
 1. **Demo GIF / short video** — a first-screen recording of a chat-to-itinerary run (the
    `## Run it, in one screen` section is its placeholder). Suggested location `docs/assets/demo.gif`.
-2. **Logo / wordmark** — a centred image for the header; optionally two `<picture>` sources for
-   light/dark themes. No logo file is committed today.
-3. **UI screenshots** — conversation workspace, itinerary canvas with the AMap canvas, Discovery
-   grid, and the undo-window card. Existing local captures live in `reports/` (git-ignored).
+2. **Standalone logo image** — the logo is already implemented as the canonical `TripalMark`
+   SVG component and used everywhere in the app, but there is no standalone image asset for
+   the GitHub header or a `<picture>` light/dark pair. Export one from the component or the
+   Ardot design file if an image file is needed.
+3. **UI screenshots** — conversation workspace, itinerary canvas with the in-flow AMap column,
+   route book, Discovery grid, and the undo-window card. Existing local captures (including
+   the brand/QA round) live in `reports/` or `/tmp` and are git-ignored.
 4. **Retrieval-traceability screenshot** — the Sources panel showing `provider · retrieved_at · url`
    for a RAG-backed plan, required by the `🧪 Results & evidence` section.
 5. **Root `LICENSE`** — choose and add a licence, then replace the placeholder licence badge and
