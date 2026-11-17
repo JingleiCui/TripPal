@@ -5,13 +5,13 @@ Optional unanswered slots are asked once, mandatory slots never receive silent d
 """
 
 import re
-from datetime import date
+from datetime import date, timedelta
 from typing import Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
 from .vendor.atlas.interview import _merge_user_details, _next_question
 from .agent.structured import generate
-from .config import settings
+from .models.registry import chat_ready
 from .schemas import Requirements, CityStay
 
 
@@ -66,6 +66,52 @@ def parsed_days(value):
     return int(number) if number.isdigit() else CN_NUM.get(number)
 
 
+_WD = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
+_WD_RE = r"(?:下个?周|下周|本周|这周|星期|周|礼拜)\s*([一二三四五六日天])"
+
+
+def _resolve_weekday(base, wd, next_week):
+    """计算某个星期几的日期；next_week 为真时取下周（严格下一周）。"""
+    days = (wd - base.weekday()) % 7
+    if days == 0:
+        days = 7
+    resolved = base + timedelta(days=days)
+    if next_week:
+        resolved += timedelta(days=7)
+    return resolved
+
+
+def parse_relative_dates(text):
+    """解析「下周三」「下周三-下周五」「本周五」等相对日期与区间。
+
+    返回 (travel_dates, duration_days)：travel_dates 为区间起点 ISO 日期，
+    duration_days 为区间天数（含首尾）。无法识别时返回 (None, None)。
+    """
+    base = date.today()
+    matches = list(re.finditer(_WD_RE, text))
+    dates = []
+    for m in matches:
+        prefix = text[max(0, m.start() - 2) : m.start()]
+        dates.append(_resolve_weekday(base, _WD[m.group(1)], "下" in prefix))
+    explicit = re.findall(r"20\d\d-\d\d-\d\d", text)
+    if len(explicit) >= 2:
+        try:
+            a, b = date.fromisoformat(explicit[0]), date.fromisoformat(explicit[1])
+            if b < a:
+                a, b = b, a
+            return a.isoformat(), (b - a).days + 1
+        except ValueError:
+            pass
+    if len(dates) >= 2:
+        a, b = dates[0], dates[-1]
+        if b < a:
+            b += timedelta(days=7)
+        return a.isoformat(), (b - a).days + 1
+    if len(dates) == 1:
+        return dates[0].isoformat(), None
+    return None, None
+
+
 def rule_extract(text, last_question=None):
     result = {}
     count = parsed_days(text)
@@ -110,15 +156,32 @@ def rule_extract(text, last_question=None):
         result["transport"] = "drive"
     elif "公共交通" in text or "地铁" in text:
         result["transport"] = "public_transit"
-    budget = re.search(r"预算\s*(\d+)", text)
+    budget = re.search(r"预算\D*?(\d+)", text)
     if budget:
         result["budget_cny"] = int(budget.group(1))
-    when = re.search(r"20\d\d-\d\d-\d\d", text)
-    if when:
+    explicit = re.findall(r"20\d\d-\d\d-\d\d", text)
+    if len(explicit) >= 2:
         try:
-            result["travel_dates"] = date.fromisoformat(when.group()).isoformat()
+            a, b = date.fromisoformat(explicit[0]), date.fromisoformat(explicit[1])
+            if b < a:
+                a, b = b, a
+            result["travel_dates"] = a.isoformat()
+            if "duration" not in result:
+                result["duration"] = f"{(b - a).days + 1} days"
         except ValueError:
             pass
+    elif explicit:
+        try:
+            result["travel_dates"] = date.fromisoformat(explicit[0]).isoformat()
+        except ValueError:
+            pass
+    # 相对日期与区间（如「下周三-下周五」）优先于模型提取，离线可预测。
+    if "travel_dates" not in result:
+        rel_start, rel_days = parse_relative_dates(text)
+        if rel_start:
+            result["travel_dates"] = rel_start
+            if rel_days and "duration" not in result:
+                result["duration"] = f"{rel_days} days"
     if text.strip() in {"跳过", "暂不提供"} and last_question == "origin":
         result["start_location"] = "declined"
     stays = re.findall(
@@ -137,7 +200,7 @@ def rule_extract(text, last_question=None):
 def extract(text, prior, last_question=None, fixture=False):
     fresh = rule_extract(text, last_question)
     source = "deterministic_literal_parser"
-    if not fixture and settings.model_enabled and settings.model_api_key:
+    if not fixture and chat_ready():
         response = generate(
             SlotUpdate,
             [

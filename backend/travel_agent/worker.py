@@ -6,8 +6,9 @@ from celery import Celery
 from langgraph.checkpoint.mysql.pymysql import PyMySQLSaver
 from langgraph.types import Command
 from sqlalchemy import select, update
+from .observability import logger
 from .config import settings
-from .db import Session, Task, Trip, Revision, Document, Message, Conversation, User, uid, now, event
+from .db import Session, Task, Trip, Revision, Document, Message, Conversation, User, uid, now, event, PendingChange
 from .access import role_for
 from .vendor.atlas.authz import role_can_edit
 from .agent.harness import Harness, Cancelled
@@ -59,7 +60,9 @@ def heartbeat(task_id, lease, stop):
                 )
         except Exception:
             # Loss of the lease is checked again before every tool and final commit.
-            pass
+            logger.warning(
+                "lease_heartbeat_failed task_id=%s", task_id, exc_info=True
+            )
 
 
 @celery.task(name="travel.execute")
@@ -92,7 +95,7 @@ def execute(task_id):
                 "compare": payload.get("compare", False),
                 "regenerate": payload.get("regenerate", False),
             }
-        harness = Harness(task_id, lease)
+        harness = Harness(task_id, lease, capabilities=payload.get("capabilities"))
         with PyMySQLSaver.from_conn_string(settings.checkpoint_url) as saver:
             graph = build_graph(saver, harness)
             config = {"configurable": {"thread_id": task_id}, "recursion_limit": 30}
@@ -138,6 +141,22 @@ def execute(task_id):
                     }
                     db.add(
                         Revision(trip_id=trip.id, version=trip.version, plan=plan, message=payload["message"])
+                    )
+                    # 逐变更卡片确认 + 撤销窗口：提交即生成可撤销卡片，而非阻塞中断。
+                    diff = plan.get("diff") or {"added": [], "removed": [], "retained": []}
+                    db.add(
+                        PendingChange(
+                            trip_id=trip.id,
+                            task_id=task.id,
+                            owner=task.owner,
+                            kind="plan_edit",
+                            summary=f"已更新行程：新增 {len(diff.get('added', []))} 处、移除 {len(diff.get('removed', []))} 处",
+                            changes={"diff": diff, "title": plan.get("title", "")},
+                            applied_plan_version=trip.version,
+                            previous_plan_version=payload["base_version"],
+                            expires_at=now() + timedelta(minutes=settings.pending_change_ttl_minutes),
+                            status="pending",
+                        )
                     )
                     if payload.get("regenerate") or payload["base_version"]:
                         record(

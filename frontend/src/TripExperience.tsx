@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { safeHref, safeImageSrc } from "./lib/safeUrl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BedDouble,
@@ -25,7 +26,7 @@ import { api, post } from "./api";
 import { Button } from "./components/ui/button";
 import { BudgetPanel, BudgetNotice } from "./BudgetPanel";
 import { MapPanel } from "./MapPanel";
-import type { Plan, Trip, Stop, Route } from "./types";
+import type { Plan, Trip, Stop, Route, PendingChange } from "./types";
 
 type Place = Omit<Stop, "planned_start" | "planned_end" | "locked"> & {
   category?: string;
@@ -120,15 +121,14 @@ function PlaceFacts({ place, kind }: { place: Place; kind?: string }) {
             {place.rating} 分
           </span>
         )}
-        {place.price_text &&
-          !/酒店|宾馆|旅馆|住宿/.test(place.category || "") && (
-            <span>
-              {place.price_text.includes("元") || place.source.synthetic
-                ? place.price_text
-                : `参考消费 ¥${place.price_text}`}
-              {kind === "food" && !place.source.synthetic ? " / 人" : ""}
-            </span>
-          )}
+        {place.price_text && !/酒店|宾馆|旅馆|住宿/.test(place.category || "") && (
+          <span>
+            {place.price_text.includes("元") || place.source.synthetic
+              ? place.price_text
+              : `参考消费 ¥${place.price_text}`}
+            {kind === "food" && !place.source.synthetic ? " / 人" : ""}
+          </span>
+        )}
       </div>
       <p className="service-address">
         <MapPin size={13} />
@@ -163,9 +163,9 @@ export function TripExperience({
   const marketAbort = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   useEffect(() => () => marketAbort.current?.abort(), []);
-  const [marketFacts, setMarketFacts] = useState<
-    { label: string; value: string }[]
-  >([]);
+  const [marketFacts, setMarketFacts] = useState<{ label: string; value: string }[]>(
+    [],
+  );
   const [marketWarning, setMarketWarning] = useState("");
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [refreshId, setRefreshId] = useState(0);
@@ -215,6 +215,49 @@ export function TripExperience({
     retry: false,
   });
   const data = facts.data;
+  // 逐变更卡片确认 + 撤销窗口：Agent 提交改动后在此给出「撤销 / 忽略」，
+  // 不阻塞自身，比 interrupt 更顺滑。trip.version 变化即触发刷新。
+  const pending = useQuery({
+    queryKey: ["pending-changes", trip?.id, trip?.version],
+    queryFn: () => api<PendingChange[]>(`/trips/${trip!.id}/pending-changes`),
+    enabled: !!trip?.id && !staged,
+    refetchInterval: 20_000,
+    retry: false,
+  });
+  const [tick, setTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!pending.data?.length) return;
+    const timer = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [pending.data?.length]);
+  async function undoChange(id: string) {
+    if (!trip) return;
+    setBusy(true);
+    setError("");
+    try {
+      await post(`/trips/${trip.id}/pending-changes/${id}/undo`);
+      await client.invalidateQueries({ queryKey: ["trip", trip.id] });
+      await client.invalidateQueries({ queryKey: ["trips"] });
+      await client.invalidateQueries({ queryKey: ["pending-changes", trip.id] });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function dismissChange(id: string) {
+    if (!trip) return;
+    setBusy(true);
+    setError("");
+    try {
+      await post(`/trips/${trip.id}/pending-changes/${id}/dismiss`);
+      await client.invalidateQueries({ queryKey: ["pending-changes", trip.id] });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   const editable = trip?.role !== "viewer" && !staged;
   async function toggleLock(place: Place) {
     if (!trip) return;
@@ -329,7 +372,7 @@ export function TripExperience({
     }
   }
   const mapDay = useMemo(() => {
-    const mapStops = data?.timeline.length
+    const mapStops = data?.timeline?.length
       ? Array.from(
           new Map(
             data.timeline.map((t) => [
@@ -360,7 +403,7 @@ export function TripExperience({
   const candidates =
     alternatives === "hotel"
       ? data?.hotels
-      : data?.meals.find((m) => m.slot === alternatives)?.alternatives;
+      : data?.meals?.find((m) => m.slot === alternatives)?.alternatives;
   return (
     <section className={"trip-experience " + (mapOnly ? "map-only" : "")}>
       <div className="experience-days">
@@ -410,10 +453,7 @@ export function TripExperience({
         >
           <RefreshCw size={14} />
         </button>
-        <button
-          onClick={() => setMapOnly(!mapOnly)}
-          className="experience-map-toggle"
-        >
+        <button onClick={() => setMapOnly(!mapOnly)} className="experience-map-toggle">
           <MapPin size={15} />
           {mapOnly ? "返回安排" : "展开地图"}
         </button>
@@ -423,6 +463,51 @@ export function TripExperience({
           {error}
         </p>
       )}
+      {pending.data && pending.data.length > 0 && (
+        <div className="pending-changes" role="region" aria-label="待确认的行程改动">
+          <div className="pending-changes-head">
+            <span className="eyebrow">行程刚被调整</span>
+            <small>窗口内可一键撤销；超时后改动保留，历史仍可恢复。</small>
+          </div>
+          {pending.data.map((pc) => {
+            const ms = new Date(pc.expires_at).getTime() - tick;
+            const secs = Math.max(0, Math.floor(ms / 1000));
+            const expired = pc.expired || secs <= 0;
+            const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+            const ss = String(secs % 60).padStart(2, "0");
+            return (
+              <article className="pending-change-card" key={pc.id}>
+                <div className="pending-change-info">
+                  <b>{pc.summary}</b>
+                  <small className={expired ? "muted" : ""}>
+                    {expired
+                      ? "已超出撤销窗口 · 改动已保留"
+                      : `撤销窗口剩余 ${mm}:${ss}`}
+                  </small>
+                </div>
+                <div className="pending-change-actions">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy || expired}
+                    onClick={() => undoChange(pc.id)}
+                  >
+                    <RefreshCw size={14} />
+                    撤销改动
+                  </Button>
+                  <button
+                    className="text-link"
+                    disabled={busy || expired}
+                    onClick={() => dismissChange(pc.id)}
+                  >
+                    忽略
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
       <div className="experience-body">
         <div className="experience-content" ref={contentRef}>
           {view === "budget" && trip && !staged ? (
@@ -431,12 +516,8 @@ export function TripExperience({
             <div className="service-pending">
               <h3>先选一个喜欢的方案</h3>
               <p>保存后会按当天景点位置查询具体餐厅、住宿与接驳。</p>
-              {current?.stops.map((s) => (
-                <button
-                  className="draft-place"
-                  key={s.id}
-                  onClick={() => showPlace(s)}
-                >
+              {current?.stops?.map((s) => (
+                <button className="draft-place" key={s.id} onClick={() => showPlace(s)}>
                   <span>{s.planned_start}</span>
                   <b>{s.name}</b>
                   <ChevronRight size={14} />
@@ -460,12 +541,8 @@ export function TripExperience({
                 <RefreshCw size={14} />
                 重新查询
               </Button>
-              {current?.stops.map((s) => (
-                <button
-                  className="draft-place"
-                  key={s.id}
-                  onClick={() => showPlace(s)}
-                >
+              {current?.stops?.map((s) => (
+                <button className="draft-place" key={s.id} onClick={() => showPlace(s)}>
                   <span>{s.planned_start}</span>
                   <b>{s.name}</b>
                 </button>
@@ -524,9 +601,7 @@ export function TripExperience({
                               <ChevronRight size={12} />
                             </button>
                           )}
-                          <article
-                            className={"timeline-entry entry-" + entry.kind}
-                          >
+                          <article className={"timeline-entry entry-" + entry.kind}>
                             <span className="timeline-node">
                               {entry.kind === "meal" ? (
                                 <Utensils size={14} />
@@ -539,9 +614,7 @@ export function TripExperience({
                             <div className="timeline-entry-body">
                               <div className="timeline-meta">
                                 <span>
-                                  {entry.timing_verified === false
-                                    ? "待核实 · "
-                                    : ""}
+                                  {entry.timing_verified === false ? "待核实 · " : ""}
                                   {entry.start}
                                   {entry.duration > 0 ? `—${entry.end}` : ""}
                                 </span>
@@ -552,9 +625,9 @@ export function TripExperience({
                                 className="timeline-place"
                               >
                                 <h3>{entry.place.name}</h3>
-                                {entry.place.photos?.[0] && (
+                                {safeImageSrc(entry.place.photos?.[0]) && (
                                   <img
-                                    src={entry.place.photos[0]}
+                                    src={safeImageSrc(entry.place.photos[0])}
                                     alt={entry.place.name}
                                     loading="lazy"
                                     referrerPolicy="no-referrer"
@@ -584,17 +657,14 @@ export function TripExperience({
                                 <div className="timeline-actions">
                                   <span>
                                     {
-                                      data.meals.find(
-                                        (m) => m.slot === entry.slot,
-                                      )?.anchor_name
+                                      data.meals.find((m) => m.slot === entry.slot)
+                                        ?.anchor_name
                                     }
                                     附近
                                   </span>
                                   <button
                                     disabled={!editable || busy}
-                                    onClick={() =>
-                                      openAlternatives(entry.slot!)
-                                    }
+                                    onClick={() => openAlternatives(entry.slot!)}
                                   >
                                     换一家
                                   </button>
@@ -674,16 +744,14 @@ export function TripExperience({
                                 查看菜单与消费
                               </button>
                               {m.place.phone && (
-                                <a
-                                  href={"tel:" + m.place.phone.split(/[;,]/)[0]}
-                                >
+                                <a href={"tel:" + m.place.phone.split(/[;,]/)[0]}>
                                   <Phone size={13} />
                                   联系商家
                                 </a>
                               )}
-                              {m.place.source.url && (
+                              {safeHref(m.place.source.url) && (
                                 <a
-                                  href={m.place.source.url}
+                                  href={safeHref(m.place.source.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
@@ -708,19 +776,17 @@ export function TripExperience({
                     </div>
                     {data.hotel ? (
                       <article className="stay-detail-card">
-                        {data.hotel.photos?.[0] && (
+                        {safeImageSrc(data.hotel.photos?.[0]) && (
                           <img
                             className="stay-photo"
-                            src={data.hotel.photos[0]}
+                            src={safeImageSrc(data.hotel.photos[0])}
                             alt={data.hotel.name}
                             referrerPolicy="no-referrer"
                           />
                         )}
                         <div className="stay-status">
-                          {data.stay?.selected
-                            ? "你选择的住宿地点"
-                            : "推荐住宿地点"}{" "}
-                          · 尚未预订
+                          {data.stay?.selected ? "你选择的住宿地点" : "推荐住宿地点"} ·
+                          尚未预订
                         </div>
                         <button
                           className="service-place-title"
@@ -785,10 +851,7 @@ export function TripExperience({
                             : "暂未查到住宿，可以换个区域再找。"}
                         </p>
                         {plan.requirements.needs_accommodation !== false && (
-                          <Button
-                            size="sm"
-                            onClick={() => openAlternatives("hotel")}
-                          >
+                          <Button size="sm" onClick={() => openAlternatives("hotel")}>
                             寻找住宿
                           </Button>
                         )}
@@ -800,9 +863,7 @@ export function TripExperience({
                   <div className="transport-view">
                     <div className="service-section-title">
                       <h2>每一段路，心里有数。</h2>
-                      <p>
-                        餐厅、景点与住宿接驳都在这里。每段另留 10 分钟缓冲。
-                      </p>
+                      <p>餐厅、景点与住宿接驳都在这里。每段另留 10 分钟缓冲。</p>
                     </div>
                     {trip && (
                       <IntercitySearch
@@ -818,9 +879,7 @@ export function TripExperience({
                         aria-label="当天交通方式"
                         value={mode}
                         disabled={!editable || busy}
-                        onChange={(e) =>
-                          choose("transport", undefined, e.target.value)
-                        }
+                        onChange={(e) => choose("transport", undefined, e.target.value)}
                       >
                         {Object.entries(modes).map(([key, label]) => (
                           <option key={key} value={key}>
@@ -851,9 +910,7 @@ export function TripExperience({
                         <div className="leg-numbers">
                           <span>{modes[l.mode]}</span>
                           <b>
-                            {l.minutes != null
-                              ? `约 ${l.minutes} 分钟`
-                              : "耗时待核实"}
+                            {l.minutes != null ? `约 ${l.minutes} 分钟` : "耗时待核实"}
                           </b>
                           {l.cost_cny != null && (
                             <span>
@@ -881,10 +938,10 @@ export function TripExperience({
                         ) : (
                           <p>详细换乘请查看地图来源。</p>
                         )}
-                        {l.source?.url && (
+                        {safeHref(l.source?.url) && (
                           <a
                             className="text-link"
-                            href={l.source.url}
+                            href={safeHref(l.source?.url)}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -933,9 +990,7 @@ export function TripExperience({
             role="dialog"
             aria-modal="true"
             aria-label={
-              alternatives
-                ? "更换" + slotNames[alternatives]
-                : detail!.name + "详情"
+              alternatives ? "更换" + slotNames[alternatives] : detail!.name + "详情"
             }
             className="service-drawer"
             onClick={(e) => e.stopPropagation()}
@@ -950,9 +1005,7 @@ export function TripExperience({
             {alternatives ? (
               <>
                 <span className="eyebrow">找到更合心意的安排</span>
-                <h2>
-                  换一家{slotNames[alternatives] === "住宿" ? "住宿" : "餐厅"}
-                </h2>
+                <h2>换一家{slotNames[alternatives] === "住宿" ? "住宿" : "餐厅"}</h2>
                 <form
                   className="service-replace-search"
                   onSubmit={(e) => {
@@ -966,9 +1019,7 @@ export function TripExperience({
                     maxLength={80}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={
-                      alternatives === "hotel"
-                        ? "酒店名或区域"
-                        : "餐厅名、菜系或口味"
+                      alternatives === "hotel" ? "酒店名或区域" : "餐厅名、菜系或口味"
                     }
                   />
                   <Button size="icon">
@@ -1005,10 +1056,10 @@ export function TripExperience({
             ) : (
               detail && (
                 <>
-                  {detail.photos?.[0] && (
+                  {safeImageSrc(detail.photos?.[0]) && (
                     <img
                       className="drawer-photo"
-                      src={detail.photos[0]}
+                      src={safeImageSrc(detail.photos[0])}
                       alt={detail.name}
                       referrerPolicy="no-referrer"
                     />
@@ -1026,10 +1077,10 @@ export function TripExperience({
                       {detail.phone}
                     </a>
                   )}
-                  {detail.source.url && (
+                  {safeHref(detail.source.url) && (
                     <Button asChild variant="secondary">
                       <a
-                        href={detail.source.url}
+                        href={safeHref(detail.source.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -1108,9 +1159,7 @@ function IntercitySearch({
   city: string;
   date: string;
 }) {
-  const [origin, setOrigin] = useState(
-      (trip.plan as Plan).requirements.origin || "",
-    ),
+  const [origin, setOrigin] = useState((trip.plan as Plan).requirements.origin || ""),
     [destination, setDestination] = useState(city),
     [when, setWhen] = useState(date),
     [kind, setKind] = useState("train"),
@@ -1220,9 +1269,9 @@ function MarketCards({ items }: { items: MarketItem[] }) {
       </p>
       {items.map((item, i) => (
         <article className="market-product" key={item.url + i}>
-          {item.photo && (
+          {safeImageSrc(item.photo) && (
             <img
-              src={item.photo}
+              src={safeImageSrc(item.photo)}
               alt={item.title}
               loading="lazy"
               referrerPolicy="no-referrer"
@@ -1234,10 +1283,12 @@ function MarketCards({ items }: { items: MarketItem[] }) {
             <small>{item.details}</small>
             <div className="market-product-bottom">
               <b>{item.price_text}</b>
-              <a href={item.url} target="_blank" rel="noopener noreferrer">
-                到平台查看
-                <ExternalLink size={12} />
-              </a>
+              {safeHref(item.url) && (
+                <a href={safeHref(item.url)} target="_blank" rel="noopener noreferrer">
+                  到平台查看
+                  <ExternalLink size={12} />
+                </a>
+              )}
             </div>
           </div>
         </article>

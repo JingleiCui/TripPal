@@ -249,3 +249,68 @@ class DailyDetailSnapshot(Base):
     mode: Mapped[str] = mapped_column(String(20))
     data: Mapped[dict] = mapped_column(JSON)
     created: Mapped[datetime] = mapped_column(DateTime, default=now)
+
+
+class AuditLog(Base):
+    """受治理工具调用的审计记录：谁、在什么范围、调用了什么、结果如何。
+
+    既服务于 MCP server（外部调用），也服务于内部工具治理，使 Agent 的
+    每一次对外工具调用都可追溯、可审计。"""
+
+    __tablename__ = "audit_logs"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=uid)
+    owner: Mapped[str | None] = mapped_column(String(32), index=True, nullable=True)
+    actor: Mapped[str] = mapped_column(String(40), default="agent")  # mcp / api / agent / attachment
+    scope: Mapped[str] = mapped_column(String(60), default="")
+    tool: Mapped[str] = mapped_column(String(60), index=True)
+    arguments: Mapped[dict] = mapped_column(JSON, default=dict)
+    success: Mapped[int] = mapped_column(Integer, default=1)
+    error: Mapped[str] = mapped_column(String(200), default="")
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    created: Mapped[datetime] = mapped_column(DateTime, default=now, index=True)
+
+
+class PendingChange(Base):
+    """行程变更的可撤销卡片。Agent 提交修改后生成一条待应用卡片，用户在
+
+    撤销窗口（默认 15 分钟）内可一键撤销回到上一版本；窗口过期后卡片淡出，
+    但历史版本仍可恢复。比 interrupt 阻塞更顺滑、更具 Agent-native 特质。"""
+
+    __tablename__ = "pending_changes"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=uid)
+    trip_id: Mapped[str] = mapped_column(String(32), ForeignKey("trips.id", ondelete="CASCADE"), index=True)
+    task_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    owner: Mapped[str] = mapped_column(String(32), index=True)
+    kind: Mapped[str] = mapped_column(String(30), default="plan_edit")  # plan_edit / attachment_suggestion
+    summary: Mapped[str] = mapped_column(Text, default="")
+    changes: Mapped[dict] = mapped_column(JSON, default=dict)
+    applied_plan_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    previous_plan_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)  # pending / dismissed
+    created: Mapped[datetime] = mapped_column(DateTime, default=now)
+
+
+class Attachment(Base):
+    """用户上传的附件（GPX / 订单文本 / 订单截图）。
+
+    上传即触发解析与 Agent 建议：GPX 提取轨迹与距离，订单文本提取城市/日期/
+    订单项，图片在配置视觉模型时尝试 OCR，否则提示手动录入。解析结果持久化，
+    供前端呈现「建议动作」。"""
+
+    __tablename__ = "attachments"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=uid)
+    owner: Mapped[str] = mapped_column(String(32), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    ext: Mapped[str] = mapped_column(String(10))
+    kind: Mapped[str] = mapped_column(String(20), default="unknown")  # gpx / order / image / unknown
+    parsed: Mapped[dict] = mapped_column(JSON, default=dict)
+    suggestion: Mapped[str] = mapped_column(Text, default="")
+    created: Mapped[datetime] = mapped_column(DateTime, default=now)
+
+
+def ensure_tables():
+    """在项目启动路径（API lifespan / MCP server）调用，确保新增表已创建。
+
+    幂等；不触碰既有表结构。"""
+    Base.metadata.create_all(engine)

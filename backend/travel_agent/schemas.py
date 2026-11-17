@@ -67,6 +67,7 @@ class RunRequest(BaseModel):
     allow_undated_draft: bool = False
     compare: bool = False
     regenerate: bool = False
+    capabilities: list[str] = Field(default_factory=list)
 
 
 class ResumeRequest(BaseModel):

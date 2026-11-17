@@ -73,7 +73,7 @@ def test_cannot_forge_or_reuse_other_users_search_candidates(account):
 def test_live_failure_never_falls_back_to_synthetic(account, monkeypatch):
     from travel_agent.providers import amap
 
-    def unavailable(*args):
+    def unavailable(*args, **kwargs):
         raise ProviderError("credentials", "test")
 
     monkeypatch.setattr(amap, "search_places", unavailable)
@@ -82,3 +82,83 @@ def test_live_failure_never_falls_back_to_synthetic(account, monkeypatch):
     assert "items" not in response.json()
     monkeypatch.setattr(settings, "fixture_enabled", False)
     assert search(account).status_code == 403
+
+
+def test_food_category_excludes_company_registry_pois(account, monkeypatch):
+    """「餐厅美食」必须排除餐饮管理公司、股份公司等非就餐企业。
+
+    这些企业的 typecode 往往也落在 05 餐饮大类，仅靠大类码拦不住，
+    需要分类路径(type)与名称双重信号。
+    """
+    from travel_agent.providers import amap
+
+    def fake_request(path, params, ttl=900):
+        assert path == "/v3/place/text"
+        assert params["types"] == "050000"
+        assert "餐饮服务" not in params["keywords"]
+        return {
+            "data": {
+                "pois": [
+                    # 公司企业大类(17)：无论名称如何都不应出现
+                    {
+                        "id": "company_a",
+                        "name": "上海某某餐饮管理有限公司",
+                        "location": "121.47,31.23",
+                        "type": "公司企业",
+                        "typecode": "170000",
+                    },
+                    # 餐饮管理子类(05 开头)：分类路径标「餐饮管理」，要排除
+                    {
+                        "id": "company_b",
+                        "name": "某品牌餐饮管理有限公司",
+                        "location": "121.471,31.231",
+                        "type": "餐饮服务;餐饮管理",
+                        "typecode": "050600",
+                    },
+                    # 股份公司：名称含「股份」，即使 typecode 落在 05 也要排除
+                    {
+                        "id": "company_c",
+                        "name": "上海某某餐饮股份有限公司",
+                        "location": "121.472,31.232",
+                        "type": "餐饮服务;中餐厅",
+                        "typecode": "050100",
+                    },
+                    # 真正的餐厅：保留
+                    {
+                        "id": "restaurant",
+                        "name": "老正兴菜馆",
+                        "location": "121.48,31.24",
+                        "type": "餐饮服务;中餐厅",
+                        "typecode": "050100",
+                    },
+                ]
+            },
+            "retrieved_at": "2026-11-13T00:00:00Z",
+        }
+
+    monkeypatch.setattr(amap, "request", fake_request)
+    response = search(account, fixture=False, city="上海", category="food")
+    assert response.status_code == 200
+    names = [item["name"] for item in response.json()["items"]]
+    assert names == ["老正兴菜馆"]
+
+
+def test_is_dining_outlet_filter():
+    """就餐门店判定：真餐厅保留，餐饮管理/股份/公司企业/非餐饮都排除。"""
+    from travel_agent.providers.amap import _is_dining_outlet
+
+    assert _is_dining_outlet(
+        {"name": "老正兴菜馆", "category": "餐饮服务;中餐厅", "typecode": "050100"}
+    )
+    assert not _is_dining_outlet(
+        {"name": "某餐饮管理公司", "category": "餐饮服务;餐饮管理", "typecode": "050600"}
+    )
+    assert not _is_dining_outlet(
+        {"name": "上海某某餐饮股份有限公司", "category": "餐饮服务;中餐厅", "typecode": "050100"}
+    )
+    assert not _is_dining_outlet(
+        {"name": "某餐饮集团", "category": "公司企业", "typecode": "170000"}
+    )
+    assert not _is_dining_outlet(
+        {"name": "故宫", "category": "风景名胜;公园", "typecode": "110200"}
+    )

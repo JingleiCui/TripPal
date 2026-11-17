@@ -1,0 +1,66 @@
+{
+  "_README": "OpenRouter 按用途分配免费模型：文本 chat/structured 用 ling-3.2-flash，视觉用 nemotron-3.5-super-vl。不要用 openrouter/free 当默认（仅 openrouter_router 用于对比试验）；把 3 处 model_api_key 占位换成同一把 sk-or-v1-... 即可。若 nemotron 触发 free-models-per-day 限流，把 model_slots.vision.model 临时改成 ling-3.2-flash:free（该模型同样支持图片输入）。",
+  "active_model_profile": "openrouter_free",
+  "model_profiles": {
+    "openrouter_free": {
+      "model_provider": "openrouter",
+      "model_name": "inclusionai/ling-3.2-flash:free",
+      "model_api_key": "在这里填入你的 OpenRouter API Key",
+      "model_enabled": true,
+      "model_timeout": 90,
+      "structured_output_method": "json_schema",
+      "model_slots": {
+        "chat": {
+          "provider": "openrouter",
+          "model": "inclusionai/ling-3.2-flash:free",
+          "extra_body": { "reasoning": { "enabled": false } }
+        },
+        "structured": {
+          "provider": "openrouter",
+          "model": "inclusionai/ling-3.2-flash:free",
+          "use_main_key": true,
+          "structured_method": "json_schema",
+          "extra_body": { "reasoning": { "enabled": false } }
+        },
+        "vision": {
+          "provider": "openrouter",
+          "model": "nvidia/nemotron-3.5-super-vl:free",
+          "use_main_key": true,
+          "enabled": true,
+          "extra_body": { "reasoning": { "enabled": false } }
+        }
+      }
+    },
+    "openrouter_router": {
+      "model_provider": "openrouter",
+      "model_name": "openrouter/free",
+      "model_api_key": "在这里填入你的 OpenRouter API Key",
+      "model_enabled": true,
+      "model_timeout": 90,
+      "structured_output_method": "json_schema"
+    },
+    "local_ollama": {
+      "model_provider": "ollama",
+      "model_name": "qwen3.5:9b",
+      "model_base_url": "http://127.0.0.1:11434",
+      "model_api_key": "ollama",
+      "model_enabled": true
+    },
+    "bailian_qwen": {
+      "model_provider": "dashscope",
+      "model_name": "qwen-plus",
+      "model_api_key": "",
+      "model_enabled": false,
+      "structured_output_method": "function_calling"
+    }
+  },
+  "vision_enabled": false,
+  "vision_fixture_enabled": true,
+  "voice_enabled": false,
+  "voice_api_key": "",
+  "amap_key": "",
+  "amap_js_key": "",
+  "amap_security_code": "",
+  "meituan_enabled": false,
+  "fixture_enabled": true
+}

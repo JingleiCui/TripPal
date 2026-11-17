@@ -250,7 +250,8 @@ def market_details(ident: str, body: MarketQuery, actor=Depends(require_user)):
     try:
         response = meituan.query(result["city"], question)
         branch = re.search(r"[（(]([^）)]+)[）)]", place["name"])
-        normalize = lambda value: re.sub(r"[^\w\u4e00-\u9fff]", "", value).lower()
+        def normalize(value):
+            return re.sub(r"[^\w\u4e00-\u9fff]", "", value).lower()
         marker = branch.group(1) if branch else place["name"].replace("酒店", "")
         if normalize(marker) not in normalize(response["raw_text"]):
             response["venue_warning"] = (

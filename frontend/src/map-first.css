@@ -1,0 +1,873 @@
+/* ==========================================================================
+   漫游 · 落地层 v3 —— 按需大地图查看器
+   --------------------------------------------------------------------------
+   引入顺序：style.css → app-shell.css → design/tokens.css → 本文件。
+   与 v2 的区别：页面回归普通文档流，可正常上下滚动；真实高德地图不再
+   铺满全屏做背景，只在用户主动点「查看地图」时以接近满屏的浮层出现，
+   打开期间锁定背景滚动，关闭后完全回到页面。配色沿用 v2 暖纸令牌。
+   ========================================================================== */
+
+.mf-shell {
+  --ui-bg: #f7f4ed;
+  --ui-surface: #fffdf7;
+  --ui-surface-2: #f2ede1;
+  --ui-surface-3: #eae3d4;
+  --ui-text: #232b27;
+  --ui-text-2: #5a635c;
+  --ui-text-3: #8c9188;
+  --ui-line: rgba(60, 66, 56, 0.14);
+  --ui-line-strong: rgba(60, 66, 56, 0.28);
+  --ui-brand: #234b42;
+  --ui-brand-hover: #17352f;
+  --ui-brand-soft: #e4ece6;
+  --ui-success: #6b7a5a;
+  --ui-warning: #a6783f;
+  --ui-danger: #a33b2a;
+  --ui-shadow: 0 10px 28px rgba(48, 44, 34, 0.1), 0 1px 2px rgba(48, 44, 34, 0.06);
+  --ui-radius-sm: 8px;
+  --ui-radius: 12px;
+  --ui-radius-lg: 14px;
+  /* style.css 的旧令牌 */
+  --green: #234b42;
+  --muted: #5a635c;
+  --line: rgba(60, 66, 56, 0.14);
+  --paper: #fffdf7;
+  --accent: #f2ede1;
+  color: var(--mf-ink-1);
+}
+
+body:has(.mf-shell) {
+  background: #f7f4ed;
+  color: #232b27;
+}
+
+/* ---------- 页面层：普通文档流，不再穿透给地图 ---------- */
+.mf-shell .app-main {
+  position: relative;
+  z-index: 2;
+  padding-top: 122px;
+  min-height: 100vh;
+  background: transparent;
+  pointer-events: auto;
+}
+.mf-shell .app-main .page,
+.mf-shell .app-main .planner {
+  /* 沿用 style.css 的 max-width / padding，页面可正常上下滚动 */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- 顶部栏：悬浮纸卡（保留 v2） ---------- */
+.mf-shell .app-header {
+  position: fixed;
+  top: 14px;
+  left: 18px;
+  right: 18px;
+  z-index: 40;
+  background: var(--mf-glass-fill);
+  -webkit-backdrop-filter: blur(var(--mf-glass-blur));
+  backdrop-filter: blur(var(--mf-glass-blur));
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: var(--mf-glass-shadow), var(--mf-glass-inset);
+}
+.mf-shell .app-header-inner {
+  max-width: none;
+  height: 58px;
+  padding: 0 18px;
+  gap: 16px;
+}
+.mf-shell .app-brand-mark {
+  background: var(--mf-brand);
+  color: #fffdf7;
+  border-radius: 9px;
+}
+.mf-shell .app-brand-period {
+  color: var(--mf-accent);
+}
+.mf-shell .app-header-nav > a.app-nav-link {
+  border-radius: var(--mf-r-pill);
+  font-size: 12.5px;
+}
+.mf-shell .app-header-nav > a.app-nav-link.active {
+  color: var(--mf-brand);
+  background: var(--mf-brand-soft);
+}
+.mf-shell .app-dropdown-trigger {
+  border-radius: var(--mf-r-pill);
+}
+.mf-shell .app-popover {
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  background: var(--mf-glass-fill-strong);
+  box-shadow: var(--mf-glass-shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.mf-shell .app-popover-item.active {
+  color: var(--mf-brand);
+  background: var(--mf-brand-soft);
+}
+.mf-shell .app-cta {
+  background: var(--mf-accent);
+  color: #fffdf7;
+  border: 1px solid var(--mf-accent-deep);
+  box-shadow: 0 5px 14px rgba(160, 76, 41, 0.22);
+  font-weight: 650;
+}
+.mf-shell .app-cta:hover {
+  background: var(--mf-accent-deep);
+}
+.mf-shell .app-avatar {
+  background: var(--mf-brand-soft);
+  color: var(--mf-brand);
+  border: 1px solid var(--mf-hairline-strong);
+}
+.mf-shell .app-service-dot {
+  background: var(--mf-moss);
+}
+.mf-shell .app-service-warning .app-service-dot {
+  background: var(--mf-danger);
+}
+.mf-shell .app-context {
+  border-top: 1px solid var(--mf-hairline-soft);
+  background: transparent;
+}
+.mf-shell .app-context-inner {
+  height: 36px;
+  max-width: none;
+  padding: 0 18px;
+}
+.mf-shell .app-breadcrumb {
+  font-size: 11.5px;
+  color: var(--mf-ink-3);
+}
+.mf-shell .app-context-hint {
+  font-size: 11px;
+  color: var(--mf-ink-3);
+}
+
+/* 步骤条：用「我在第几步」替代并列入口 */
+.mf-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.mf-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--mf-ink-3);
+  padding: 3px 8px;
+  border-radius: var(--mf-r-pill);
+}
+.mf-step b {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.mf-step + .mf-step::before {
+  content: "·";
+  margin-right: 4px;
+  color: var(--mf-hairline-strong);
+}
+.mf-step.active {
+  color: var(--mf-brand);
+  background: var(--mf-brand-soft);
+  font-weight: 650;
+}
+.mf-step.done {
+  color: var(--mf-moss);
+}
+.mf-shell .app-mobile-panel {
+  background: var(--mf-glass-fill-strong);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: var(--mf-glass-shadow);
+}
+.mf-shell .app-mobile-scrim {
+  background: rgba(35, 43, 39, 0.28);
+}
+
+/* ==========================================================================
+   右侧常驻地图面板：默认显示、占比大；不是模态框，页面照常上下滚动
+   ========================================================================== */
+.mf-map-viewer {
+  position: fixed;
+  top: 116px;
+  right: 18px;
+  bottom: 18px;
+  width: min(56vw, 920px);
+  z-index: 6;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+.mf-map-viewer.is-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+.mf-map-dialog {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--mf-paper-light);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: 0 14px 38px rgba(35, 43, 39, 0.16);
+}
+
+/* 有地图的页面：左侧内容让出右侧面板宽度，内部两栏收成单栏 */
+body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
+body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
+body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
+  max-width: none;
+  padding-right: calc(min(56vw, 920px) + 42px);
+}
+body:has(.mf-map-viewer.is-open)
+  .mf-travel-view
+  .app-main
+  :is(
+    .workspace,
+    .experience-body,
+    .discovery-layout,
+    .explore-layout,
+    .discovery-grid
+  ) {
+  grid-template-columns: 1fr;
+}
+.mf-map-dialog-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--mf-hairline);
+  background: var(--mf-glass-fill-strong);
+}
+.mf-map-dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.mf-map-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: #fffdf7;
+  background: var(--mf-brand);
+  flex: 0 0 auto;
+}
+.mf-map-dialog-heading b {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--mf-ink-1);
+}
+.mf-map-dialog-heading small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--mf-ink-3);
+}
+.mf-map-dialog-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.mf-map-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font-size: 11.5px;
+  color: var(--mf-ink-2);
+  background: var(--mf-paper-light);
+  border: 1px solid var(--mf-hairline-strong);
+  border-radius: var(--mf-r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mf-map-switch input {
+  accent-color: var(--mf-accent);
+  margin: 0;
+}
+.mf-map-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--mf-ink-2);
+  background: var(--mf-paper-light);
+  border: 1px solid var(--mf-hairline-strong);
+  border-radius: var(--mf-r-pill);
+  cursor: pointer;
+}
+.mf-map-dialog-close:hover {
+  color: var(--mf-brand);
+  border-color: var(--mf-brand);
+}
+.mf-map-dialog-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 18px;
+  font-size: 11px;
+  color: var(--mf-ink-3);
+  border-top: 1px solid var(--mf-hairline-soft);
+  background: var(--mf-glass-fill-strong);
+}
+
+/* ---------- 查看器内的真实高德地图（相对浮层定位，不再固定全屏） ---------- */
+.mf-map-layer {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--mf-map-land);
+}
+.mf-map-root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mf-map-root .amap-logo,
+.mf-map-root .amap-copyright {
+  opacity: 0.55;
+}
+/* 极淡纸纹，压住底图饱和度，与浮层同一色温 */
+.mf-map-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(247, 244, 237, 0.16),
+      transparent 22%,
+      transparent 78%,
+      rgba(247, 244, 237, 0.2)
+    ),
+    repeating-linear-gradient(0deg, rgba(90, 82, 66, 0.018) 0 1px, transparent 1px 5px);
+}
+
+/* ---------- 纸质地图书占位（无 Key / fixture / 加载失败） ---------- */
+.mf-map-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+.mf-paper-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mf-map-notice {
+  width: min(400px, calc(100vw - 48px));
+  padding: 24px 24px 22px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-top: -40px;
+}
+.mf-map-notice-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--mf-accent-deep);
+  background: var(--mf-accent-soft);
+  border: 1px solid rgba(192, 95, 53, 0.24);
+}
+.mf-map-notice b {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--mf-ink-1);
+}
+.mf-map-notice p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--mf-ink-2);
+}
+.mf-map-notice .mf-btn {
+  margin-top: 4px;
+}
+
+/* ---------- 地图控件 / 图例 / 锚点（相对查看器定位） ---------- */
+.mf-map-controls {
+  position: absolute;
+  right: 18px;
+  bottom: 34px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.mf-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding: 8px 13px;
+  font-size: 11px;
+  color: var(--mf-ink-2);
+  background: var(--mf-glass-fill);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-pill);
+  box-shadow: 0 4px 14px rgba(48, 44, 34, 0.08);
+}
+.mf-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.mf-map-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.mf-map-day {
+  position: absolute;
+  left: 18px;
+  bottom: 34px;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: var(--mf-r-card);
+  pointer-events: none;
+}
+.mf-map-day b {
+  font-size: 14px;
+  color: var(--mf-ink-1);
+}
+.mf-map-day small {
+  font-size: 11px;
+  color: var(--mf-ink-3);
+}
+.mf-map-caption {
+  position: absolute;
+  right: 18px;
+  bottom: 10px;
+  z-index: 3;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--mf-ink-3);
+  text-shadow: 0 1px 2px rgba(255, 253, 247, 0.9);
+  pointer-events: none;
+}
+.mf-amap-pin {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  color: #fffdf7;
+  font:
+    600 12px/1 Georgia,
+    "PingFang SC",
+    sans-serif;
+  border: 2px solid rgba(255, 253, 247, 0.92);
+  box-shadow: 0 3px 9px rgba(35, 45, 38, 0.28);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.mf-amap-pin.is-active {
+  transform: rotate(-45deg) scale(1.22);
+  box-shadow:
+    0 0 0 5px rgba(192, 95, 53, 0.24),
+    0 5px 14px rgba(35, 45, 38, 0.3);
+}
+.mf-amap-info {
+  padding: 9px 12px;
+  font:
+    600 12px/1.5 "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  color: #232b27;
+  background: #fffdf7;
+  border: 1px solid rgba(96, 88, 70, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(48, 44, 34, 0.14);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   收起地图后唯一的恢复入口 + 页面内紧凑状态条
+   ========================================================================== */
+.mf-map-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 16px 9px 9px;
+  font-family: inherit;
+  text-align: left;
+  color: #fffdf7;
+  background: var(--mf-brand);
+  border: 1px solid var(--mf-brand-deep);
+  border-radius: var(--mf-r-pill);
+  box-shadow: 0 10px 26px rgba(35, 75, 66, 0.28);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.mf-map-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(35, 75, 66, 0.34);
+}
+.mf-map-fab-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 253, 247, 0.16);
+}
+.mf-map-fab-copy {
+  display: grid;
+  gap: 2px;
+}
+.mf-map-fab-copy b {
+  font-size: 13px;
+  font-weight: 650;
+}
+.mf-map-fab-copy small {
+  font-size: 10.5px;
+  opacity: 0.8;
+}
+/* 同意横幅出现时把按钮上移，避免互相遮挡 */
+body:has(.consent-banner) .mf-map-fab {
+  bottom: 116px;
+}
+
+/* 地图已默认显示在右侧，原地图位只保留一条紧凑的同步状态条 */
+.mf-shell .map-shell.mf-map-entry {
+  height: 68px;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--mf-paper-light);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: none;
+}
+.mf-map-entry-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: var(--mf-brand);
+  background: var(--mf-brand-soft);
+}
+.mf-map-entry-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.mf-map-entry-text b {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--mf-ink-1);
+}
+.mf-map-entry-text small {
+  font-size: 11px;
+  color: var(--mf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf-map-entry-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--mf-moss);
+}
+.mf-map-entry-live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mf-moss);
+  box-shadow: 0 0 0 3px rgba(107, 122, 90, 0.16);
+}
+
+/* 旧版「展开内嵌地图」按钮已废弃，统一走查看器入口 */
+.mf-travel-view .experience-map-toggle {
+  display: none !important;
+}
+
+/* ---------- 统一的按钮 / 标签 / 状态色 ---------- */
+.mf-shell .btn,
+.mf-shell button.btn {
+  border-radius: var(--mf-r-pill);
+}
+.mf-shell .btn-primary,
+.mf-shell .btn:not(.btn-secondary):not(.btn-ghost) {
+  background: var(--mf-brand);
+  color: #fffdf7;
+  border-color: var(--mf-brand-deep);
+}
+.mf-shell .btn-primary:hover,
+.mf-shell .btn:not(.btn-secondary):not(.btn-ghost):hover {
+  background: var(--mf-brand-deep);
+}
+.mf-shell .notice.error,
+.mf-shell .ui-state-error .ui-state-icon {
+  color: var(--mf-danger);
+  background: var(--mf-danger-soft);
+  border-color: rgba(163, 59, 42, 0.24);
+}
+.mf-shell .app-service.app-service-ready .app-service-dot {
+  background: var(--mf-moss);
+}
+
+/* ---------- 管理域：表单与列表用不透明纸面，保证可读性 ---------- */
+.mf-manage-view .app-main {
+  pointer-events: auto;
+}
+.mf-manage-view .app-main .page,
+.mf-manage-view .app-main .planner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 24px 40px;
+  background: var(--mf-glass-fill-strong);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: var(--mf-glass-shadow);
+}
+.mf-manage-view .app-main .card {
+  background: var(--mf-paper-light);
+  border: 1px solid var(--mf-hairline);
+  box-shadow: none;
+}
+.mf-manage-view .muted,
+.mf-manage-view .settings-card p,
+.mf-manage-view .settings-card small,
+.mf-manage-view .settings-card span,
+.mf-manage-view .card small {
+  color: var(--mf-ink-2);
+}
+
+/* ---------- 同意横幅：继承纸色玻璃 ---------- */
+.mf-shell .consent-banner {
+  left: 18px;
+  right: 18px;
+  max-width: none;
+  color: var(--mf-ink-2);
+  background: var(--mf-glass-fill);
+  -webkit-backdrop-filter: blur(var(--mf-glass-blur));
+  backdrop-filter: blur(var(--mf-glass-blur));
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-card);
+  box-shadow: var(--mf-glass-shadow), var(--mf-glass-inset);
+}
+.mf-shell .consent-banner b {
+  color: var(--mf-ink-1);
+}
+.mf-shell .consent-banner span {
+  color: var(--mf-ink-2);
+}
+.mf-shell .consent-banner .btn {
+  white-space: nowrap;
+}
+
+/* 轻量 eyebrow 胶囊（不影响标题排布） */
+.mf-travel-view .app-main .page > .eyebrow,
+.mf-travel-view .app-main .chat-page > .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  margin-bottom: 8px;
+  color: var(--mf-ink-2);
+  background: var(--mf-glass-fill-soft);
+  border: 1px solid var(--mf-glass-border);
+  border-radius: var(--mf-r-pill);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1250px) {
+  .mf-map-viewer {
+    width: min(52vw, 720px);
+  }
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
+    padding-right: calc(min(52vw, 720px) + 34px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .mf-context-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .mf-shell .app-header {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .mf-shell .app-header-inner {
+    height: 54px;
+    padding: 0 12px;
+  }
+  .mf-shell .app-context {
+    display: none;
+  }
+  .mf-shell .app-main {
+    padding-top: 84px;
+    padding-bottom: 24px;
+  }
+  .mf-shell .app-main .page,
+  .mf-shell .app-main .planner,
+  .mf-shell .app-main .chat-page {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .mf-steps {
+    display: none;
+  }
+  /* 移动端：地图默认占据上半屏，内容顺延到下方，两者互不遮挡 */
+  .mf-map-viewer {
+    top: 74px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    width: auto;
+    height: 44vh;
+  }
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main {
+    padding-top: calc(74px + 44vh + 14px);
+  }
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
+  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
+    padding-right: 14px;
+  }
+  .mf-map-dialog-bar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .mf-map-dialog-heading small {
+    display: none;
+  }
+  .mf-map-dialog-close span {
+    display: none;
+  }
+  .mf-map-dialog-foot {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+  .mf-map-dialog-foot span:last-child {
+    display: none;
+  }
+  .mf-map-controls {
+    right: 12px;
+    bottom: 28px;
+  }
+  .mf-map-day {
+    left: 12px;
+    bottom: 28px;
+    padding: 9px 12px;
+  }
+  .mf-map-caption {
+    right: 12px;
+    bottom: 8px;
+  }
+  .mf-map-notice {
+    margin-top: -30px;
+    padding: 18px;
+  }
+  .mf-map-fab {
+    right: 14px;
+    bottom: 14px;
+  }
+  body:has(.consent-banner) .mf-map-fab {
+    bottom: 152px;
+  }
+  .mf-manage-view .app-main .page,
+  .mf-manage-view .app-main .planner {
+    padding: 16px 14px 30px;
+  }
+  .mf-shell .consent-banner {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    gap: 10px;
+    padding: 14px;
+  }
+  .mf-shell .consent-banner > svg {
+    flex: 0 0 auto;
+  }
+  .mf-shell .consent-banner > p {
+    flex: 1 1 calc(100% - 36px);
+    min-width: 0;
+  }
+  .mf-shell .consent-banner > .btn {
+    flex: 0 0 auto;
+  }
+  .mf-shell .consent-banner > .btn:first-of-type {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mf-map-viewer,
+  .mf-map-dialog,
+  .mf-map-fab,
+  .mf-amap-pin,
+  .mf-btn {
+    transition: none !important;
+  }
+}

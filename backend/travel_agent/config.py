@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 import os
 from pydantic import BaseModel, Field
+from .models.specs import known_names
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,6 +21,9 @@ MODEL_PROFILE_FIELDS = {
     "model_context_tokens",
     "model_output_tokens",
     "structured_output_method",
+    # profile 可自带按能力槽位的模型分配；切换 profile 时随 profile 一起生效/失效，
+    # 避免顶层 model_slots 污染其它 profile（例如本地 Ollama）。
+    "model_slots",
 }
 
 
@@ -27,6 +31,15 @@ class Settings(BaseModel):
     active_model_profile: str = ""  # 空值兼容原配置；填写 model_profiles 中的配置名即可切换
     model_profiles: dict[str, dict] = Field(default_factory=dict)
     structured_output_method: str = "auto"  # auto / json_schema / function_calling
+
+    # —— 可插拔模型网关 ——
+    # model_providers：自定义供应商，或覆盖内置预设的 base_url / model / headers。
+    # model_slots：按能力槽位（chat/structured/vision/asr/tts）单独指定供应商、模型与凭证。
+    # 两者都为空时完全保持旧行为（model_provider / model_base_url / model_api_key）。
+    model_providers: dict[str, dict] = Field(default_factory=dict)
+    model_slots: dict[str, dict] = Field(default_factory=dict)
+    vision_provider: str = ""  # 可选：视觉槽位供应商；留空时跟随对话供应商
+    voice_provider: str = ""  # 可选：语音槽位供应商；默认 dashscope_native
 
     host: str = "127.0.0.1"
     port: int = 8808
@@ -67,6 +80,13 @@ class Settings(BaseModel):
     voice_api_key: str = ""  # Gemini 对话 Key 不会自动发送到百炼语音服务
     asr_model: str = "qwen3-asr-flash"
     tts_model: str = "qwen3-tts-flash"
+    # 截图识别：独立于对话模型的视觉通道，避免把对话 Key 发往未授权服务。
+    vision_enabled: bool = False
+    vision_api_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    vision_api_key: str = ""
+    vision_model: str = "qwen-vl-max-latest"
+    vision_timeout: int = 60
+    vision_fixture_enabled: bool = False  # 仅合成流程演示，结果必须显式标注 synthetic
     cookie_secure: bool = False
     session_days: int = 7
     share_days: int = 7
@@ -89,6 +109,24 @@ class Settings(BaseModel):
     public_base_url: str = "http://127.0.0.1:8808"
     posthog_key: str = ""
     posthog_host: str = "https://us.i.posthog.com"
+    # 能力门控：会话可见工具按启用的能力收敛。空列表表示放开全部（向后兼容）。
+    capabilities: list[str] = Field(default_factory=list)
+    # 受治理 MCP server
+    mcp_enabled: bool = False
+    mcp_transport: str = "stdio"  # stdio / http
+    mcp_scopes: list[str] = Field(default_factory=lambda: ["travel_agent:read", "travel_agent:tools"])
+    mcp_bind: str = "127.0.0.1"
+    mcp_port: int = 8811
+    # 逐变更卡片确认 + 撤销窗口
+    pending_change_ttl_minutes: int = 15
+    # 附件驱动工具触发
+    attachment_parsers_enabled: bool = True
+    allowed_attachment_extensions: list[str] = Field(
+        default_factory=lambda: [
+            ".txt", ".md", ".pdf", ".docx", ".gpx", ".json",
+            ".png", ".jpg", ".jpeg", ".webp",
+        ]
+    )
 
 
 def apply_model_profile(values):
@@ -112,8 +150,11 @@ def apply_model_profile(values):
         structured_output_method="auto",
     )
     values.update(profile)
-    if not values.get("model_name") or values["model_provider"] not in {"openai", "ollama", "gemini"}:
-        raise ValueError("请填写模型名称和有效接口类型 openai / ollama / gemini")
+    allowed = known_names(values.get("model_providers"))
+    if not values.get("model_name") or values["model_provider"] not in allowed:
+        raise ValueError(
+            "请填写模型名称和已注册的接口类型（" + " / ".join(sorted(allowed)) + "）"
+        )
     if values.get("structured_output_method") not in {"auto", "json_schema", "function_calling"}:
         raise ValueError("不支持该结构化输出模式")
     return values

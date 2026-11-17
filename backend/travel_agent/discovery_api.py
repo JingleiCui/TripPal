@@ -10,21 +10,70 @@ from sqlalchemy import select, func
 from .config import settings
 from .db import Session, SavedPlace, User, now
 from .security import require_user
-from .providers import amap, fixtures
+from .providers import amap, fixtures, meituan
 from .providers.base import ProviderError
 
 # User-editable runtime limits. Search candidates expire; saved snapshots persist in SQL.
 CANDIDATE_TTL_SECONDS = 1800
 MAX_SAVED_PLACES = 300
+# 关键词用用户会说的词，而不是行业分类名。「餐饮服务」这类词会被高德
+# 文本检索按名称匹配到「XX 餐饮管理有限公司」等企业条目。
 CATEGORY_QUERIES = {
     "all": "景点 公园 博物馆",
     "sights": "风景名胜",
-    "food": "餐饮服务",
+    "food": "餐厅 美食",
     "stays": "酒店",
     "nature": "公园",
     "art": "博物馆 美术馆",
 }
+# 高德 POI 大类码：把结果限定在真正可消费/可游览的场所。
+# 050000 餐饮服务 / 100000 住宿服务 / 110000 风景名胜 / 140000 科教文化。
+CATEGORY_TYPES = {
+    "sights": "110000",
+    "food": "050000",
+    "stays": "100000",
+    "nature": "110000",
+    "art": "140000",
+}
 router = APIRouter(prefix="/api/v1")
+
+
+def _merge_meituan_food(items, city, query):
+    """美食检索在美团已启用时补充到店/团购结果；短超时降级，不影响高德结果。
+
+    返回的卡片与高德卡片保持同一形状（含 source / photos），前端可直接复用同一套
+    渲染逻辑；同时保留 source_label 用于标注「美团」徽标。卡片无经纬度，地图侧
+    会按坐标缺失自动跳过，避免把实时团购点位误标到地图上。
+    """
+    if not meituan.configured():
+        return items, False
+    try:
+        merged = meituan.food_recommend(city, query, timeout=8)
+        for it in merged.get("items", []):
+            photo = it.get("photo")
+            deal_url = it.get("url") or "https://www.meituan.com/"
+            items.append(
+                {
+                    "id": "meituan:" + (it.get("url") or it.get("title") or "")[:80],
+                    "name": it.get("title", "美团商家"),
+                    "category": "美团美食",
+                    "price_text": it.get("price_text"),
+                    "url": it.get("url"),
+                    "photo": photo,
+                    "photos": [photo] if photo else [],
+                    "source": {
+                        "provider": "美团美食",
+                        "url": deal_url,
+                        "retrieved_at": now().isoformat(),
+                        "synthetic": False,
+                    },
+                    "source_label": "美团",
+                    "city": city,
+                }
+            )
+        return items, True
+    except ProviderError:
+        return items, False
 
 
 def cache():
@@ -81,7 +130,10 @@ def explore(
                         None, [query, CATEGORY_QUERIES[category] if category != "all" or not query else ""]
                     )
                 ),
+                types=CATEGORY_TYPES.get(category),
             )
+            if category == "food":
+                items, _meituan_merged = _merge_meituan_food(items, city, query)
         client = cache()
         for item in items:
             client.setex(

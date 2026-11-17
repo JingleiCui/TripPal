@@ -8,6 +8,8 @@ from ..vendor.atlas.authz import role_can_edit
 from ..config import settings
 from ..providers.base import ProviderError
 from ..model_errors import classify
+from ..models import gateway
+from ..models.registry import chat_ready
 
 
 class Cancelled(RuntimeError):
@@ -15,8 +17,10 @@ class Cancelled(RuntimeError):
 
 
 class Harness:
-    def __init__(self, task_id, lease):
+    def __init__(self, task_id, lease, capabilities=None):
         self.task_id, self.lease, self.started = task_id, lease, time.monotonic()
+        # 能力门控：空列表 = 放开全部（向后兼容）。
+        self.capabilities = list(capabilities or [])
         with Session() as db:
             events = db.scalars(select(Event).where(Event.task_id == task_id)).all()
         self.model_calls = sum(e.kind == "model_start" for e in events)
@@ -46,12 +50,21 @@ class Harness:
         self.check()
         event(self.task_id, kind, **data)
 
+    def filter_tools(self, tools):
+        """按启用能力收敛暴露给 LLM 的工具集合（与工具预算/租约互补）。"""
+        from ..capabilities import resolve_enabled_tools
+
+        if not self.capabilities:
+            return tools
+        allowed = resolve_enabled_tools(self.capabilities, tool_names={t.name for t in tools})
+        return [t for t in tools if t.name in allowed]
+
     def invoke(self, model, messages, label, allow_unparsed=False):
         self.check()
         if self.model_calls >= settings.model_call_limit:
             raise ProviderError("budget", "本任务模型调用次数已达上限")
-        if not settings.model_enabled or not settings.model_api_key:
-            raise ProviderError("credentials", "尚未配置并启用云端模型；请填写 config.local.json")
+        if not chat_ready():
+            raise ProviderError("credentials", "尚未配置并启用模型；请填写 config.local.json 的 API key")
         self.model_calls += 1
         event(
             self.task_id,
@@ -139,7 +152,7 @@ class Harness:
         self.check()
         if self.model_calls >= settings.model_call_limit:
             raise ProviderError("budget", "模型调用次数已达上限")
-        if not settings.model_enabled or not settings.model_api_key:
+        if not chat_ready():
             raise ProviderError("credentials", "模型尚未配置")
         self.model_calls += 1
         event(self.task_id, "model_start", label="对话答复", number=self.model_calls)
@@ -180,41 +193,11 @@ class Harness:
             raise
 
 
-def model():
-    from .structured import is_ollama
+def model(slot="chat"):
+    """唯一的 LLM 构造入口。
 
-    if is_ollama():
-        from langchain_ollama import ChatOllama
-
-        return ChatOllama(
-            model=settings.model_name,
-            base_url=settings.model_base_url.rstrip("/").removesuffix("/v1"),
-            temperature=0,
-            reasoning=False,
-            num_ctx=settings.model_context_tokens,
-            num_predict=settings.model_output_tokens,
-            client_kwargs={"timeout": settings.model_timeout},
-        )
-    if settings.model_provider == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        kwargs = {"base_url": settings.gemini_base_url} if settings.gemini_base_url else {}
-        return ChatGoogleGenerativeAI(
-            model=settings.model_name,
-            api_key=settings.model_api_key or "not-configured",
-            vertexai=False,
-            timeout=settings.model_timeout,
-            max_retries=0,
-            max_output_tokens=settings.model_output_tokens,
-            **kwargs,
-        )
-    return ChatOpenAI(
-        model=settings.model_name,
-        api_key=settings.model_api_key or "not-configured",
-        base_url=settings.model_base_url,
-        temperature=0,
-        timeout=settings.model_timeout,
-        max_retries=0,
-        max_tokens=settings.model_output_tokens,
-        **({"reasoning_effort": settings.model_reasoning_effort} if settings.model_reasoning_effort else {}),
-    )
+    具体实现（协议分派、实例缓存、额外 headers）统一收在 models.gateway；
+    这里只注入 ChatOpenAI 驱动，保持对既有测试与调用方的接口不变。
+    ``slot=\"structured\"`` 时返回独立的结构化输出模型实例。
+    """
+    return gateway.chat_model(drivers={"openai": ChatOpenAI}, slot=slot)

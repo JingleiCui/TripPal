@@ -3,6 +3,7 @@ import hashlib
 import json
 import secrets
 import threading
+import time
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
@@ -10,10 +11,17 @@ from urllib.parse import urlparse
 import httpx
 import redis
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from sqlalchemy import select, text, or_
 from sqlalchemy.exc import IntegrityError
 from .config import settings, ROOT
+from .observability import (
+    error_payload,
+    install as install_observability,
+    log_access,
+    logger,
+    new_request_id,
+)
 from .db import Session, User, Trip, Task, Event, Revision, Document, Share, LoginSession, TripMember, now
 from .access import get_trip, role_for, safe_plan
 from .security import require_user, password_hash, password_valid, new_session, hash_token
@@ -30,6 +38,8 @@ from .booking_api import router as booking_router
 from .services_api import router as services_router
 from .budget_api import router as budget_router
 from .budgeting import calculate_budget, compatible_snapshot
+from .pending_api import router as pending_router
+from .attachments_api import router as attachments_router
 
 
 def owned(db, model, ident, owner):
@@ -68,18 +78,22 @@ def trip_view(trip, role="owner"):
 
 def dispatcher(stop):
     while not stop.wait(10):
+        # SQL remains the outbox: a failed tick is retried on the next one.
+        # Each job is isolated so one failure cannot silently skip the others.
         try:
             dispatch_pending()
         except Exception:
-            # SQL remains the outbox: next tick retries undispatched queued jobs.
-            pass
+            logger.exception("dispatch_pending_failed")
         try:
             deliver_pending()
+        except Exception:
+            logger.exception("deliver_pending_failed")
+        try:
             from .privacy_cleanup import process_pending
 
             process_pending()
         except Exception:
-            pass
+            logger.exception("privacy_cleanup_failed")
 
 
 @asynccontextmanager
@@ -87,6 +101,9 @@ async def lifespan(app):
     stop = threading.Event()
     thread = threading.Thread(target=dispatcher, args=(stop,), daemon=True)
     thread.start()
+    from .db import ensure_tables
+
+    ensure_tables()
     yield
     stop.set()
 
@@ -96,29 +113,56 @@ app = FastAPI(title="travel_agent", version="0.1.0", lifespan=lifespan)
 
 @app.middleware("http")
 async def security_headers(request, call_next):
+    started = time.perf_counter()
+    request.state.request_id = new_request_id(request)
+    request_id = request.state.request_id
+
+    def with_request_id(response):
+        response.headers["X-Request-Id"] = request_id
+        return response
+
     if (
         request.method not in {"GET", "HEAD", "OPTIONS"}
         and (Path(settings.data_dir) / "maintenance").exists()
     ):
-        return Response("正在备份维护，请稍后再试", 503)
+        log_access(request, 503, started)
+        return with_request_id(Response("正在备份维护，请稍后再试", 503))
     origin = request.headers.get("origin")
     if request.method not in {"GET", "HEAD", "OPTIONS"} and origin:
         origin_host = urlparse(origin).netloc
         host = request.headers.get("host", "")
         if origin_host not in {host, "127.0.0.1:8809", "localhost:8809"}:
-            return Response("不允许的请求来源", 403)
-    response = await call_next(request)
+            log_access(request, 403, started)
+            return with_request_id(Response("不允许的请求来源", 403))
+    try:
+        response = await call_next(request)
+    except Exception:
+        # 未捕获异常统一转成可排障的 JSON，并留下完整堆栈；不再静默 500。
+        logger.exception(
+            "unhandled_error path=%s request_id=%s", request.url.path, request_id
+        )
+        response = JSONResponse(
+            status_code=500,
+            content=error_payload(
+                500, "服务内部错误，请稍后重试", request_id, "internal_error"
+            ),
+        )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Cache-Control"] = (
         "no-store" if request.url.path.startswith(("/api", "/s/")) else "no-cache"
     )
-    return response
+    log_access(request, response.status_code, started)
+    return with_request_id(response)
 
 
 @app.get("/api/v1/health")
 def health():
+    from .vision import available as vision_available
+    from .voice import ready as voice_ready
+    from .models.registry import chat_ready, status
+
     services = {}
     try:
         with Session() as db:
@@ -142,15 +186,34 @@ def health():
         "application": "travel_agent",
         "services": services,
         "providers": {
-            "model": "configured_not_verified"
-            if settings.model_enabled and settings.model_api_key
-            else "needs_key",
+            "model": "configured_not_verified" if chat_ready() else "needs_key",
             "amap": "configured_not_verified" if settings.amap_key else "needs_key",
             "meituan": "configured_not_verified" if settings.meituan_enabled else "disabled",
         },
+        # 逐槽位状态见 /api/v1/models；这里只给出当前对话供应商名，便于前端提示。
+        "model_provider": status()["slots"]["chat"].get("provider", ""),
         "fixture_enabled": settings.fixture_enabled,
         "voice_enabled": settings.voice_enabled,
+        # 输入通道状态：配置齐备不等于已与真实服务联调。
+        "voice_ready": voice_ready(),
+        "vision_enabled": vision_available() or settings.vision_fixture_enabled,
+        "vision_status": (
+            "synthetic_fixture"
+            if settings.vision_fixture_enabled and not vision_available()
+            else "configured_not_verified"
+            if vision_available()
+            else "needs_key"
+        ),
     }
+
+
+@app.get("/api/v1/models")
+def model_status():
+    """只读的模型网关状态：逐槽位供应商、模型与就绪情况，绝不返回凭证明文。"""
+    from .models import gateway
+    from .models.registry import status
+
+    return {**status(), "cache": gateway.cache_stats()}
 
 
 def throttle_login(request):
@@ -492,7 +555,6 @@ def export(ident: str, kind: str, owner=Depends(require_user)):
             .order_by(DailyDetailSnapshot.created.desc())
         ).all()
         for day in plan.get("days", []):
-            mode = day.get("transport_mode") or plan["requirements"]["transport"]
             snapshot = next((s for s in snapshots if compatible_snapshot(plan, day, s)), None)
             if snapshot:
                 day["daily_details"] = snapshot.data
@@ -637,7 +699,8 @@ def delete_document(ident: str, owner=Depends(require_user)):
             json={"query": {"term": {"doc_id": ident}}},
         )
     except Exception:
-        pass
+        # 可见性已在事务里撤销；派生索引清理失败只记录，不改变删除结果。
+        logger.warning("knowledge_cleanup_failed doc_id=%s", ident, exc_info=True)
     return {"ok": True}
 
 
@@ -649,6 +712,7 @@ def search(body: dict, owner=Depends(require_user)):
     try:
         return knowledge.search(owner, query)
     except Exception:
+        logger.warning("knowledge_search_failed owner=%s", owner, exc_info=True)
         raise HTTPException(503, "检索服务暂不可用，请检查 Elasticsearch 和本地 Embedding 模型")
 
 
@@ -708,6 +772,11 @@ app.include_router(discovery_router)
 app.include_router(booking_router)
 app.include_router(services_router)
 app.include_router(budget_router)
+app.include_router(pending_router)
+app.include_router(attachments_router)
+
+# 统一 HTTPException / RequestValidationError 响应契约（保留 detail 兼容旧调用）。
+install_observability(app)
 
 
 @app.get("/{path:path}")

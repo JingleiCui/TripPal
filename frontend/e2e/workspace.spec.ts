@@ -6,17 +6,11 @@ test("desktop: register, plan, version, export, share, archive and documents", a
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.goto("/");
-  await page
-    .getByLabel("用户名", { exact: true })
-    .fill("browser-" + Date.now());
-  await page
-    .getByLabel("密码", { exact: true })
-    .fill("travel-browser-test-123");
+  await page.getByLabel("用户名", { exact: true }).fill("browser-" + Date.now());
+  await page.getByLabel("密码", { exact: true }).fill("travel-browser-test-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "下一程，想去哪里？" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
   await page.screenshot({
     path: "../reports/home-desktop.png",
     fullPage: true,
@@ -46,9 +40,7 @@ test("desktop: register, plan, version, export, share, archive and documents", a
   ]);
   expect(download.suggestedFilename()).toBe("travel-roadbook.pdf");
   await page.getByRole("button", { name: "分享", exact: true }).click();
-  await expect(
-    page.getByRole("dialog", { name: "分享旅行路书" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "分享旅行路书" })).toBeVisible();
   await page.getByRole("button", { name: "撤销此链接" }).click();
   await page.getByRole("link", { name: "我的行程", exact: true }).click();
   await expect(
@@ -62,13 +54,9 @@ test("desktop: register, plan, version, export, share, archive and documents", a
   });
   await expect(page.getByText("我的攻略.txt", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "执行记录", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "每一步，都有来处" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "每一步，都有来处" })).toBeVisible();
   await page.getByRole("link", { name: "平台与设置", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "平台与运行设置" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "平台与运行设置" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -79,9 +67,7 @@ test("mobile: navigation, form and overflow", async ({ page }) => {
   await page.getByLabel("密码", { exact: true }).fill("travel-mobile-test-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "下一程，想去哪里？" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "下一程，想去哪里？" })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -90,9 +76,7 @@ test("mobile: navigation, form and overflow", async ({ page }) => {
   await page.screenshot({ path: "../reports/home-mobile.png", fullPage: true });
   await page.getByRole("button", { name: "打开导航" }).click();
   await page.getByRole("link", { name: "平台与设置", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "平台与运行设置" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "平台与运行设置" })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -113,13 +97,11 @@ test("interrupted task survives page refresh and resumes", async ({ page }) => {
   await page.locator(".planning-details > summary").click();
   await page.getByRole("checkbox", { name: /合成流程体验/ }).check();
   await page.getByRole("button", { name: "开始规划", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "补充日期与出发位置" }),
-  ).toBeVisible({ timeout: 40000 });
+  await expect(page.getByRole("heading", { name: "补充日期与出发位置" })).toBeVisible({
+    timeout: 40000,
+  });
   await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "补充日期与出发位置" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "补充日期与出发位置" })).toBeVisible();
   await page.getByLabel("出发位置", { exact: true }).fill("北京站");
   await page.getByLabel("出游日期", { exact: true }).fill("2027-05-01");
   await page.getByRole("button", { name: "继续调查", exact: true }).click();

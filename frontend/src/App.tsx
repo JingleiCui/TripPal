@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertCircle,
   SlidersHorizontal,
   Heart,
   BedDouble,
@@ -56,7 +57,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "./components/ui/button";
-import { api, post, setCsrf } from "./api";
+import { AppHeader } from "./components/AppHeader";
+import { GlobalMapCanvas } from "./components/GlobalMapCanvas";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { EmptyState, ErrorState, Skeleton } from "./components/ui/states";
+import { safeHref, safeImageSrc } from "./lib/safeUrl";
+import { AUTH_EXPIRED_EVENT, ApiError, api, post, setCsrf } from "./api";
 import {
   ExplorePage,
   SavedPlacesPage,
@@ -76,6 +82,7 @@ import {
   ConsentBanner,
 } from "./AccountLifecycle";
 import type {
+  Account,
   Day,
   Health,
   Plan,
@@ -111,21 +118,13 @@ const defaultReq = (): Requirements => ({
   excluded_ids: [],
   indoor_only: false,
 });
-type Account = {
-  name: string;
-  csrf: string;
-  preferences: Record<string, string>;
-};
-
 function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          a: (props) => (
-            <a {...props} target="_blank" rel="noopener noreferrer" />
-          ),
+          a: (props) => <a {...props} target="_blank" rel="noopener noreferrer" />,
           img: (props) => (
             <img {...props} loading="lazy" referrerPolicy="no-referrer" />
           ),
@@ -138,8 +137,9 @@ function Markdown({ text }: { text: string }) {
 }
 function ErrorBox({ message }: { message: string }) {
   return message ? (
-    <div role="alert" className="notice error">
-      {message}
+    <div role="alert" className="notice error ui-notice">
+      <AlertCircle size={16} aria-hidden="true" />
+      <span>{message}</span>
     </div>
   ) : null;
 }
@@ -286,29 +286,32 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [routeLocation.pathname]);
-  const client = useQueryClient(),
-    [account, setAccount] = useState<Account | null>(null),
-    [menu, setMenu] = useState(false);
+  const client = useQueryClient();
+  const [account, setAccount] = useState<Account | null>(null);
+  // 会话过期后 /auth/me 的缓存或重新探测不应把用户"自动登录"回去。
+  const [sessionExpired, setSessionExpired] = useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => api<Account>("/auth/me"),
     retry: false,
   });
+  const currentAccount = sessionExpired ? null : (account ?? me.data ?? null);
   const health = useQuery({
     queryKey: ["health"],
     queryFn: () => api<Health>("/health"),
-    refetchInterval: 30000,
+    // 后台标签页不轮询；前台也降到 60s，健康检查不是高频数据。
+    refetchInterval: () => (document.hidden ? false : 60000),
   });
   const recentTrips = useQuery({
     queryKey: ["trips"],
     queryFn: () => api<Trip[]>("/trips"),
-    enabled: !!account,
+    enabled: !!currentAccount,
   });
   const recentConversations = useQuery({
     queryKey: ["conversations"],
     queryFn: () =>
       api<{ id: string; slots: { destination?: string } }[]>("/conversations"),
-    enabled: !!account,
+    enabled: !!currentAccount,
   });
   useEffect(() => {
     if (me.data) {
@@ -316,199 +319,101 @@ export default function App() {
       setCsrf(me.data.csrf);
     }
   }, [me.data]);
+  useEffect(() => {
+    // 任何接口的 401 都统一收回到登录页，避免各页面各自处理过期会话。
+    const onExpired = () => {
+      setSessionExpired(true);
+      setAccount(null);
+      setCsrf("");
+      client.clear();
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, [client]);
   function authenticated(a: Account) {
+    setSessionExpired(false);
     setCsrf(a.csrf);
     setAccount(a);
     client.invalidateQueries();
   }
-  if (location.pathname === "/verify-email")
+  const unauthenticated = me.isError && me.error instanceof ApiError && me.error.isAuth;
+  if (routeLocation.pathname === "/verify-email")
     return <PublicAccountAction kind="verify" />;
-  if (location.pathname === "/reset-password")
+  if (routeLocation.pathname === "/reset-password")
     return <PublicAccountAction kind="reset" />;
-  if (!account && me.isPending)
+  if (!currentAccount && (sessionExpired || unauthenticated))
+    return <Login onDone={authenticated} />;
+  if (!currentAccount && (me.isPending || !me.isError))
     return (
-      <div className="initial-loading">
-        <Compass className="spin" />
-        正在打开旅行工作台…
+      <div className="initial-loading ui-initial-loading">
+        <span className="app-brand-mark" aria-hidden="true">
+          <Compass size={20} />
+        </span>
+        <b>漫游</b>
+        <Skeleton lines={2} compact />
+        <span className="ui-initial-hint">正在打开旅行工作台…</span>
       </div>
     );
-  if (!account) return <Login onDone={authenticated} />;
-  return (
-    <div className="app-shell">
-      <aside className={"sidebar " + (menu ? "open" : "")}>
-        <Link to="/" className="brand">
-          <span className="brand-symbol">
-            <Compass size={22} />
-          </span>
-          <b>
-            漫游<span className="brand-period">。</span>
-          </b>
-        </Link>
-        <span className="nav-label">探索你的下一程</span>
-        <nav onClick={() => setMenu(false)}>
-          <NavLink title="对话规划" to="/chat">
-            <MessageSquare size={19} />
-            对话规划
-          </NavLink>
-          <NavLink title="开始规划" to="/" end>
-            <Compass size={19} />
-            开始规划
-          </NavLink>
-          <NavLink title="探索发现" to="/explore">
-            <Search size={19} />
-            探索发现
-          </NavLink>
-          <NavLink title="旅行收藏" to="/saved">
-            <Heart size={19} />
-            旅行收藏
-          </NavLink>
-          <NavLink title="我的行程" to="/archive">
-            <Map size={19} />
-            我的行程
-          </NavLink>
-          <NavLink title="旅行资料" to="/documents">
-            <FolderOpen size={19} />
-            旅行资料
-          </NavLink>
-          <NavLink title="执行记录" to="/runs">
-            <History size={19} />
-            执行记录
-          </NavLink>
-        </nav>
-        {!!recentTrips.data?.length && (
-          <div className="sidebar-saved">
-            <span className="nav-label">已保存行程</span>
-            {recentTrips.data.slice(0, 4).map((t) => (
-              <Link
-                key={t.id}
-                to={"/trips/" + t.id}
-                onClick={() => setMenu(false)}
-              >
-                {t.title}
-              </Link>
-            ))}
-          </div>
-        )}
-        {!!recentConversations.data?.length && (
-          <div className="sidebar-saved">
-            <span className="nav-label">最近对话</span>
-            {recentConversations.data.slice(0, 3).map((c) => (
-              <Link
-                key={c.id}
-                to={"/chat/" + c.id}
-                onClick={() => setMenu(false)}
-              >
-                {c.slots.destination || "尚未确定目的地"} · 对话
-              </Link>
-            ))}
-          </div>
-        )}
-        <Link to="/chat" className="sidebar-new-chat">
-          <Plus size={17} /> 开始新对话
-        </Link>
-        <nav className="bottom-nav" onClick={() => setMenu(false)}>
-          <NavLink title="旅行偏好" to="/assistant">
-            <SlidersHorizontal size={19} />
-            旅行偏好
-          </NavLink>
-          <NavLink title="平台与设置" to="/settings">
-            <Settings size={19} />
-            平台与设置
-          </NavLink>
-        </nav>
-        <div className="account">
-          <span>{account.name[0].toUpperCase()}</span>
-          <div>
-            <b>{account.name}</b>
-            <small>本机旅行档案</small>
-          </div>
-          <button
-            title="退出登录"
-            onClick={async () => {
-              await post("/auth/logout");
-              setAccount(null);
-              client.clear();
-            }}
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
-      </aside>
-      {menu && (
-        <button
-          className="sidebar-scrim"
-          aria-label="关闭导航"
-          onClick={() => setMenu(false)}
+  if (!currentAccount)
+    return (
+      <div className="ui-initial-loading">
+        <ErrorState
+          title="无法连接服务"
+          message={
+            me.error instanceof ApiError
+              ? me.error.message
+              : "请检查本地服务是否已启动，然后重试。"
+          }
+          requestId={me.error instanceof ApiError ? me.error.requestId : undefined}
+          onRetry={() => void me.refetch()}
         />
-      )}
-      <main className="main">
-        <header className="topbar">
-          <button
-            className="mobile-menu"
-            aria-label="打开导航"
-            onClick={() => setMenu(!menu)}
-          >
-            <Menu size={22} />
-          </button>
-          <span>
-            <span className="crumb">工作空间</span>
-            <ChevronRight size={13} />
-            我的旅行
-          </span>
-          <div className="topbar-right">
-            <Link to="/archive">
-              <Map size={16} /> 查看行程
-            </Link>
-            <Link to="/chat" className="topbar-create">
-              <Plus size={16} /> 新建旅行
-            </Link>
-          </div>
-        </header>
-        <Routes>
-          <Route
-            path="/chat/:conversationId?"
-            element={<ConversationWorkspace />}
-          />
-          <Route path="/" element={<Planner />} />
-          <Route path="/trips/:id" element={<Planner />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/saved" element={<SavedPlacesPage />} />
-          <Route path="/assistant" element={<AssistantSetup />} />
-          <Route path="/archive" element={<Archive />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/runs" element={<Runs />} />
-          <Route
-            path="/settings"
-            element={<SettingsPage health={health.data} account={account} />}
-          />
-        </Routes>
+      </div>
+    );
+  // 旅行域共享常驻地图画布；资料 / 执行记录 / 偏好 / 设置这类表单列表页不铺地图。
+  const managePaths = ["/documents", "/runs", "/assistant", "/settings"];
+  const isManage = managePaths.some((p) => routeLocation.pathname.startsWith(p));
+  return (
+    <div
+      className={
+        "app-shell mf-shell " + (isManage ? "mf-manage-view" : "mf-travel-view")
+      }
+    >
+      <GlobalMapCanvas mode={isManage ? "manage" : "travel"} />
+      <AppHeader
+        account={currentAccount}
+        health={health.data}
+        trips={recentTrips.data ?? []}
+        conversations={recentConversations.data ?? []}
+        pathname={routeLocation.pathname}
+        onLogout={async () => {
+          try {
+            await post("/auth/logout");
+          } finally {
+            setAccount(null);
+            setCsrf("");
+            client.clear();
+          }
+        }}
+      />
+      <main className="app-main">
+        <ErrorBoundary resetKey={routeLocation.pathname}>
+          <Routes>
+            <Route path="/chat/:conversationId?" element={<ConversationWorkspace />} />
+            <Route path="/" element={<Planner />} />
+            <Route path="/trips/:id" element={<Planner />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/saved" element={<SavedPlacesPage />} />
+            <Route path="/assistant" element={<AssistantSetup />} />
+            <Route path="/archive" element={<Archive />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/runs" element={<Runs />} />
+            <Route
+              path="/settings"
+              element={<SettingsPage health={health.data} account={currentAccount} />}
+            />
+          </Routes>
+        </ErrorBoundary>
       </main>
-      <nav
-        className="mobile-dock"
-        aria-label="主要页面导航"
-        onClick={() => setMenu(false)}
-      >
-        <NavLink to="/" end>
-          <Compass size={20} />
-          <span>首页</span>
-        </NavLink>
-        <NavLink to="/chat">
-          <MessageSquare size={20} />
-          <span>对话</span>
-        </NavLink>
-        <NavLink to="/archive">
-          <Map size={20} />
-          <span>行程</span>
-        </NavLink>
-        <NavLink to="/explore">
-          <Search size={20} />
-          <span>发现</span>
-        </NavLink>
-        <NavLink to="/saved">
-          <Heart size={20} />
-          <span>收藏</span>
-        </NavLink>
-      </nav>
       <ConsentBanner />
     </div>
   );
@@ -614,9 +519,7 @@ function RequirementsForm({
           旅行类型
           <select
             value={req.style}
-            onChange={(e) =>
-              patch({ style: e.target.value as Requirements["style"] })
-            }
+            onChange={(e) => patch({ style: e.target.value as Requirements["style"] })}
           >
             <option value="city">城市漫游</option>
             <option value="outdoor">景区 / 轻户外</option>
@@ -674,9 +577,7 @@ function Planner() {
   const [idea, setIdea] = useState("");
   const [starting, setStarting] = useState(false);
   function openBrief() {
-    const brief = document.getElementById(
-      "trip-brief",
-    ) as HTMLDetailsElement | null;
+    const brief = document.getElementById("trip-brief") as HTMLDetailsElement | null;
     if (brief) {
       brief.open = true;
       brief.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -715,14 +616,14 @@ function Planner() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [taskId, setTaskId] = useState<string | null>(null),
+    // 恢复/重试时只需重连 SSE，不必把 taskId 置空再 setTimeout 塞回去。
+    [streamNonce, setStreamNonce] = useState(0),
     [trace, setTrace] = useState<Trace[]>([]),
     [dayIndex, setDayIndex] = useState(0),
     [selected, setSelected] = useState<Stop | null>(null),
     [tab, setTab] = useState("itinerary"),
     [showForm, setShowForm] = useState(false),
-    [showShare, setShowShare] = useState<{ path: string; id: string } | null>(
-      null,
-    ),
+    [showShare, setShowShare] = useState<{ path: string; id: string } | null>(null),
     [showHistory, setShowHistory] = useState(false);
   const trip = useQuery({
     queryKey: ["trip", id],
@@ -733,9 +634,11 @@ function Planner() {
     queryKey: ["task", taskId],
     queryFn: () => api<Task>("/tasks/" + taskId),
     enabled: !!taskId,
+    // SSE 负责实时状态，这里只做断线兜底；后台标签页不轮询。
     refetchInterval: (q) =>
-      ["queued", "running"].includes(q.state.data?.status ?? "queued")
-        ? 2000
+      ["queued", "running"].includes(q.state.data?.status ?? "queued") &&
+      !document.hidden
+        ? 4000
         : false,
   });
   const recentTasks = useQuery({
@@ -789,7 +692,7 @@ function Planner() {
     const saved = savedPlaces.data?.find((s) => s.id === savedId);
     setReq((old) => ({
       ...old,
-      city: saved?.place.city || prefs.default_city || old.city,
+      city: saved?.place?.city || prefs.default_city || old.city,
       days: Number(prefs.default_days) || old.days,
       interests: saved
         ? `希望安排：${saved.place.name}；${prefs.travel_style || ""}`
@@ -797,11 +700,9 @@ function Planner() {
     }));
     if (saved) {
       setMessage(`想去${saved.place.city}的${saved.place.name}。${saved.note}`);
-      setFixture(!!saved.place.source.synthetic);
+      setFixture(!!saved.place.source?.synthetic);
       requestAnimationFrame(() =>
-        document
-          .getElementById("trip-brief")
-          ?.scrollIntoView({ block: "start" }),
+        document.getElementById("trip-brief")?.scrollIntoView({ block: "start" }),
       );
     }
     seeded.current = seedKey;
@@ -824,17 +725,24 @@ function Planner() {
     if (!taskId) return;
     setTrace([]);
     const sse = new EventSource(`/api/v1/tasks/${taskId}/events`);
-    sse.addEventListener("trace", (e) =>
-      setTrace((old) =>
-        [...old, JSON.parse((e as MessageEvent).data)].slice(-300),
-      ),
-    );
+    sse.addEventListener("trace", (e) => {
+      try {
+        const row = JSON.parse((e as MessageEvent).data) as Trace;
+        setTrace((old) => [...old, row].slice(-300));
+      } catch {
+        // 单条坏事件不应让整条时间线崩掉。
+      }
+    });
     sse.addEventListener("status", () => {
       client.invalidateQueries({ queryKey: ["task", taskId] });
       sse.close();
     });
+    sse.onerror = () => {
+      // 浏览器会自动重连；任务侧轮询仍作为兜底，不在此清空已有记录。
+      client.invalidateQueries({ queryKey: ["task", taskId] });
+    };
     return () => sse.close();
-  }, [taskId]);
+  }, [taskId, streamNonce]);
   async function submit(text?: string, overrides?: Partial<Requirements>) {
     setError("");
     setBusy(true);
@@ -889,12 +797,8 @@ function Planner() {
     <div className={"planner " + (!id ? "new-planner" : "")}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            {id ? "你的旅程，你的节奏" : "从这里出发"}
-          </span>
-          <h1>
-            {plan?.title || (id ? "正在准备你的行程" : "下一程，想去哪里？")}
-          </h1>
+          <span className="eyebrow">{id ? "你的旅程，你的节奏" : "从这里出发"}</span>
+          <h1>{plan?.title || (id ? "正在准备你的行程" : "下一程，想去哪里？")}</h1>
           <p>
             {id
               ? "把地点连成路线，把想法变成可调整的安排。"
@@ -905,9 +809,7 @@ function Planner() {
           <div className="heading-actions">
             {trip.data && (
               <>
-                {trip.data.role === "owner" && (
-                  <BookingManager tripId={trip.data.id} />
-                )}
+                {trip.data.role === "owner" && <BookingManager tripId={trip.data.id} />}
                 <MemberManager tripId={trip.data.id} />
                 <HotelSelector trip={trip.data} />
               </>
@@ -1040,9 +942,7 @@ function Planner() {
             </button>
             <button
               onClick={() =>
-                setIdea(
-                  "想去北京玩三天，带父母，少走路，景点之间交通方便，直接规划。",
-                )
+                setIdea("想去北京玩三天，带父母，少走路，景点之间交通方便，直接规划。")
               }
             >
               带父母轻松走走
@@ -1052,10 +952,7 @@ function Planner() {
             </Link>
           </div>
           <div className="discovery-actions">
-            <button
-              className="discovery-action action-plan"
-              onClick={openBrief}
-            >
+            <button className="discovery-action action-plan" onClick={openBrief}>
               <span className="action-illustration mini-itinerary">
                 <span>我的旅行计划</span>
                 <i />
@@ -1192,11 +1089,7 @@ function Planner() {
               </label>
               <ErrorBox message={error} />
               <Button className="full" disabled={busy} onClick={() => submit()}>
-                {busy ? (
-                  <Loader2 size={18} className="spin" />
-                ) : (
-                  <Compass size={18} />
-                )}
+                {busy ? <Loader2 size={18} className="spin" /> : <Compass size={18} />}
                 开始规划
                 <ArrowRight size={18} />
               </Button>
@@ -1211,11 +1104,7 @@ function Planner() {
             <section className="card edit-form">
               <div className="section-heading">
                 <h2>更新行程条件</h2>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowForm(false)}
-                >
+                <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>
                   <X size={16} />
                 </Button>
               </div>
@@ -1223,9 +1112,7 @@ function Planner() {
               <Button
                 size="sm"
                 disabled={active || busy}
-                onClick={() =>
-                  submit("请按更新后的条件重新安排，保留锁定地点。")
-                }
+                onClick={() => submit("请按更新后的条件重新安排，保留锁定地点。")}
               >
                 按新条件重新规划
               </Button>
@@ -1310,9 +1197,7 @@ function Planner() {
                     ) : (
                       <History size={18} />
                     )}
-                    <b>
-                      {statusNames[task.data?.status || ""] || "暂无执行任务"}
-                    </b>
+                    <b>{statusNames[task.data?.status || ""] || "暂无执行任务"}</b>
                     {active && (
                       <Button
                         variant="ghost"
@@ -1328,7 +1213,7 @@ function Planner() {
                       </Button>
                     )}
                   </div>
-                  {task.data?.result.error && (
+                  {task.data?.result?.error && (
                     <ErrorBox message={task.data.result.error} />
                   )}
                   <div className="trace-list">
@@ -1352,8 +1237,7 @@ function Planner() {
                             client.invalidateQueries({
                               queryKey: ["task", taskId],
                             });
-                            setTaskId(null);
-                            setTimeout(() => setTaskId(task.data!.id), 0);
+                            setStreamNonce((n) => n + 1);
                           } catch (e) {
                             setError((e as Error).message);
                           }
@@ -1374,9 +1258,7 @@ function Planner() {
                           client.invalidateQueries({
                             queryKey: ["task", taskId],
                           });
-                          const old = taskId;
-                          setTaskId(null);
-                          setTimeout(() => setTaskId(old), 0);
+                          setStreamNonce((n) => n + 1);
                         } catch (e) {
                           setError((e as Error).message);
                         }
@@ -1386,10 +1268,7 @@ function Planner() {
                     </Button>
                   )}
                   {task.data?.status === "completed" && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setTab("itinerary")}
-                    >
+                    <Button variant="secondary" onClick={() => setTab("itinerary")}>
                       查看每日安排
                       <ArrowRight size={15} />
                     </Button>
@@ -1411,12 +1290,11 @@ function Planner() {
                       <div className="source-row" key={s.id}>
                         <b>{s.name}</b>
                         <small>
-                          {s.source.provider} ·{" "}
-                          {s.source.retrieved_at?.slice(0, 16)}
+                          {s.source.provider} · {s.source.retrieved_at?.slice(0, 16)}
                         </small>
-                        {s.source.url && (
+                        {safeHref(s.source.url) && (
                           <a
-                            href={s.source.url}
+                            href={safeHref(s.source.url)}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -1492,10 +1370,7 @@ function Planner() {
                   hotels={plan?.hotels}
                 />
                 {selected ? (
-                  <PlaceDetail
-                    stop={selected}
-                    close={() => setSelected(null)}
-                  />
+                  <PlaceDetail stop={selected} close={() => setSelected(null)} />
                 ) : plan ? (
                   <div className="card trip-overview">
                     <div>
@@ -1504,8 +1379,7 @@ function Planner() {
                       <p>{plan.budget.status}。景点内部步行与接驳尚需确认。</p>
                     </div>
                     <p className="notice">
-                      完整费用请在「每日安排 →
-                      花费」中核对；尚未查到的项目不会计为零。
+                      完整费用请在「每日安排 → 花费」中核对；尚未查到的项目不会计为零。
                     </p>
                     {plan.warnings.length > 0 && (
                       <div className="warning-list">
@@ -1553,15 +1427,12 @@ function Planner() {
             <p>只读快照，有效期 7 天。不包含私人资料和对话。</p>
             <input readOnly value={location.origin + showShare.path} />
             <small>
-              127.0.0.1 地址只能在本机打开；跨设备使用需要局域网配置或 HTTPS
-              部署。
+              127.0.0.1 地址只能在本机打开；跨设备使用需要局域网配置或 HTTPS 部署。
             </small>
             <div className="modal-actions">
               <Button
                 onClick={() =>
-                  navigator.clipboard.writeText(
-                    location.origin + showShare.path,
-                  )
+                  navigator.clipboard.writeText(location.origin + showShare.path)
                 }
               >
                 复制链接
@@ -1622,9 +1493,7 @@ function TraceBatches({ traces }: { traces: Trace[] }) {
 function TraceRow({ trace }: { trace: Trace }) {
   const data = trace.data;
   return (
-    <details
-      className={"trace-row " + (data.success === false ? "trace-error" : "")}
-    >
+    <details className={"trace-row " + (data.success === false ? "trace-error" : "")}>
       <summary>
         <span className="trace-dot" />
         <div>
@@ -1641,24 +1510,32 @@ function TraceRow({ trace }: { trace: Trace }) {
   );
 }
 function PlaceDetail({ stop, close }: { stop: Stop; close: () => void }) {
+  const photos = Array.from(
+    new Set(stop.photos.map(safeImageSrc).filter(Boolean)),
+  ) as string[];
+  const sourceUrl = safeHref(stop.source.url);
+  const guideUrl = safeHref(stop.guide_url);
+  const bookingUrl = safeHref(stop.booking_url);
   return (
     <div className="card place-detail">
       <Button
         className="detail-close"
         variant="secondary"
         size="icon"
+        aria-label="关闭地点详情"
         onClick={close}
       >
         <X size={16} />
       </Button>
-      {stop.photos.length ? (
+      {photos.length ? (
         <div className="photo-strip">
-          {stop.photos.map((photo, i) => (
+          {photos.map((src, i) => (
             <img
-              key={photo}
-              src={photo}
+              key={src}
+              src={src}
               alt={`${stop.name} 来源图片 ${i + 1}`}
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
           ))}
         </div>
@@ -1683,29 +1560,25 @@ function PlaceDetail({ stop, close }: { stop: Stop; close: () => void }) {
           <dt>费用信息</dt>
           <dd>{stop.price_text || "尚无可信价格"}</dd>
         </dl>
-        {stop.source.url && (
+        {sourceUrl && (
           <Button variant="secondary" asChild>
-            <a href={stop.source.url} target="_blank" rel="noopener noreferrer">
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
               地图与来源
               <ExternalLink size={14} />
             </a>
           </Button>
         )}
-        {stop.guide_url && (
+        {guideUrl && (
           <p>
-            <a href={stop.guide_url} target="_blank" rel="noopener noreferrer">
+            <a href={guideUrl} target="_blank" rel="noopener noreferrer">
               官方介绍与依据 ↗
             </a>{" "}
             · 静态来源核对于 {stop.guide_checked_at}
           </p>
         )}
-        {stop.booking_url && (
+        {bookingUrl && (
           <p>
-            <a
-              href={stop.booking_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
               查看官方游览／购票入口 ↗
             </a>
           </p>
@@ -1719,7 +1592,7 @@ function PlaceDetail({ stop, close }: { stop: Stop; close: () => void }) {
 }
 
 function Archive() {
-  const { data, error } = useQuery({
+  const { data, error, isPending, refetch } = useQuery({
     queryKey: ["trips"],
     queryFn: () => api<Trip[]>("/trips"),
   });
@@ -1730,7 +1603,19 @@ function Archive() {
         title="留住每一次出发的想法"
         subtitle="行程会保存在本机。计划还可以改，想去的地方可以慢慢走。"
       />
-      <ErrorBox message={error?.message || ""} />
+      {error && (
+        <ErrorState
+          title="行程列表加载失败"
+          message={error.message}
+          requestId={error instanceof ApiError ? error.requestId : undefined}
+          onRetry={() => void refetch()}
+        />
+      )}
+      {isPending && (
+        <div className="card ui-archive-loading">
+          <Skeleton lines={4} />
+        </div>
+      )}
       <div className="archive-grid">
         <Link to="/" className="new-trip-card">
           <Plus size={28} />
@@ -1799,10 +1684,21 @@ type Doc = {
 };
 function Documents() {
   const client = useQueryClient(),
-    { data } = useQuery({
+    {
+      data,
+      error: loadError,
+      isPending,
+      refetch,
+    } = useQuery({
       queryKey: ["documents"],
       queryFn: () => api<Doc[]>("/documents"),
-      refetchInterval: 5000,
+      // 只有后台仍在解析/索引时才轮询，且后台标签页不发请求。
+      refetchInterval: (q) => {
+        const pending = q.state.data?.some((d) =>
+          ["queued", "indexing"].includes(d.status),
+        );
+        return pending && !document.hidden ? 4000 : false;
+      },
     });
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -1823,11 +1719,20 @@ function Documents() {
     setBusy(true);
     setError("");
     try {
-      for (let i = 0; i < files.length; i++) {
-        setProgress(`正在提交 ${i + 1}/${files.length}：${files[i].name}`);
-        const form = new FormData();
-        form.append("file", files[i]);
-        await api("/documents", { method: "POST", body: form });
+      const queue = Array.from(files);
+      // 有限并发：既避免逐个串行等待，也不一次性压满上传连接。
+      for (let i = 0; i < queue.length; i += 2) {
+        const batch = queue.slice(i, i + 2);
+        await Promise.all(
+          batch.map(async (file) => {
+            const form = new FormData();
+            form.append("file", file);
+            await api("/documents", { method: "POST", body: form });
+          }),
+        );
+        setProgress(
+          `正在提交 ${Math.min(i + batch.length, queue.length)}/${queue.length}`,
+        );
       }
       setProgress("提交完成，后台将解析和建立索引。");
       client.invalidateQueries({ queryKey: ["documents"] });
@@ -1862,14 +1767,32 @@ function Documents() {
               onChange={(e) => upload(e.target.files)}
             />
           </label>
-          {progress && <p className="muted">{progress}</p>}
+          {progress && (
+            <p className="muted" role="status">
+              {progress}
+            </p>
+          )}
           <ErrorBox message={error} />
+          {loadError && (
+            <ErrorState
+              title="资料列表加载失败"
+              message={loadError.message}
+              requestId={
+                loadError instanceof ApiError ? loadError.requestId : undefined
+              }
+              onRetry={() => void refetch()}
+            />
+          )}
           <div className="card document-list">
             <h3>
               我的资料 <span>{data?.length || 0}</span>
             </h3>
-            {!data?.length && (
-              <p className="muted">还没有资料。可先导入一份自己的旅行攻略。</p>
+            {isPending && <Skeleton lines={3} compact />}
+            {!isPending && !loadError && !data?.length && (
+              <EmptyState
+                title="还没有旅行资料"
+                description="导入一份自己的攻略或官方说明，检索结果会保留原文出处。"
+              />
             )}
             {data?.map((d) => (
               <div className="document-row" key={d.id}>
@@ -1887,12 +1810,9 @@ function Documents() {
                         } as Record<string, string>
                       )[d.status]
                     }{" "}
-                    · v{d.version}{" "}
-                    {d.info.chunks ? `· ${d.info.chunks} 片段` : ""}
+                    · v{d.version} {d.info.chunks ? `· ${d.info.chunks} 片段` : ""}
                   </small>
-                  {d.info.error && (
-                    <small className="error-text">{d.info.error}</small>
-                  )}
+                  {d.info.error && <small className="error-text">{d.info.error}</small>}
                 </div>
                 <a href={`/api/v1/documents/${d.id}/original`} title="下载原文">
                   <Download size={15} />
@@ -1973,10 +1893,20 @@ function Documents() {
 }
 
 function Runs() {
-  const { data } = useQuery({
+  const {
+    data,
+    error: loadError,
+    isPending,
+    refetch,
+  } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => api<Task[]>("/tasks"),
-    refetchInterval: 5000,
+    refetchInterval: (q) => {
+      const active = q.state.data?.some((t) =>
+        ["queued", "running"].includes(t.status),
+      );
+      return active && !document.hidden ? 4000 : false;
+    },
   });
   const [selected, setSelected] = useState<string | null>(null),
     [trace, setTrace] = useState<Trace[]>([]);
@@ -1997,18 +1927,30 @@ function Runs() {
         title="每一步，都有来处"
         subtitle="查看模型、工具与任务状态，区分真实执行和合成流程。"
       />
+      {loadError && (
+        <ErrorState
+          title="执行记录加载失败"
+          message={loadError.message}
+          requestId={loadError instanceof ApiError ? loadError.requestId : undefined}
+          onRetry={() => void refetch()}
+        />
+      )}
       <div className="runs-layout">
         <div className="card runs-list">
-          {!data?.length && <p className="muted">还没有执行记录。</p>}
+          {isPending && <Skeleton lines={4} compact />}
+          {!isPending && !loadError && !data?.length && (
+            <EmptyState
+              title="还没有执行记录"
+              description="提交一次规划后，模型、工具与任务状态会记录在这里。"
+            />
+          )}
           {data?.map((t) => (
             <button
               key={t.id}
               onClick={() => setSelected(t.id)}
               className={selected === t.id ? "selected" : ""}
             >
-              <span className={"status-pill " + t.status}>
-                {statusNames[t.status]}
-              </span>
+              <span className={"status-pill " + t.status}>{statusNames[t.status]}</span>
               <b>{t.message}</b>
               <small>
                 {t.fixture ? "合成夹具" : "真实平台模式"} ·{" "}
@@ -2024,22 +1966,14 @@ function Runs() {
         <div className="card run-detail">
           <h3>执行时间线</h3>
           <TraceBatches traces={trace} />
-          {!selected && (
-            <p className="muted">选择左侧任务，查看详细执行记录。</p>
-          )}
+          {!selected && <p className="muted">选择左侧任务，查看详细执行记录。</p>}
         </div>
       </div>
     </div>
   );
 }
 
-function SettingsPage({
-  health,
-  account,
-}: {
-  health?: Health;
-  account: Account;
-}) {
+function SettingsPage({ health, account }: { health?: Health; account: Account }) {
   const client = useQueryClient();
   const [prefs, setPrefs] = useState(account.preferences),
     [message, setMessage] = useState("");
@@ -2086,14 +2020,9 @@ function SettingsPage({
           <div className="platform-entry">
             <b>01 / 高德地图</b>
             <p>
-              个人实名认证后创建应用，分别申请 Web 服务 Key、Web JS Key
-              和安全配置。
+              个人实名认证后创建应用，分别申请 Web 服务 Key、Web JS Key 和安全配置。
             </p>
-            <a
-              href="https://lbs.amap.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="https://lbs.amap.com/" target="_blank" rel="noopener noreferrer">
               打开高德开放平台
               <ArrowUpRight size={14} />
             </a>

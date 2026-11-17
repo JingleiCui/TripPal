@@ -16,14 +16,12 @@ test("Atlas integration: gate, live candidates, choice, hotel, portrait and reco
   await page.getByLabel("给我两个不同方案供选择").check();
   await page.getByLabel("旅行对话输入").fill("去北京");
   await page.getByRole("button", { name: "发送旅行对话" }).click();
-  await expect(
-    page.getByText("这次打算玩几天？", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("这次打算玩几天？", { exact: true })).toBeVisible();
   await page.getByLabel("旅行对话输入").fill("三天，直接规划");
   await page.getByRole("button", { name: "发送旅行对话" }).click();
-  await expect(
-    page.getByRole("button", { name: "选择并保存方案 A" }),
-  ).toBeEnabled({ timeout: 45000 });
+  await expect(page.getByRole("button", { name: "选择并保存方案 A" })).toBeEnabled({
+    timeout: 45000,
+  });
   await page.screenshot({
     path: "../reports/atlas-candidates-desktop.png",
     fullPage: true,
@@ -36,9 +34,7 @@ test("Atlas integration: gate, live candidates, choice, hotel, portrait and reco
   await page.getByRole("button", { name: "住宿地点", exact: true }).click();
   await page.getByLabel("酒店查询").fill("北京站");
   await page.getByRole("button", { name: "查询地点", exact: true }).click();
-  await expect(
-    page.getByText("演示·北京旅居酒店 1", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("演示·北京旅居酒店 1", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "选择", exact: true }).first().click();
   await expect(
     page.getByRole("heading", { name: "把住宿地点放到地图上" }),
@@ -73,9 +69,7 @@ test("Atlas integration: gate, live candidates, choice, hotel, portrait and reco
   expect(errors).toEqual([]);
 });
 
-test("multi-city chat preserves per-city plan and privacy export", async ({
-  page,
-}) => {
+test("multi-city chat preserves per-city plan and privacy export", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("用户名", { exact: true }).fill("cities-" + Date.now());
   await page.getByLabel("密码", { exact: true }).fill("cities-browser-123");
@@ -88,9 +82,7 @@ test("multi-city chat preserves per-city plan and privacy export", async ({
   await expect(
     page.getByRole("button", { name: "第 3 天 · 上海", exact: true }),
   ).toBeVisible({ timeout: 45000 });
-  await page
-    .getByRole("button", { name: "第 3 天 · 上海", exact: true })
-    .click();
+  await page.getByRole("button", { name: "第 3 天 · 上海", exact: true }).click();
   await expect(page.locator(".canvas-stops")).toContainText("上海");
   await page.getByRole("link", { name: "平台与设置", exact: true }).click();
   const [download] = await Promise.all([

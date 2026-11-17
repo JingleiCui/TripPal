@@ -7,9 +7,10 @@ from langgraph.types import interrupt
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from ..config import settings
+from ..models.registry import chat_ready
 from ..schemas import Requirements, PlanSelection, DelegateSelection, day_cities
 from ..planning import build_plan, validate_selection, plan_diff
-from ..providers import amap, meituan, fixtures
+from ..providers import amap, meituan, fixtures, booking
 from ..providers.base import ProviderError
 from .. import knowledge
 from .. import research_cache
@@ -87,6 +88,7 @@ def compact_context(state):
 
 
 def domain_agent(name, tools, harness, state):
+    tools = harness.filter_tools(tools)
     messages = [
         SystemMessage(content=SYSTEM + f"\n本次职责：{name}"),
         HumanMessage(content=compact_context(state)),
@@ -139,7 +141,7 @@ def build_graph(checkpointer, harness):
         if not state["fixture"]:
             if not settings.amap_key:
                 raise ProviderError("credentials", "尚未配置高德 Web 服务 Key")
-            if not settings.model_enabled or not settings.model_api_key:
+            if not chat_ready():
                 raise ProviderError("credentials", "尚未配置并启用模型")
         return {"requirements": req.model_dump(mode="json")}
 
@@ -216,7 +218,13 @@ def build_graph(checkpointer, harness):
                 places.update({p["id"]: p for p in result})
                 return result
 
-            summary = domain_agent("景点与目的地", [search_places], harness, state)
+            @tool
+            def poi_detail(poi_id: str, city: str = ""):
+                """查询某个地点的详情（开放时间、电话、评分、照片），poi_id 取自已检索地点。"""
+                city = city or req.city
+                return harness.tool("poi_detail", amap.poi_detail, poi_id=poi_id[:40], city=city)
+
+            summary = domain_agent("景点与目的地", [search_places, poi_detail], harness, state)
             for city in allowed_cities:
                 if not any(p.get("city", req.city) == city for p in places.values()):
                     search_places.invoke({"city": city, "query": req.interests[:80]})
@@ -272,8 +280,38 @@ def build_graph(checkpointer, harness):
         assignments = []
         if "transport" in state["delegates"]:
             assignments.append(("交通与天气", [query_weather]))
+        @tool
+        def search_dining(query: str, city: str = ""):
+            """通过美团查询城市的餐厅、美食与团购，返回原文价格与链接。美食缺省仍用高德 POI。"""
+            city = city or req.city
+            if state["fixture"]:
+                return {"note": "合成流程不调用美团"}
+            if not meituan.configured():
+                return {"note": "美团未启用；美食仍可用高德 POI 检索。"}
+            return harness.tool("meituan_food", meituan.food_recommend, city=city, query=query[:2000])
+
+        @tool
+        def plan_booking(
+            kind: str, name: str, city: str, date: str = "", party: int = 1, budget: str = ""
+        ):
+            """记录一项预订意图（酒店/门票/交通/餐饮），仅结构化意图，不执行支付或下单。"""
+            try:
+                party_int = int(party)
+            except (TypeError, ValueError):
+                party_int = 1
+            return harness.tool(
+                "booking_intent",
+                booking.build_intent,
+                kind=kind,
+                name=name,
+                city=city,
+                date=date[:40],
+                party=max(1, min(12, party_int)),
+                budget=budget[:200],
+            )
+
         if "lodging" in state["delegates"]:
-            assignments.append(("住宿与商品", [query_lodging]))
+            assignments.append(("住宿与商品", [query_lodging, search_dining, plan_booking]))
         if "knowledge" in state["delegates"]:
             assignments.append(("私人旅行资料", [search_private_guides]))
         if state["strategy"] == "single" and assignments:

@@ -1,4 +1,3 @@
-import copy
 from sqlalchemy import select
 from travel_agent.db import Base, engine, Session, User, Trip, TripMember
 from travel_agent.schemas import Requirements
@@ -49,7 +48,7 @@ def test_daily_plan_contains_concrete_meals_hotel_and_every_leg():
     assert len(details["legs"]) == len(details["timeline"]) - 1
     assert details["timeline"][0]["place"]["name"] == "北京站"
     assert details["timeline"][-1]["kind"] == "hotel"
-    assert all(l["instructions"] and l["from_name"] and l["to_name"] for l in details["legs"])
+    assert all(leg["instructions"] and leg["from_name"] and leg["to_name"] for leg in details["legs"])
     assert details["meals"][1]["planned_start"] >= "12:00"
 
 
@@ -70,7 +69,7 @@ def test_daily_services_choices_are_revisioned_and_scoped(account):
     updated = account.get(f"/api/v1/trips/{ident}/daily-details?day=1").json()
     assert updated["meals"][1]["place"]["id"] == lunch["id"]
     assert updated["meals"][1]["user_selected"] is True
-    assert any(l["to_id"] == lunch["id"] for l in updated["legs"])
+    assert any(leg["to_id"] == lunch["id"] for leg in updated["legs"])
     assert account.post(f"/api/v1/trips/{ident}/service-choice", json=body).status_code == 409
     transport = {"day": 1, "base_version": 2, "slot": "transport", "mode": "walk"}
     assert account.post(f"/api/v1/trips/{ident}/service-choice", json=transport).status_code == 200
@@ -109,7 +108,7 @@ def test_real_provider_failure_does_not_create_meals_or_claim_routes(monkeypatch
     assert all(m["place"] is None for m in details["meals"])
     assert details["hotel"] is None
     assert details["warnings"]
-    assert any(l.get("error") for l in details["legs"])
+    assert any(leg.get("error") for leg in details["legs"])
     assert details["timeline"][-1]["timing_verified"] is False
 
 

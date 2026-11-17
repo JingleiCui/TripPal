@@ -31,10 +31,7 @@ export function HotelSelector({ trip }: { trip: Trip }) {
       </Button>
       {open && (
         <div className="modal-scrim" onClick={() => setOpen(false)}>
-          <div
-            className="modal hotel-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal hotel-modal" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon"

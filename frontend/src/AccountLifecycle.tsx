@@ -70,9 +70,7 @@ export function PublicAccountAction({ kind }: { kind: "verify" | "reset" }) {
             setBusy(true);
             try {
               const r = await post<{ message: string }>(
-                kind === "verify"
-                  ? "/auth/verify-email"
-                  : "/auth/reset-password",
+                kind === "verify" ? "/auth/verify-email" : "/auth/reset-password",
                 { token, ...(kind === "reset" ? { password } : {}) },
               );
               setMessage(r.message);
@@ -146,9 +144,7 @@ export function PrivacyPanel({ username }: { username: string }) {
     <>
       <section className="card settings-card">
         <h2>邮箱与账户</h2>
-        <p>
-          {account.data?.email || "此本机账户没有邮箱；无法通过邮件找回密码。"}
-        </p>
+        <p>{account.data?.email || "此本机账户没有邮箱；无法通过邮件找回密码。"}</p>
         {account.data?.email && (
           <>
             <p>{account.data.email_verified ? "邮箱已验证" : "邮箱尚未验证"}</p>
@@ -172,15 +168,17 @@ export function PrivacyPanel({ username }: { username: string }) {
             )}
           </>
         )}
-        <p>
-          <a
-            href="http://127.0.0.1:18026"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            打开本地开发收件箱 ↗
-          </a>
-        </p>
+        {["localhost", "127.0.0.1", "::1"].includes(window.location.hostname) && (
+          <p>
+            <a
+              href={`${window.location.protocol}//${window.location.hostname}:18026`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              打开本地开发收件箱 ↗
+            </a>
+          </p>
+        )}
         <p className="muted">
           本地收件箱不代表邮件已发到你的真实邮箱；正式部署需配置 SMTP。
         </p>
@@ -188,11 +186,9 @@ export function PrivacyPanel({ username }: { username: string }) {
       </section>
       <section className="card settings-card">
         <h2>偏好画像与统计选择</h2>
-        <p>
-          本机行为信号形成启发式建议，不是机器学习模型，也不覆盖你的明确条件。
-        </p>
+        <p>本机行为信号形成启发式建议，不是机器学习模型，也不覆盖你的明确条件。</p>
         <div className="portrait-summary">
-          {Object.entries(portrait.data?.portrait.leanings || {}).map(
+          {Object.entries(portrait.data?.portrait?.leanings || {}).map(
             ([key, value]) => (
               <p key={key}>
                 {(
@@ -206,7 +202,7 @@ export function PrivacyPanel({ username }: { username: string }) {
               </p>
             ),
           )}
-          <p>已记录 {portrait.data?.portrait.signal_count || 0} 条有效信号</p>
+          <p>已记录 {portrait.data?.portrait?.signal_count || 0} 条有效信号</p>
         </div>
         <Button
           size="sm"

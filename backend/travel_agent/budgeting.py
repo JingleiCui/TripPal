@@ -172,7 +172,7 @@ def calculate_budget(plan, snapshots):
                     if mode == "drive"
                     else "票价按出行人数计算",
                 )
-            if any(l.get("mode") == "drive" for l in legs):
+            if any(leg.get("mode") == "drive" for leg in legs):
                 add(f"driving-extras:{n}", "transport", "油费与停车费", unit="group")
         else:
             add(f"local-transport:{n}", "transport", "当天市内接驳 · 路线尚未完整核算", unit="group")

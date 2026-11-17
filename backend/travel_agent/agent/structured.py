@@ -1,19 +1,28 @@
 """Schema generation with a single bounded correction, never invented fallback data."""
 
 import re
-from urllib.parse import urlparse
 from pydantic import ValidationError
 from langchain_core.messages import HumanMessage
 from ..config import settings
 from ..providers.base import ProviderError
+from ..models import specs
+from ..models.registry import ConfigurationError, resolve
 
 
 def is_ollama():
-    return settings.model_provider == "ollama" or (
-        settings.model_provider == "openai"
-        and urlparse(settings.model_base_url).hostname in {"127.0.0.1", "localhost", "::1"}
-        and urlparse(settings.model_base_url).port == 11434
-    )
+    """是否走本机 Ollama。判定统一交给 registry，避免 URL 逻辑散落多处。"""
+    try:
+        return resolve("chat").protocol == specs.PROTOCOL_OLLAMA
+    except ConfigurationError:
+        return False
+
+
+def structured_method():
+    """结构化输出方式由供应商能力决定，仍允许 structured_output_method 全局覆盖。"""
+    try:
+        return resolve("structured").structured_method
+    except ConfigurationError:
+        return "json_schema" if is_ollama() or settings.model_provider == "gemini" else "function_calling"
 
 
 def diagnostic(result, method):
@@ -54,13 +63,11 @@ def diagnostic(result, method):
 def generate(schema, messages, label, harness=None, validator=None):
     from .harness import model
 
-    method = "json_schema" if is_ollama() or settings.model_provider == "gemini" else "function_calling"
-    if settings.structured_output_method != "auto":
-        method = settings.structured_output_method
+    method = structured_method()
     prompts = list(messages)
     last = None
     for attempt in range(2):
-        runnable = model().with_structured_output(schema, method=method, include_raw=True)
+        runnable = model("structured").with_structured_output(schema, method=method, include_raw=True)
         result = (
             harness.invoke(runnable, prompts, label, allow_unparsed=True)
             if harness

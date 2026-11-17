@@ -14,6 +14,7 @@ import {
   Users,
   X,
   Star,
+  Paperclip,
 } from "lucide-react";
 import { api, post } from "./api";
 import { Button } from "./components/ui/button";
@@ -21,8 +22,82 @@ import { BookingManager } from "./Bookings";
 import { TripExperience } from "./TripExperience";
 import { MapPanel } from "./MapPanel";
 import { HotelSelector } from "./HotelSelector";
-import type { Plan, Trip, Stop } from "./types";
+import { VoiceControls } from "./VoiceControls";
+import type { Plan, Trip, Stop, Attachment, ScreenshotFacts, Health } from "./types";
 import { capture } from "./AccountLifecycle";
+
+function isScreenshot(parsed: unknown): parsed is ScreenshotFacts {
+  if (!parsed || typeof parsed !== "object") return false;
+  const status = (parsed as { status?: unknown }).status;
+  return (
+    status === "ok" ||
+    status === "synthetic" ||
+    status === "unavailable" ||
+    status === "error"
+  );
+}
+
+/** 未识别成功的截图不产生可交给助手的内容，按钮保持禁用。 */
+function canAdopt(att: Attachment) {
+  if (!isScreenshot(att.parsed)) return true;
+  return att.parsed.status === "ok" || att.parsed.status === "synthetic";
+}
+
+function ScreenshotFactsView({ parsed }: { parsed: ScreenshotFacts }) {
+  if (parsed.status === "unavailable" || parsed.status === "error") {
+    return (
+      <div className="screenshot-gap" role="status">
+        {parsed.error || parsed.note || "截图内容未被识别，请手动录入关键信息。"}
+      </div>
+    );
+  }
+  const f = parsed.fields;
+  const chips: { label: string; value: string }[] = [];
+  if (f?.cities?.length) chips.push({ label: "目的地", value: f.cities.join("、") });
+  if (f?.dates?.length) chips.push({ label: "日期", value: f.dates.join("、") });
+  if (f?.places?.length)
+    chips.push({ label: "想去的地方", value: f.places.join("、") });
+  if (f?.days) chips.push({ label: "天数", value: f.days });
+  if (f?.budget_text) chips.push({ label: "预算 / 价格", value: f.budget_text });
+  if (f?.notes?.length) chips.push({ label: "备注", value: f.notes.join("、") });
+  return (
+    <div className="screenshot-facts">
+      <div className="screenshot-head">
+        <span
+          className={
+            parsed.synthetic ? "screenshot-badge synthetic" : "screenshot-badge"
+          }
+        >
+          {parsed.synthetic ? "合成演示识别" : "截图识别 · 待核实"}
+        </span>
+        <small>识别内容不会自动写入行程</small>
+      </div>
+      {chips.length > 0 ? (
+        <ul className="screenshot-chips">
+          {chips.map((chip) => (
+            <li key={chip.label}>
+              <span>{chip.label}</span>
+              {chip.value}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="screenshot-gap">图中未识别到可用的旅行信息，请手动补充。</p>
+      )}
+      {!!parsed.unknowns?.length && (
+        <small className="screenshot-unknowns">
+          未识别：{parsed.unknowns.join("、")}
+        </small>
+      )}
+      {f?.raw_text && (
+        <details className="screenshot-raw">
+          <summary>查看图中文字摘录</summary>
+          <p>{f.raw_text}</p>
+        </details>
+      )}
+    </div>
+  );
+}
 
 type ChatMessage = {
   id: number;
@@ -62,6 +137,20 @@ export function ConversationWorkspace() {
     [dayIndex, setDayIndex] = useState(0),
     [streamed, setStreamed] = useState<Record<string, string>>({});
   const bottom = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]),
+    [attaching, setAttaching] = useState(false),
+    [attachError, setAttachError] = useState("");
+  const health = useQuery({
+    queryKey: ["health"],
+    queryFn: () => api<Health>("/health"),
+  });
+  const visionHint =
+    health.data?.vision_status === "synthetic_fixture"
+      ? "截图识别：合成演示，结果不代表真实识别"
+      : health.data?.vision_status === "configured_not_verified"
+        ? "截图识别：已配置，待真实服务联调"
+        : "截图识别：未启用，上传后会提示手动录入";
   const [stageVariants, setStageVariants] = useState<
       Record<string, Record<string, Plan>>
     >({}),
@@ -70,9 +159,11 @@ export function ConversationWorkspace() {
     queryKey: ["conversation", conversationId],
     queryFn: () => api<Conversation>("/conversations/" + conversationId),
     enabled: !!conversationId,
+    // SSE 推送 token/stage，轮询仅作断线兜底；后台标签页不轮询。
     refetchInterval: (q) =>
-      ["queued", "running"].includes(q.state.data?.task?.status || "")
-        ? 1500
+      ["queued", "running"].includes(q.state.data?.task?.status || "") &&
+      !document.hidden
+        ? 3000
         : false,
   });
   const conv = conversation.data,
@@ -96,15 +187,14 @@ export function ConversationWorkspace() {
   const waiting = conv?.task?.status === "waiting_choice";
   const running = ["queued", "running"].includes(conv?.task?.status || "");
   const staged = waiting
-    ? conv.task?.result.variants
+    ? conv.task?.result?.variants
     : running
       ? stageVariants[conv?.task?.id || ""]
       : undefined;
   const stage = stages[conv?.task?.id || ""];
   const plan = (staged?.[variant] ||
     (trip.data?.plan?.days ? trip.data.plan : null)) as Plan | null;
-  const editable =
-    !trip.data?.role || ["owner", "editor"].includes(trip.data.role);
+  const editable = !trip.data?.role || ["owner", "editor"].includes(trip.data.role);
   useEffect(() => {
     setStreamed({});
     setStageVariants({});
@@ -113,13 +203,11 @@ export function ConversationWorkspace() {
     setDayIndex(0);
   }, [conversationId]);
   useEffect(() => {
-    if (conv?.state.fixture !== undefined) setFixture(conv.state.fixture);
-  }, [conv?.state.fixture]);
+    if (conv?.state?.fixture !== undefined) setFixture(conv.state?.fixture);
+  }, [conv?.state?.fixture]);
   useEffect(() => {
     if (!conversationId) return;
-    const stream = new EventSource(
-      `/api/v1/conversations/${conversationId}/events`,
-    );
+    const stream = new EventSource(`/api/v1/conversations/${conversationId}/events`);
     stream.addEventListener("message", () =>
       client.invalidateQueries({ queryKey: ["conversation", conversationId] }),
     );
@@ -128,8 +216,7 @@ export function ConversationWorkspace() {
       setStreamed((old) => ({
         ...old,
         [value.task_id + ":" + (value.variant || "")]:
-          (old[value.task_id + ":" + (value.variant || "")] || "") +
-          value.delta,
+          (old[value.task_id + ":" + (value.variant || "")] || "") + value.delta,
       }));
     });
     stream.addEventListener("reset", (e) => {
@@ -161,7 +248,7 @@ export function ConversationWorkspace() {
   }, [conv?.task?.status, tripId]);
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [conv?.messages.length, streamed]);
+  }, [conv?.messages?.length, streamed]);
   async function send(content = input, regenerate = false) {
     if (!content.trim()) return;
     setBusy(true);
@@ -172,17 +259,14 @@ export function ConversationWorkspace() {
         current = await post<Conversation>("/conversations", { fixture });
         void capture("conversation_started");
       }
-      const updated = await post<Conversation>(
-        `/conversations/${current.id}/turns`,
-        {
-          content,
-          version: current.version,
-          request_key: crypto.randomUUID(),
-          plan_now: regenerate,
-          compare,
-          regenerate,
-        },
-      );
+      const updated = await post<Conversation>(`/conversations/${current.id}/turns`, {
+        content,
+        version: current.version,
+        request_key: crypto.randomUUID(),
+        plan_now: regenerate,
+        compare,
+        regenerate,
+      });
       client.setQueryData(["conversation", current.id], updated);
       setInput("");
       if (updated.state.task_id) void capture("plan_requested");
@@ -211,6 +295,28 @@ export function ConversationWorkspace() {
     } finally {
       setBusy(false);
     }
+  }
+  async function uploadAttachment(file: File) {
+    setAttaching(true);
+    setAttachError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const att = await api<Attachment>("/attachments", {
+        method: "POST",
+        body: form,
+      });
+      setAttachments((old) => [att, ...old]);
+    } catch (e) {
+      setAttachError((e as Error).message);
+    } finally {
+      setAttaching(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  }
+  function adoptAttachment(att: Attachment) {
+    void send(att.suggestion);
+    setAttachments((old) => old.filter((a) => a.id !== att.id));
   }
   const messages = conv?.messages || [
     {
@@ -290,9 +396,9 @@ export function ConversationWorkspace() {
                   <span className="chat-avatar">
                     <Compass size={15} />
                   </span>
-                  <div>
+                  <div aria-live="polite" aria-label="正在生成的回复">
                     {text}
-                    <span className="typing-cursor" />
+                    <span className="typing-cursor" aria-hidden="true" />
                   </div>
                 </div>
               ))}
@@ -306,7 +412,7 @@ export function ConversationWorkspace() {
                     : "正在调查、编排并检查行程…"}
               </div>
             )}
-            {conv?.task?.result.error && (
+            {conv?.task?.result?.error && (
               <div className="notice error">{conv.task.result.error}</div>
             )}
             {conv?.task?.status === "waiting_input" && (
@@ -373,6 +479,70 @@ export function ConversationWorkspace() {
                 使用合成资料体验（不调用模型和真实平台）
               </label>
             )}
+            <div className="attachment-row">
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".txt,.md,.pdf,.docx,.gpx,.json,.png,.jpg,.jpeg,.webp"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void uploadAttachment(f);
+                }}
+              />
+              <button
+                type="button"
+                className="text-link attachment-add"
+                disabled={running || busy || attaching}
+                onClick={() => fileInput.current?.click()}
+              >
+                <Paperclip size={15} />
+                {attaching ? "正在识别附件…" : "添加附件（订单 / 轨迹 / 旅行截图）"}
+              </button>
+              {attachError && <small className="error-text">{attachError}</small>}
+              <small className="input-channel-hint">{visionHint}</small>
+            </div>
+            {attachments.length > 0 && (
+              <div className="attachment-cards">
+                {attachments.map((att) => (
+                  <article className="attachment-card" key={att.id}>
+                    <div className="attachment-card-head">
+                      <b>{att.name}</b>
+                      <small>{att.kind}</small>
+                    </div>
+                    {att.kind === "screenshot" && isScreenshot(att.parsed) && (
+                      <ScreenshotFactsView parsed={att.parsed} />
+                    )}
+                    <p>{att.suggestion}</p>
+                    <div className="attachment-actions">
+                      <Button
+                        size="sm"
+                        disabled={busy || running || waiting || !canAdopt(att)}
+                        onClick={() => adoptAttachment(att)}
+                      >
+                        {att.kind === "screenshot"
+                          ? "把识别结果交给助手"
+                          : "把建议交给助手"}
+                      </Button>
+                      <button
+                        className="text-link"
+                        onClick={() =>
+                          setAttachments((old) => old.filter((a) => a.id !== att.id))
+                        }
+                      >
+                        忽略
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+            <VoiceControls
+              onTranscript={(text) =>
+                setInput((old) => (old.trim() ? `${old.trim()}\n${text}` : text))
+              }
+              disabled={busy || running || waiting || !editable}
+            />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -389,9 +559,7 @@ export function ConversationWorkspace() {
               <Button
                 size="icon"
                 title="发送旅行对话"
-                disabled={
-                  busy || running || waiting || !editable || !input.trim()
-                }
+                disabled={busy || running || waiting || !editable || !input.trim()}
               >
                 <Send size={17} />
               </Button>
@@ -413,10 +581,7 @@ export function ConversationWorkspace() {
                     variant="secondary"
                     disabled={running || busy || !editable}
                     onClick={() =>
-                      send(
-                        "重新生成一个不同的安排，保留锁定条件，直接规划。",
-                        true,
-                      )
+                      send("重新生成一个不同的安排，保留锁定条件，直接规划。", true)
                     }
                   >
                     <RefreshCw size={14} />
@@ -487,18 +652,40 @@ export function ConversationWorkspace() {
                   setDayIndex={setDayIndex}
                   staged={!!staged}
                 />
-                {!staged && !running && tripId && (
-                  <TripFeedback tripId={tripId} />
-                )}
+                {!staged && !running && tripId && <TripFeedback tripId={tripId} />}
               </div>
             </>
           ) : (
             <div className="card blank-canvas">
               <Compass size={40} />
-              <h2>先聊清期待，再展开地图。</h2>
-              <p>
-                目的地和天数明确后，行程将在这里逐步形成。日期尚未确定时，只生成带缺口说明的草案。
-              </p>
+              {conv?.slots?.destination ? (
+                <>
+                  <h2>已识别你的期待</h2>
+                  <ul className="recognized-slots">
+                    {conv.slots.destination ? (
+                      <li>目的地：{String(conv.slots.destination)}</li>
+                    ) : null}
+                    {conv.slots.travel_dates ? (
+                      <li>出游日期：{String(conv.slots.travel_dates)}</li>
+                    ) : null}
+                    {conv.slots.duration ? (
+                      <li>天数：{String(conv.slots.duration)}</li>
+                    ) : null}
+                    {conv.slots.budget_cny ? (
+                      <li>预算：¥{String(conv.slots.budget_cny)}/天</li>
+                    ) : null}
+                    {conv.slots.interests ? (
+                      <li>兴趣：{String(conv.slots.interests)}</li>
+                    ) : null}
+                  </ul>
+                  <p>补全剩余条件（或直接说「开始规划」）后，行程地图将在这里展开。</p>
+                </>
+              ) : (
+                <>
+                  <h2>先聊清期待，再展开地图。</h2>
+                  <p>告诉我想去哪里、玩几天；地图会在行程生成后实时显示。</p>
+                </>
+              )}
             </div>
           )}
         </section>
@@ -543,7 +730,7 @@ export function MemberManager({ tripId }: { tripId: string }) {
             <p className="muted">
               查看者只能阅读；编辑者可修改行程。公开链接仍保持只读。
             </p>
-            {members.data?.members.map((m) => (
+            {members.data?.members?.map((m) => (
               <div className="member-row" key={m.user_id}>
                 <b>{m.username}</b>
                 <span>{m.role === "editor" ? "编辑者" : "查看者"}</span>
@@ -590,10 +777,7 @@ export function MemberManager({ tripId }: { tripId: string }) {
                 </label>
                 <label>
                   权限
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                  >
+                  <select value={role} onChange={(e) => setRole(e.target.value)}>
                     <option value="viewer">查看者</option>
                     <option value="editor">编辑者</option>
                   </select>

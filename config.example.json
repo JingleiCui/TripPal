@@ -1,11 +1,68 @@
 {
-  "model_api_key": "",
-  "model_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-  "model_name": "qwen-plus",
-  "model_enabled": false,
+  "active_model_profile": "openrouter_free",
+  "model_profiles": {
+    "openrouter_free": {
+      "model_provider": "openrouter",
+      "model_name": "inclusionai/ling-3.2-flash:free",
+      "model_api_key": "",
+      "model_enabled": false,
+      "model_timeout": 90,
+      "structured_output_method": "json_schema",
+      "model_slots": {
+        "chat": {
+          "provider": "openrouter",
+          "model": "inclusionai/ling-3.2-flash:free",
+          "extra_body": { "reasoning": { "enabled": false } }
+        },
+        "structured": {
+          "provider": "openrouter",
+          "model": "inclusionai/ling-3.2-flash:free",
+          "use_main_key": true,
+          "structured_method": "json_schema",
+          "extra_body": { "reasoning": { "enabled": false } }
+        },
+        "vision": {
+          "provider": "openrouter",
+          "model": "nvidia/nemotron-3.5-super-vl:free",
+          "use_main_key": true,
+          "enabled": true,
+          "extra_body": { "reasoning": { "enabled": false } }
+        }
+      }
+    },
+    "local_ollama": {
+      "model_provider": "ollama",
+      "model_name": "qwen3.5:9b",
+      "model_base_url": "http://127.0.0.1:11434",
+      "model_api_key": "ollama",
+      "model_enabled": true
+    },
+    "bailian_qwen": {
+      "model_provider": "dashscope",
+      "model_name": "qwen-plus",
+      "model_api_key": "",
+      "model_enabled": false
+    },
+    "google_gemini": {
+      "model_provider": "gemini",
+      "model_name": "填写你账号可用的模型名称",
+      "model_api_key": "",
+      "model_enabled": false
+    }
+  },
+  "model_providers": {},
+  "model_slots": {},
+  "vision_enabled": false,
+  "vision_api_key": "",
+  "vision_model": "qwen-vl-max-latest",
+  "vision_fixture_enabled": false,
+  "voice_enabled": false,
+  "voice_api_key": "",
+  "asr_model": "qwen3-asr-flash",
+  "tts_model": "qwen3-tts-flash",
   "amap_key": "",
   "amap_js_key": "",
   "amap_security_code": "",
   "meituan_enabled": false,
-  "voice_enabled": false
+  "fixture_enabled": true
 }

@@ -82,13 +82,7 @@ function verdict(summary: Summary, basis = "") {
           : "已记录金额在预算内";
 }
 
-export function BudgetPanel({
-  trip,
-  dayNumber,
-}: {
-  trip: Trip;
-  dayNumber: number;
-}) {
+export function BudgetPanel({ trip, dayNumber }: { trip: Trip; dayNumber: number }) {
   const client = useQueryClient(),
     plan = trip.plan as Plan;
   const ledger = useQuery({
@@ -108,7 +102,7 @@ export function BudgetPanel({
     [progress, setProgress] = useState(""),
     [error, setError] = useState("");
   const data = ledger.data,
-    current = data?.days.find((d) => d.day === dayNumber);
+    current = data?.days?.find((d) => d.day === dayNumber);
   useEffect(() => {
     if (data) {
       setTotal(data.trip.limit_cny == null ? "" : String(data.trip.limit_cny));
@@ -292,9 +286,7 @@ export function BudgetPanel({
       <div className="expense-list">
         {current.rows.map((row) => (
           <article
-            className={
-              "expense-row " + (row.subtotal_cny == null ? "unpriced" : "")
-            }
+            className={"expense-row " + (row.subtotal_cny == null ? "unpriced" : "")}
             key={row.key}
           >
             <div>
@@ -340,12 +332,7 @@ export function BudgetPanel({
           缺少 {data.trip.unpriced_count} 项金额；已确认金额{" "}
           {money(data.trip.confirmed_subtotal_cny)}。
         </p>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={busy}
-          onClick={calculateAll}
-        >
+        <Button size="sm" variant="secondary" disabled={busy} onClick={calculateAll}>
           {busy && progress ? (
             <Loader2 size={14} className="spin" />
           ) : (
@@ -357,10 +344,7 @@ export function BudgetPanel({
       </div>
       <p className="service-source-note">{data.notice}</p>
       {editing && (
-        <div
-          className="service-drawer-scrim"
-          onClick={() => !busy && setEditing(null)}
-        >
+        <div className="service-drawer-scrim" onClick={() => !busy && setEditing(null)}>
           <form
             className="service-drawer expense-editor"
             role="dialog"
@@ -413,8 +397,7 @@ export function BudgetPanel({
               >
                 {Object.entries(units)
                   .filter(
-                    ([key]) =>
-                      editing.category === "hotel" || key !== "per_room_night",
+                    ([key]) => editing.category === "hotel" || key !== "per_room_night",
                   )
                   .map(([key, label]) => (
                     <option value={key} key={key}>
@@ -498,13 +481,11 @@ export function BudgetNotice({
     queryFn: () => api<Ledger>(`/trips/${trip.id}/budget`),
     retry: false,
   });
-  const day = ledger.data?.days.find((d) => d.day === dayNumber);
+  const day = ledger.data?.days?.find((d) => d.day === dayNumber);
   if (!day) return null;
   return (
     <button
-      className={
-        "budget-inline " + (day.status === "over_budget" ? "over-budget" : "")
-      }
+      className={"budget-inline " + (day.status === "over_budget" ? "over-budget" : "")}
       onClick={onOpen}
     >
       <Wallet size={15} />

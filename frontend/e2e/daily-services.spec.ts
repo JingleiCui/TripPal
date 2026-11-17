@@ -36,14 +36,10 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
     .nth(1)
     .getByRole("button", { name: "选这家餐厅", exact: true })
     .click();
-  await expect(page.locator(".meal-detail-card").nth(1)).toContainText(
-    "演示·街角面馆",
-  );
+  await expect(page.locator(".meal-detail-card").nth(1)).toContainText("演示·街角面馆");
   await page.reload();
   await page.getByRole("tab", { name: "吃什么", exact: true }).click();
-  await expect(page.locator(".meal-detail-card").nth(1)).toContainText(
-    "演示·街角面馆",
-  );
+  await expect(page.locator(".meal-detail-card").nth(1)).toContainText("演示·街角面馆");
   await page.screenshot({
     path: "../reports/daily-food-desktop.png",
     fullPage: true,
@@ -56,18 +52,12 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
     .nth(1)
     .getByRole("button", { name: "选这家住宿", exact: true })
     .click();
-  await expect(page.locator(".stay-detail-card")).toContainText(
-    "演示·街区精品酒店",
-  );
-  await expect(page.locator(".stay-detail-card")).toContainText(
-    "你选择的住宿地点",
-  );
+  await expect(page.locator(".stay-detail-card")).toContainText("演示·街区精品酒店");
+  await expect(page.locator(".stay-detail-card")).toContainText("你选择的住宿地点");
   await page.getByRole("tab", { name: "怎么走", exact: true }).click();
   await expect(page.locator(".transport-leg").first()).toContainText("分钟");
   await page.getByLabel("当天交通方式", { exact: true }).selectOption("walk");
-  await expect(page.getByLabel("当天交通方式", { exact: true })).toHaveValue(
-    "walk",
-  );
+  await expect(page.getByLabel("当天交通方式", { exact: true })).toHaveValue("walk");
   await expect(page.locator(".transport-leg").first()).toContainText("步行");
   await page.screenshot({
     path: "../reports/daily-transport-desktop.png",
@@ -96,9 +86,7 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
     .click();
   await page.getByLabel("费用单价", { exact: true }).fill("120");
   await expect(page.locator(".expense-preview")).toContainText("240.00");
-  await page
-    .getByLabel("费用金额状态", { exact: true })
-    .selectOption("confirmed");
+  await page.getByLabel("费用金额状态", { exact: true }).selectOption("confirmed");
   await page.getByRole("button", { name: "保存这项费用", exact: true }).click();
   await expect(page.locator(".budget-verdict")).toContainText("320.00");
   await expect(page.locator(".budget-verdict")).toContainText("270.00");
@@ -110,12 +98,8 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
     fullPage: true,
   });
   await page.getByRole("tab", { name: "每日安排", exact: true }).click();
-  await expect(page.locator(".experience-timeline")).toContainText(
-    "演示·街角面馆",
-  );
-  await expect(page.locator(".experience-timeline")).toContainText(
-    "演示·街区精品酒店",
-  );
+  await expect(page.locator(".experience-timeline")).toContainText("演示·街角面馆");
+  await expect(page.locator(".experience-timeline")).toContainText("演示·街区精品酒店");
   await page.screenshot({
     path: "../reports/daily-workspace-desktop.png",
     fullPage: true,
@@ -124,9 +108,7 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
   await page.getByRole("button", { name: "行程画布", exact: true }).click();
   await expect(page.locator(".experience-timeline")).toBeVisible();
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
   await page.getByRole("button", { name: "展开地图", exact: true }).click();
   await expect(page.locator(".experience-map")).toBeVisible();

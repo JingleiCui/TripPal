@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CalendarDays,
-  FileText,
-  Loader2,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { CalendarDays, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { api, post } from "./api";
 import { Button } from "./components/ui/button";
 
@@ -54,8 +46,7 @@ export function BookingManager({ tripId }: { tripId: string }) {
   });
   const docs = useQuery({
     queryKey: ["documents"],
-    queryFn: () =>
-      api<{ id: string; name: string; status: string }[]>("/documents"),
+    queryFn: () => api<{ id: string; name: string; status: string }[]>("/documents"),
     enabled: open,
   });
   async function submit(e: React.FormEvent) {
@@ -160,9 +151,7 @@ export function BookingManager({ tripId }: { tripId: string }) {
                     安排类型
                     <select
                       value={editing.kind}
-                      onChange={(e) =>
-                        setEditing({ ...editing, kind: e.target.value })
-                      }
+                      onChange={(e) => setEditing({ ...editing, kind: e.target.value })}
                     >
                       {Object.entries(kinds).map(([k, v]) => (
                         <option value={k} key={k}>
@@ -202,9 +191,7 @@ export function BookingManager({ tripId }: { tripId: string }) {
                       type="datetime-local"
                       min={editing.start?.slice(0, 16)}
                       value={editing.end?.slice(0, 16) || ""}
-                      onChange={(e) =>
-                        setEditing({ ...editing, end: e.target.value })
-                      }
+                      onChange={(e) => setEditing({ ...editing, end: e.target.value })}
                     />
                   </label>
                 </div>
@@ -235,9 +222,7 @@ export function BookingManager({ tripId }: { tripId: string }) {
                     rows={2}
                     maxLength={2000}
                     value={editing.note || ""}
-                    onChange={(e) =>
-                      setEditing({ ...editing, note: e.target.value })
-                    }
+                    onChange={(e) => setEditing({ ...editing, note: e.target.value })}
                   />
                 </label>
                 <div className="booking-attachment">
@@ -312,9 +297,7 @@ export function BookingManager({ tripId }: { tripId: string }) {
                           <h3>{b.title}</h3>
                           <p>
                             {b.start.replace("T", " ").slice(0, 16)}
-                            {b.end
-                              ? " — " + b.end.replace("T", " ").slice(0, 16)
-                              : ""}
+                            {b.end ? " — " + b.end.replace("T", " ").slice(0, 16) : ""}
                           </p>
                           {b.location && <p>{b.location}</p>}
                           {b.reference && <p>确认号：{b.reference}</p>}

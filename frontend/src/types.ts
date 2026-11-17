@@ -112,4 +112,49 @@ export type Health = {
   providers: Record<string, string>;
   fixture_enabled: boolean;
   voice_enabled: boolean;
+  voice_ready?: boolean;
+  vision_enabled?: boolean;
+  vision_status?: string;
+  model_provider?: string; // 当前对话供应商，来自 /api/v1/health；逐槽位状态见 /api/v1/models
+};
+export type Account = {
+  name: string;
+  csrf: string;
+  preferences: Record<string, string>;
+};
+export type PendingChange = {
+  id: string;
+  kind: string;
+  summary: string;
+  changes: Record<string, unknown>;
+  expires_at: string;
+  expired: boolean;
+  applied_plan_version: number;
+  previous_plan_version: number;
+};
+export type ScreenshotFacts = {
+  status: "ok" | "synthetic" | "unavailable" | "error";
+  fields?: {
+    cities: string[];
+    dates: string[];
+    places: string[];
+    days: string | null;
+    budget_text: string | null;
+    notes: string[];
+    raw_text: string;
+  };
+  unknowns?: string[];
+  requires_confirmation?: boolean;
+  synthetic?: boolean;
+  source?: { provider: string; model?: string; retrieved_at?: string };
+  note?: string;
+  error?: string;
+};
+export type Attachment = {
+  id: string;
+  name: string;
+  kind: string;
+  parsed?: ScreenshotFacts | Record<string, unknown>;
+  suggestion: string;
+  created: string;
 };

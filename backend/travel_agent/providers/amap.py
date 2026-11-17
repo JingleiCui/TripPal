@@ -35,13 +35,65 @@ def poi_url(name, lon, lat):
     )
 
 
-def search_places(city, query):
-    raw = request(
-        "/v3/place/text",
-        {"keywords": query, "city": city, "citylimit": "true", "offset": 8, "extensions": "all"},
-        3600,
-    )
-    return normalize_places(raw, city)
+# 餐饮检索里要把「不是吃饭的地方」剔除：餐饮管理公司、中央厨房、
+# 食材/食品配送、以及各类「XX 餐饮股份有限公司」「XX 食品股份」等。
+# 它们在高德里 typecode 也落在 05 餐饮大类，仅靠大类码拦不住；
+# 用分类路径(type)与名称双重信号识别。
+NON_DINING_HINTS = (
+    "餐饮管理", "管理", "集团", "总部", "办事处", "配送", "供应链",
+    "中央厨房", "食材", "食品厂", "工业园", "商行", "贸易", "科技",
+    "投资", "咨询", "加盟", "招商", "运营", "股份", "实业", "控股",
+    "产业园", "物流", "仓储", "加工", "合作社",
+)
+
+
+def _is_dining_outlet(place):
+    category = place.get("category") or ""
+    name = place.get("name") or ""
+    # 分类路径直接标明「餐饮管理」的，是管理机构而非门店。
+    if "餐饮管理" in category or "餐饮管理" in name:
+        return False
+    # 名称出现明显企业/机构信号 → 不是可就餐门店。
+    if any(hint in name for hint in NON_DINING_HINTS):
+        return False
+    # 必须落在餐饮大类(05)，公司企业大类(17)等自然排除。
+    if not str(place.get("typecode") or "").startswith("05"):
+        return False
+    return True
+
+
+def search_places(city, query, types=None):
+    """按关键词检索城市 POI。
+
+    ``types`` 是高德 POI 大类码（如 050000 餐饮服务）。文本检索即使带
+    types，仍可能返回名称相近的公司/管理机构（例如「XX 餐饮管理有限公司」，
+    typecode 属于 170000 公司企业），因此在规范化之后按返回的 typecode
+    再兜一层，只保留目标大类，避免把企业条目当成可以吃饭的门店。
+    """
+    params = {
+        "keywords": query,
+        "city": city,
+        "citylimit": "true",
+        "offset": 8,
+        "extensions": "all",
+    }
+    if types:
+        params["types"] = types
+    raw = request("/v3/place/text", params, 3600)
+    places = normalize_places(raw, city)
+    if types:
+        if types.startswith("05"):
+            # 餐饮大类里混入餐饮管理公司/中央厨房/食材配送/股份公司等，
+            # 仅按 typecode 前缀无法剔除，改用就餐门店判定。
+            places = [place for place in places if _is_dining_outlet(place)]
+        else:
+            prefix = types.split("|")[0][:2]
+            places = [
+                place
+                for place in places
+                if str(place.get("typecode") or "").startswith(prefix)
+            ]
+    return places
 
 
 def search_nearby(city, lon, lat, category="food", query=""):
@@ -58,7 +110,10 @@ def search_nearby(city, lon, lat, category="food", query=""):
         },
         1800,
     )
-    return normalize_places(raw, city)
+    places = normalize_places(raw, city)
+    if category == "food":
+        places = [place for place in places if _is_dining_outlet(place)]
+    return places
 
 
 def place_photo_url(value):
@@ -190,6 +245,7 @@ def route_between(a, b, mode, city):
         "cost_cny": number(first.get("cost")),
         "polyline": polylines,
         "instructions": [s.get("instruction", "") for s in steps][:30],
+        "traffic": _traffic_summary(steps, mode),
         "source": source(
             "高德路线",
             "https://uri.amap.com/navigation?"
@@ -237,3 +293,78 @@ def resolve_origin(city, address):
         "address": item.get("formatted_address", address),
         "source": source("高德地理编码", poi_url(address, lon, lat), raw["retrieved_at"]),
     }
+
+
+def _traffic_summary(steps, mode):
+    if mode != "drive":
+        return {"applicable": False}
+    statuses = [s.get("traffic_status") for s in steps if isinstance(s, dict) and s.get("traffic_status")]
+    return {
+        "applicable": True,
+        "congested_steps": sum(1 for s in statuses if s in ("缓行", "拥堵")),
+        "has_congestion": any(s in ("缓行", "拥堵") for s in statuses),
+    }
+
+
+def poi_detail(poi_id, city=""):
+    """地点详情：开放时间、电话、评分、照片。poi_id 形如 'amap:B0FF...'。"""
+    raw_id = poi_id.split(":", 1)[-1] if isinstance(poi_id, str) else str(poi_id)
+    raw = request("/v3/place/detail", {"id": raw_id}, 86400)
+    data = raw["data"]
+    poi = data.get("poi") or (data.get("pois") or [None])[0]
+    if not isinstance(poi, dict):
+        raise ProviderError("empty", "没有查到该地点详情")
+    photos = poi.get("photos") or []
+    photos = list(
+        dict.fromkeys(
+            url for photo in photos if isinstance(photo, dict) and (url := place_photo_url(photo.get("url")))
+        )
+    )
+    return {
+        "id": "amap:" + poi["id"],
+        "name": str(poi.get("name", "")),
+        "city": city,
+        "address": poi.get("address") if isinstance(poi.get("address"), str) else "",
+        "category": poi.get("type", ""),
+        "phone": poi.get("tel")[:150] if isinstance(poi.get("tel"), str) else "",
+        "rating": number(poi.get("rating")),
+        "opening_text": poi.get("open_time") if isinstance(poi.get("open_time"), str) else None,
+        "photos": photos,
+        "business_area": poi.get("business_area")
+        if isinstance(poi.get("business_area"), str)
+        else "",
+        "source": source("高德地点详情", poi_url(poi.get("name", ""), 0, 0), raw["retrieved_at"]),
+    }
+
+
+def distance_matrix(origins, destinations, mode="driving"):
+    """多点到多点的距离矩阵。origins/destinations 为 (lon,lat) 字符串或含 lon/lat 的字典。"""
+
+    def fmt(point):
+        if isinstance(point, dict):
+            return f"{point['lon']},{point['lat']}"
+        return str(point)
+
+    origin_str = ";".join(fmt(o) for o in origins)
+    dest_str = ";".join(fmt(d) for d in destinations)
+    type_flag = "0" if mode == "driving" else "1"
+    params = {"origins": origin_str, "destination": dest_str, "type": type_flag}
+    if mode == "driving":
+        params["strategy"] = 0
+    raw = request("/v3/distance", params, 3600)
+    rows = raw["data"].get("results") or []
+    return {
+        "mode": mode,
+        "rows": rows,
+        "source": source("高德距离矩阵", "https://www.amap.com/", raw["retrieved_at"]),
+    }
+
+
+def traffic_route(a, b, mode="drive"):
+    """实时路况路线：复用驾车路线（已含路况），并给出拥堵摘要。"""
+    plan = route_between(a, b, mode, a.get("city", ""))
+    summary = plan.get("traffic", {})
+    plan["traffic_note"] = (
+        "路线已尽量规避拥堵" if not summary.get("has_congestion") else f"途经 {summary.get('congested_steps', 0)} 个缓行/拥堵路段"
+    )
+    return plan

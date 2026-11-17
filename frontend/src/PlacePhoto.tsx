@@ -1,25 +1,6 @@
 import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
-
-function imageUrl(value: string) {
-  try {
-    const url = new URL(value.startsWith("//") ? "https:" + value : value);
-    if (
-      url.protocol === "http:" &&
-      [
-        "store.is.autonavi.com",
-        "aos-comment.amap.com",
-        "aos-cdn-image.amap.com",
-      ].includes(url.hostname)
-    )
-      url.protocol = "https:";
-    return url.protocol === "https:" || url.origin === location.origin
-      ? url.href
-      : "";
-  } catch {
-    return "";
-  }
-}
+import { safeImageSrc } from "./lib/safeUrl";
 
 /** Use only the actual place's provider photos; a failed URL advances to its next photo. */
 export function PlacePhoto({
@@ -34,8 +15,8 @@ export function PlacePhoto({
   loading?: "lazy" | "eager";
 }) {
   const urls = Array.from(
-    new Set((photos || []).map(imageUrl).filter(Boolean)),
-  );
+    new Set((photos || []).map(safeImageSrc).filter(Boolean)),
+  ) as string[];
   const photoKey = urls.join("|");
   const [index, setIndex] = useState(0);
   useEffect(() => setIndex(0), [photoKey]);

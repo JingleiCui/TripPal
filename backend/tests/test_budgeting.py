@@ -1,4 +1,3 @@
-import copy
 from sqlalchemy import select
 from travel_agent.budgeting import calculate_budget, reference_meal_price
 from travel_agent.db import Base, engine, Session, User, Trip, DailyDetailSnapshot

@@ -2,9 +2,7 @@ import { test, expect, Page } from "@playwright/test";
 
 async function register(page: Page) {
   await page.goto("/");
-  await page
-    .getByLabel("用户名", { exact: true })
-    .fill("discover-" + Date.now());
+  await page.getByLabel("用户名", { exact: true }).fill("discover-" + Date.now());
   await page.getByLabel("密码", { exact: true }).fill("travel-discovery-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
@@ -25,12 +23,8 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
   await expect(
     page.getByRole("heading", { name: "演示·北京餐厅 1", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "查看演示·北京餐厅 1", exact: true })
-    .click();
-  await expect(
-    page.getByRole("dialog", { name: "演示·北京餐厅 1详情" }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "查看演示·北京餐厅 1", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "演示·北京餐厅 1详情" })).toBeVisible();
   await page.getByRole("button", { name: "加入旅行收藏", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "已加入收藏", exact: true }),
@@ -43,26 +37,20 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
   await page.getByRole("link", { name: "旅行收藏", exact: true }).click();
   await page.getByRole("button", { name: "编辑收藏", exact: true }).click();
   await page.getByLabel("收藏夹名称", { exact: true }).fill("北京美食之旅");
-  await page
-    .getByLabel("想去的理由", { exact: true })
-    .fill("想和朋友一起吃当地菜");
+  await page.getByLabel("想去的理由", { exact: true }).fill("想和朋友一起吃当地菜");
   await page.getByRole("button", { name: "保存收藏", exact: true }).click();
   await page.reload();
-  await expect(
-    page.getByText("想和朋友一起吃当地菜", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("想和朋友一起吃当地菜", { exact: true })).toBeVisible();
   await page.screenshot({
     path: "../reports/saved-desktop.png",
     fullPage: true,
   });
   await page.getByRole("link", { name: "用此地点规划", exact: true }).click();
   await expect(page.getByLabel("目的地", { exact: true })).toHaveValue("北京");
-  await expect(
-    page.getByLabel("还有什么特别期待？", { exact: true }),
-  ).toHaveValue(/演示·北京餐厅 1/);
-  await expect(
-    page.getByRole("checkbox", { name: /合成流程体验/ }),
-  ).toBeChecked();
+  await expect(page.getByLabel("还有什么特别期待？", { exact: true })).toHaveValue(
+    /演示·北京餐厅 1/,
+  );
+  await expect(page.getByRole("checkbox", { name: /合成流程体验/ })).toBeChecked();
   await page.getByRole("link", { name: "旅行偏好", exact: true }).click();
   await page.getByLabel("默认目的地", { exact: true }).fill("上海");
   await page.getByLabel("默认旅行天数", { exact: true }).selectOption("4");
@@ -87,9 +75,7 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
     page.getByRole("heading", { name: "演示·城市博物馆", exact: true }),
   ).toBeVisible();
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
   await page.screenshot({
     path: "../reports/explore-mobile.png",
@@ -97,9 +83,7 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
   });
   await page.goto("/saved");
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
   expect(errors).toEqual([]);
 });
@@ -115,27 +99,19 @@ test("bookings: attach receipt, edit logistics, survive refresh and remove", asy
   await page.getByRole("button", { name: "开始规划", exact: true }).click();
   await page.getByRole("button", { name: "查看每日安排", exact: true }).click();
   await page.getByRole("button", { name: "订单与凭证", exact: true }).click();
-  await page
-    .getByRole("button", { name: "添加已安排事项", exact: true })
-    .click();
+  await page.getByRole("button", { name: "添加已安排事项", exact: true }).click();
   await page.getByLabel("安排名称", { exact: true }).fill("北京住宿确认单");
   await page.getByLabel("开始时间", { exact: true }).fill("2027-05-01T14:00");
-  await page
-    .getByLabel("结束时间（可选）", { exact: true })
-    .fill("2027-05-04T12:00");
+  await page.getByLabel("结束时间（可选）", { exact: true }).fill("2027-05-04T12:00");
   await page.getByLabel("确认号（可选）", { exact: true }).fill("TRAVEL-2027");
   await page.getByLabel("上传订单凭证", { exact: true }).setInputFiles({
     name: "住宿确认.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("北京住宿，三晚，确认号 TRAVEL-2027"),
   });
-  await expect(
-    page.getByLabel("关联已有凭证", { exact: true }),
-  ).not.toHaveValue("");
+  await expect(page.getByLabel("关联已有凭证", { exact: true })).not.toHaveValue("");
   await page.getByRole("button", { name: "保存安排", exact: true }).click();
-  await expect(
-    page.getByText("确认号：TRAVEL-2027", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("确认号：TRAVEL-2027", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "关闭订单与凭证" }).click();
   await page.reload();
   await page.getByRole("button", { name: "订单与凭证", exact: true }).click();
@@ -151,9 +127,7 @@ test("bookings: attach receipt, edit logistics, survive refresh and remove", asy
   });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
   await page
     .getByRole("button", { name: "移除安排北京住宿已确认", exact: true })
@@ -170,9 +144,8 @@ test("place cards recover from broken photos and normalize trusted HTTP images",
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3vQAAAAASUVORK5CYII=",
     "base64",
   );
-  await page.route(
-    "https://store.is.autonavi.com/qa-broken-photo.jpg",
-    (route) => route.abort(),
+  await page.route("https://store.is.autonavi.com/qa-broken-photo.jpg", (route) =>
+    route.abort(),
   );
   await page.route("https://store.is.autonavi.com/qa-good-photo.jpg", (route) =>
     route.fulfill({ status: 200, contentType: "image/png", body: image }),
@@ -202,9 +175,7 @@ test("place cards recover from broken photos and normalize trusted HTTP images",
   );
   await expect
     .poll(() =>
-      photo.evaluate(
-        (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
-      ),
+      photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0),
     )
     .toBeTruthy();
 });

@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 from datetime import timedelta
+from .observability import logger
 from .config import settings
 from .db import now
 from .knowledge import es, embed
@@ -100,7 +101,7 @@ def store(owner, city, query, constraints, results):
             },
         )
     except Exception:
-        pass
+        logger.warning("semantic_cache_index_failed", exc_info=True)
     scope = scope_for(owner, city, constraints)
     ident = hashlib.sha256((scope + "\0" + query).encode()).hexdigest()
     es(
@@ -137,7 +138,7 @@ def search(owner, city, query, constraints, on_event=None):
         if settings.semantic_cache_enabled:
             store(owner, city, query, constraints, result)
     except Exception:
-        pass
+        logger.warning("semantic_cache_store_failed", exc_info=True)
     if on_event:
         on_event(hit=False)
     return result

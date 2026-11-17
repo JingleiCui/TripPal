@@ -5,19 +5,30 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
-from urllib.parse import urlparse
-import httpx
-from .config import settings
+import httpx  # noqa: F401  # 保留模块引用：测试替身经 voice.httpx.Client 注入，网关共用同一模块
 from .providers.base import ProviderError
+from .models import gateway
+from .models.registry import ConfigurationError, ready as slot_ready, resolve
+
+TTS_PATH = "/api/v1/services/aigc/multimodal-generation/generation"
 
 
 def enabled():
-    if not settings.voice_enabled or not voice_key():
+    if not slot_ready("asr"):
         raise ProviderError("disabled", "语音尚未启用，需要先完成模型账号与额度配置")
 
 
+def ready():
+    """配置是否齐备。注意：配置存在不等于已与真实服务联调通过。"""
+    return slot_ready("asr")
+
+
 def voice_key():
-    return settings.voice_api_key or (settings.model_api_key if settings.model_provider == "openai" else "")
+    """凭证解析统一交给 registry；跨域名绝不复用对话 Key。"""
+    try:
+        return resolve("asr").api_key
+    except ConfigurationError:
+        return ""
 
 
 def normalize(raw):
@@ -86,8 +97,12 @@ def normalize(raw):
 def transcribe(raw):
     enabled()
     wav = normalize(raw)
+    try:
+        spec = resolve("asr")
+    except ConfigurationError as exc:
+        raise ProviderError("configuration", str(exc)) from exc
     body = {
-        "model": settings.asr_model,
+        "model": spec.model,
         "messages": [
             {
                 "role": "user",
@@ -102,52 +117,42 @@ def transcribe(raw):
         "stream": False,
         "asr_options": {"enable_itn": False},
     }
-    with httpx.Client(timeout=60) as client:
-        response = client.post(
-            settings.voice_api_base_url + "/compatible-mode/v1/chat/completions",
-            headers={"Authorization": "Bearer " + voice_key()},
-            json=body,
-        )
-    if response.status_code != 200:
-        raise ProviderError("asr_failed", "语音识别服务拒绝或未完成请求，请核对模型、地域及额度")
-    try:
-        text = response.json()["choices"][0]["message"]["content"]
-        if not isinstance(text, str):
-            raise ValueError()
-        return {"text": text, "requires_confirmation": True, "model": settings.asr_model}
-    except (KeyError, IndexError, ValueError, TypeError) as exc:
-        raise ProviderError("schema", "语音识别返回结构不符合约定") from exc
+    text = gateway.post_chat(
+        "asr",
+        body,
+        label="语音识别",
+        failure_code="asr_failed",
+        unavailable_code="asr_unavailable",
+    )
+    return {"text": text, "requires_confirmation": True, "model": spec.model}
 
 
 def synthesize(text):
     enabled()
     if not text.strip() or len(text) > 800:
         raise ValueError("朗读文字应为 1—800 字")
-    with httpx.Client(timeout=60, follow_redirects=False) as client:
-        response = client.post(
-            settings.voice_api_base_url + "/api/v1/services/aigc/multimodal-generation/generation",
-            headers={"Authorization": "Bearer " + voice_key()},
-            json={
-                "model": settings.tts_model,
-                "input": {"text": text, "voice": "Cherry", "language_type": "Chinese"},
-            },
-        )
-        if response.status_code != 200:
-            raise ProviderError("tts_failed", "语音合成未完成，请核对模型、地域与额度")
-        url = response.json().get("output", {}).get("audio", {}).get("url", "")
-        parsed = urlparse(url)
-        if (
-            parsed.scheme not in {"http", "https"}
-            or not parsed.hostname
-            or not parsed.hostname.endswith(".aliyuncs.com")
-        ):
-            raise ProviderError("schema", "语音返回地址不在允许的服务域名内")
-        url = "https://" + url.split("://", 1)[1]
-        audio = bytearray()
-        with client.stream("GET", url) as stream:
-            stream.raise_for_status()
-            for piece in stream.iter_bytes():
-                audio.extend(piece)
-                if len(audio) > 10 * 1024 * 1024:
-                    raise ProviderError("size", "合成音频超过返回上限")
-        return bytes(audio)
+    try:
+        spec = resolve("tts")
+    except ConfigurationError as exc:
+        raise ProviderError("configuration", str(exc)) from exc
+    payload = gateway.post_json(
+        "tts",
+        TTS_PATH,
+        {
+            "model": spec.model,
+            "input": {"text": text, "voice": "Cherry", "language_type": "Chinese"},
+        },
+        label="语音合成",
+        failure_code="tts_failed",
+        unavailable_code="tts_unavailable",
+    )
+    output = payload.get("output") or {}
+    audio_info = output.get("audio") or {} if isinstance(output, dict) else {}
+    url = audio_info.get("url", "") if isinstance(audio_info, dict) else ""
+    return gateway.download(
+        url if isinstance(url, str) else "",
+        allowed_suffix=".aliyuncs.com",
+        max_bytes=10 * 1024 * 1024,
+        unavailable_code="tts_unavailable",
+        label="语音合成",
+    )

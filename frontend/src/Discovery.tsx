@@ -16,15 +16,25 @@ import {
   X,
 } from "lucide-react";
 import { api, post } from "./api";
+import { safeHref } from "./lib/safeUrl";
 import { Button } from "./components/ui/button";
 import { PlacePhoto } from "./PlacePhoto";
 import { MapPanel } from "./MapPanel";
-import type { Stop } from "./types";
+import type { Stop, Source } from "./types";
 
 export type DiscoveryPlace = Omit<
   Stop,
-  "planned_start" | "planned_end" | "locked"
-> & { category?: string; coordinate_system?: string };
+  "planned_start" | "planned_end" | "locked" | "source" | "lon" | "lat" | "photos"
+> & {
+  category?: string;
+  coordinate_system?: string;
+  source?: Source;
+  lon?: number;
+  lat?: number;
+  photos?: string[];
+  url?: string;
+  source_label?: string;
+};
 export type SavedPlace = {
   id: string;
   place: DiscoveryPlace;
@@ -184,16 +194,13 @@ export function ExplorePage() {
           正在寻找{params.city}的好去处…
         </div>
       ) : (
-        results.data && (
-          <p className="discovery-notice">{results.data.notice}</p>
-        )
+        results.data && <p className="discovery-notice">{results.data.notice}</p>
       )}
       <div className="explore-layout">
         <div className="explore-results">
           <div className="explore-results-title">
             <h2>
-              {params.city} ·{" "}
-              {categories.find((c) => c[0] === params.category)?.[1]}
+              {params.city} · {categories.find((c) => c[0] === params.category)?.[1]}
             </h2>
             <span>{places.length} 个地点</span>
           </div>
@@ -211,8 +218,7 @@ export function ExplorePage() {
                 <article
                   key={p.id}
                   className={
-                    "card discovery-place" +
-                    (selected?.id === p.id ? " selected" : "")
+                    "card discovery-place" + (selected?.id === p.id ? " selected" : "")
                   }
                 >
                   <button
@@ -221,24 +227,27 @@ export function ExplorePage() {
                     aria-label={"查看" + p.name}
                   >
                     <PlacePhoto photos={p.photos} alt={p.name} />
-                    {p.source.synthetic && <em>合成体验</em>}
+                    {p.source?.synthetic && <em>合成体验</em>}
                   </button>
-                  <button
-                    className="place-save"
-                    aria-label={(isSaved ? "已收藏" : "收藏") + p.name}
-                    aria-pressed={isSaved}
-                    disabled={!!busy || isSaved}
-                    onClick={() => save(p)}
-                  >
-                    {busy === p.id ? (
-                      <Loader2 size={17} className="spin" />
-                    ) : (
-                      <Heart
-                        size={17}
-                        fill={isSaved ? "currentColor" : "none"}
-                      />
-                    )}
-                  </button>
+                  {p.source_label === "美团" ? (
+                    <span className="source-badge meituan" aria-hidden="true">
+                      美团
+                    </span>
+                  ) : (
+                    <button
+                      className="place-save"
+                      aria-label={(isSaved ? "已收藏" : "收藏") + p.name}
+                      aria-pressed={isSaved}
+                      disabled={!!busy || isSaved}
+                      onClick={() => save(p)}
+                    >
+                      {busy === p.id ? (
+                        <Loader2 size={17} className="spin" />
+                      ) : (
+                        <Heart size={17} fill={isSaved ? "currentColor" : "none"} />
+                      )}
+                    </button>
+                  )}
                   <div className="place-card-copy">
                     <button onClick={() => setSelected(p)}>
                       <h3>{p.name}</h3>
@@ -246,14 +255,25 @@ export function ExplorePage() {
                     <p>{p.category || "地点"}</p>
                     <small>{p.address || "地址信息待核实"}</small>
                     <div>
-                      <button
-                        className="text-link"
-                        onClick={() => setSelected(p)}
-                      >
+                      <button className="text-link" onClick={() => setSelected(p)}>
                         地点详情 <ArrowRight size={13} />
                       </button>
-                      <span>{p.source.provider}</span>
+                      <span>{p.source?.provider || p.source_label || "未知来源"}</span>
                     </div>
+                    {p.source_label === "美团" && p.price_text && (
+                      <span className="meituan-price">{p.price_text}</span>
+                    )}
+                    {p.source_label === "美团" && safeHref(p.url) && (
+                      <a
+                        className="text-link meituan-link"
+                        href={safeHref(p.url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        在美团查看
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
                   </div>
                 </article>
               );
@@ -268,12 +288,19 @@ export function ExplorePage() {
                     day: 1,
                     date: "",
                     city: params.city,
-                    stops: places.map((p) => ({
-                      ...p,
-                      planned_start: "",
-                      planned_end: "",
-                      locked: false,
-                    })),
+                    stops: places
+                      .filter(
+                        (p) =>
+                          typeof p.lon === "number" &&
+                          typeof p.lat === "number" &&
+                          (p.lon !== 0 || p.lat !== 0),
+                      )
+                      .map((p) => ({
+                        ...p,
+                        planned_start: "",
+                        planned_end: "",
+                        locked: false,
+                      })) as Stop[],
                     routes: [],
                     known_route_walking_meters: 0,
                     walking_note: "",
@@ -328,16 +355,15 @@ function PlaceDialog({
         className="modal discovery-detail"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="modal-close"
-          aria-label="关闭地点详情"
-          onClick={close}
-        >
+        <button className="modal-close" aria-label="关闭地点详情" onClick={close}>
           <X size={20} />
         </button>
         <span className="eyebrow">{place.city} · 地点详情</span>
         <h2>{place.name}</h2>
         <p>{place.description || "暂无地点介绍"}</p>
+        {place.source_label === "美团" && place.price_text && (
+          <p className="meituan-price">参考：{place.price_text}</p>
+        )}
         <dl>
           <dt>地址</dt>
           <dd>{place.address || "待核实"}</dd>
@@ -347,18 +373,32 @@ function PlaceDialog({
           <dd>{place.price_text || "未提供，请以场所或预订平台为准"}</dd>
           <dt>资料来源</dt>
           <dd>
-            {place.source.provider} · {place.source.retrieved_at?.slice(0, 10)}
+            {place.source?.provider || place.source_label || "未知来源"}
+            {place.source?.retrieved_at
+              ? " · " + place.source.retrieved_at.slice(0, 10)
+              : ""}
           </dd>
         </dl>
         <div className="discovery-detail-actions">
-          <Button onClick={save} disabled={saved || saving}>
-            <Heart size={16} />
-            {saved ? "已加入收藏" : "加入旅行收藏"}
-          </Button>
-          {place.source.url && (
+          {place.source_label === "美团" ? (
+            safeHref(place.url) && (
+              <Button asChild variant="secondary">
+                <a href={safeHref(place.url)} target="_blank" rel="noopener noreferrer">
+                  在美团查看优惠
+                  <ExternalLink size={14} />
+                </a>
+              </Button>
+            )
+          ) : (
+            <Button onClick={save} disabled={saved || saving}>
+              <Heart size={16} />
+              {saved ? "已加入收藏" : "加入旅行收藏"}
+            </Button>
+          )}
+          {safeHref(place.source?.url) && (
             <Button asChild variant="secondary">
               <a
-                href={place.source.url}
+                href={safeHref(place.source?.url)}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -368,7 +408,7 @@ function PlaceDialog({
             </Button>
           )}
         </div>
-        {place.source.synthetic && (
+        {place.source?.synthetic && (
           <p className="notice">这是合成资料，不可用于实际出游。</p>
         )}
       </section>
@@ -387,9 +427,7 @@ export function SavedPlacesPage() {
     [editing, setEditing] = useState<SavedPlace | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const folders = Array.from(
-    new Set(saved.data?.map((s) => s.collection) || []),
-  );
+  const folders = Array.from(new Set(saved.data?.map((s) => s.collection) || []));
   const items = (saved.data || []).filter(
     (s) =>
       (filter === "全部收藏" || s.collection === filter) &&
@@ -472,9 +510,7 @@ export function SavedPlacesPage() {
       ) : !items.length ? (
         <div className="discovery-empty">
           <Bookmark size={36} />
-          <h2>
-            {saved.data?.length ? "没有匹配的收藏" : "把想去的地方，留在这里。"}
-          </h2>
+          <h2>{saved.data?.length ? "没有匹配的收藏" : "把想去的地方，留在这里。"}</h2>
           <p>在探索页面收藏一个地点，就能开始整理你的旅行心愿单。</p>
           <Button asChild variant="secondary">
             <Link to="/explore">
@@ -502,12 +538,10 @@ export function SavedPlacesPage() {
               </div>
               <h2>{row.place.name}</h2>
               <p>{row.place.address || "地址待核实"}</p>
-              {row.place.source.synthetic && (
+              {row.place.source?.synthetic && (
                 <span className="status-pill">合成资料 · 不可出游</span>
               )}
-              <div className="saved-note">
-                {row.note || "还没写下想去的理由。"}
-              </div>
+              <div className="saved-note">{row.note || "还没写下想去的理由。"}</div>
               <div className="saved-card-actions">
                 <button
                   className="text-link"
@@ -557,9 +591,7 @@ export function SavedPlacesPage() {
                 required
                 maxLength={60}
                 list="saved-folders"
-                onChange={(e) =>
-                  setEditing({ ...editing, collection: e.target.value })
-                }
+                onChange={(e) => setEditing({ ...editing, collection: e.target.value })}
               />
               <datalist id="saved-folders">
                 {folders.map((f) => (
@@ -573,9 +605,7 @@ export function SavedPlacesPage() {
                 rows={4}
                 maxLength={1000}
                 value={editing.note}
-                onChange={(e) =>
-                  setEditing({ ...editing, note: e.target.value })
-                }
+                onChange={(e) => setEditing({ ...editing, note: e.target.value })}
               />
             </label>
             <ErrorNotice error={error} />
@@ -738,9 +768,7 @@ export function AssistantSetup() {
                     <input
                       value={prefs.food || ""}
                       maxLength={300}
-                      onChange={(e) =>
-                        setPrefs({ ...prefs, food: e.target.value })
-                      }
+                      onChange={(e) => setPrefs({ ...prefs, food: e.target.value })}
                       placeholder="例如：喜欢本地小吃，少辣"
                     />
                   </label>
@@ -754,9 +782,7 @@ export function AssistantSetup() {
                     <select
                       aria-label="旅行节奏"
                       value={prefs.pace || ""}
-                      onChange={(e) =>
-                        setPrefs({ ...prefs, pace: e.target.value })
-                      }
+                      onChange={(e) => setPrefs({ ...prefs, pace: e.target.value })}
                     >
                       <option value="">每次单独决定</option>
                       <option>轻松慢游，每天少安排一些</option>
@@ -787,10 +813,7 @@ export function AssistantSetup() {
             </div>
             <ErrorNotice error={error || me.error} />
             <div className="setup-footer">
-              <button
-                disabled={step === 0 || busy}
-                onClick={() => setStep(step - 1)}
-              >
+              <button disabled={step === 0 || busy} onClick={() => setStep(step - 1)}>
                 上一步
               </button>
               {step < 2 ? (
@@ -799,15 +822,8 @@ export function AssistantSetup() {
                   <ArrowRight size={16} />
                 </Button>
               ) : (
-                <Button
-                  disabled={busy || me.isPending || !!me.error}
-                  onClick={save}
-                >
-                  {busy ? (
-                    <Loader2 className="spin" size={16} />
-                  ) : (
-                    <Check size={16} />
-                  )}
+                <Button disabled={busy || me.isPending || !!me.error} onClick={save}>
+                  {busy ? <Loader2 className="spin" size={16} /> : <Check size={16} />}
                   保存旅行偏好
                 </Button>
               )}
