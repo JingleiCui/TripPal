@@ -10,6 +10,8 @@ import "./app-shell.css";
 import "../design/tokens.css";
 import "./map-first.css";
 import "./agent-capabilities.css";
+// Tripal 品牌视觉最后引入，覆盖旧品牌样式；统一 Logo 来自 components/TripalLogo。
+import "./tripal.css";
 
 const client = new QueryClient({
   defaultOptions: {

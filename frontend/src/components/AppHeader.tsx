@@ -20,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Account, Health, Trip } from "../types";
+import { TripalMark } from "./TripalLogo";
 
 type RecentConversation = { id: string; slots: { destination?: string } };
 
@@ -219,12 +220,12 @@ export function AppHeader({
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <Link to="/" className="app-brand" aria-label="漫游 · 返回工作台">
+        <Link to="/" className="app-brand" aria-label="Tripal 旅伴 · 返回工作台">
           <span className="app-brand-mark" aria-hidden="true">
-            <Compass size={19} />
+            <TripalMark size={34} />
           </span>
           <b>
-            漫游<span className="app-brand-period">。</span>
+            Tripal<span className="app-brand-cn">旅伴</span>
           </b>
         </Link>
 

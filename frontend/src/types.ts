@@ -79,6 +79,22 @@ export type Plan = {
     unknown_items: string[];
     status: string;
   };
+  /** 高德预报：forecasts[].casts[]。预测期外无数据属正常，UI 需诚实回退。 */
+  weather?: {
+    forecasts?: {
+      city?: string;
+      reporttime?: string;
+      casts?: {
+        date?: string;
+        week?: string;
+        dayweather?: string;
+        nightweather?: string;
+        daytemp?: string;
+        nighttemp?: string;
+      }[];
+    }[];
+    note?: string;
+  };
   lodging?: { raw_text?: string };
   diff?: { added: string[]; removed: string[]; retained: string[] };
   findings?: { domain: string; text: string }[];

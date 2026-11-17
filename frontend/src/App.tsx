@@ -58,11 +58,19 @@ import remarkGfm from "remark-gfm";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "./components/ui/button";
 import { AppHeader } from "./components/AppHeader";
+import { TripalBrand, TripalMark } from "./components/TripalLogo";
 import { GlobalMapCanvas } from "./components/GlobalMapCanvas";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EmptyState, ErrorState, Skeleton } from "./components/ui/states";
 import { safeHref, safeImageSrc } from "./lib/safeUrl";
-import { AUTH_EXPIRED_EVENT, ApiError, api, post, setCsrf } from "./api";
+import {
+  AUTH_EXPIRED_EVENT,
+  ApiError,
+  api,
+  downloadRouteBook,
+  post,
+  setCsrf,
+} from "./api";
 import {
   ExplorePage,
   SavedPlacesPage,
@@ -71,6 +79,8 @@ import {
 } from "./Discovery";
 import { BookingManager } from "./Bookings";
 import { TripExperience } from "./TripExperience";
+import { RouteBook } from "./RouteBook";
+import { routeBookFallbackHtml } from "./lib/routeBookHtml";
 import { MapPanel } from "./MapPanel";
 import { HotelSelector } from "./HotelSelector";
 import { VoiceControls } from "./VoiceControls";
@@ -182,20 +192,15 @@ function Login({ onDone }: { onDone: (a: Account) => void }) {
     <div className="login-page">
       <div className="login-story">
         <div className="brand">
-          <span className="brand-symbol">
-            <Compass />
-          </span>
-          <b>
-            漫游<span className="brand-period">。</span>
-          </b>
+          <TripalBrand size={46} light />
         </div>
-        <span className="eyebrow light">少一点操心，多一点旅行。</span>
+        <span className="eyebrow light">AI 旅行规划助手</span>
         <h1>
-          把想去的地方，
+          一句话，
           <br />
-          连成自己的旅程。
+          安排好下一程。
         </h1>
-        <p>从一张地图出发，让路线、时间与期待都有所安排。</p>
+        <p>说出你的期待，让路线、时间与花费都有界可循。</p>
         <div className="story-route">
           <span>01 · 灵感</span>
           <i />
@@ -346,12 +351,10 @@ export default function App() {
   if (!currentAccount && (me.isPending || !me.isError))
     return (
       <div className="initial-loading ui-initial-loading">
-        <span className="app-brand-mark" aria-hidden="true">
-          <Compass size={20} />
-        </span>
-        <b>漫游</b>
+        <TripalMark size={44} />
+        <b>Tripal 旅伴</b>
+        <span className="ui-initial-hint">一句话，安排好下一程。</span>
         <Skeleton lines={2} compact />
-        <span className="ui-initial-hint">正在打开旅行工作台…</span>
       </div>
     );
   if (!currentAccount)
@@ -401,6 +404,7 @@ export default function App() {
             <Route path="/chat/:conversationId?" element={<ConversationWorkspace />} />
             <Route path="/" element={<Planner />} />
             <Route path="/trips/:id" element={<Planner />} />
+            <Route path="/trips/:id/routebook" element={<RouteBook />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/saved" element={<SavedPlacesPage />} />
             <Route path="/assistant" element={<AssistantSetup />} />
@@ -624,7 +628,9 @@ function Planner() {
     [tab, setTab] = useState("itinerary"),
     [showForm, setShowForm] = useState(false),
     [showShare, setShowShare] = useState<{ path: string; id: string } | null>(null),
-    [showHistory, setShowHistory] = useState(false);
+    [showHistory, setShowHistory] = useState(false),
+    [routeDownloading, setRouteDownloading] = useState(false),
+    [routeDownloadNote, setRouteDownloadNote] = useState("");
   const trip = useQuery({
     queryKey: ["trip", id],
     queryFn: () => api<Trip>("/trips/" + id),
@@ -791,6 +797,24 @@ function Planner() {
       setError((e as Error).message);
     }
   }
+  async function downloadTripRouteBook() {
+    if (!id || !plan || routeDownloading) return;
+    setRouteDownloading(true);
+    setRouteDownloadNote("");
+    try {
+      const kind = await downloadRouteBook(
+        `/trips/${id}/export/pdf`,
+        () => routeBookFallbackHtml(plan, undefined, id),
+      );
+      setRouteDownloadNote(
+        kind === "html" ? "PDF 生成失败，已下载设计版 HTML（可用浏览器打印为 PDF）。" : "",
+      );
+    } catch (e) {
+      setRouteDownloadNote("下载失败：" + (e as Error).message);
+    } finally {
+      setRouteDownloading(false);
+    }
+  }
   const current = plan?.days[Math.min(dayIndex, plan.days.length - 1)];
   const canEdit = !!plan && !active && !busy && trip.data?.role !== "viewer";
   return (
@@ -833,9 +857,22 @@ function Planner() {
                   版本 {trip.data?.version}
                 </Button>
                 <Button variant="secondary" size="sm" asChild>
-                  <a href={`/api/v1/trips/${id}/export/pdf`}>
+                  <Link to={`/trips/${id}/routebook`}>
+                    <BookOpen size={15} />
+                    路书预览
+                  </Link>
+                </Button>
+                <Button variant="secondary" size="sm" asChild>
+                  <a
+                    href={`/api/v1/trips/${id}/export/pdf`}
+                    aria-disabled={routeDownloading}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void downloadTripRouteBook();
+                    }}
+                  >
                     <Download size={15} />
-                    路书
+                    {routeDownloading ? "下载中…" : "路书"}
                   </a>
                 </Button>
                 <Button
@@ -1100,6 +1137,7 @@ function Planner() {
       {id && (
         <>
           <ErrorBox message={error || trip.error?.message || ""} />
+          {routeDownloadNote && <p className="notice">{routeDownloadNote}</p>}
           {showForm && (
             <section className="card edit-form">
               <div className="section-heading">

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api, post } from "./api";
 import { Button } from "./components/ui/button";
+import { TripalMark } from "./components/TripalLogo";
 import { BookingManager } from "./Bookings";
 import { TripExperience } from "./TripExperience";
 import { MapPanel } from "./MapPanel";
@@ -378,7 +379,7 @@ export function ConversationWorkspace() {
             {messages.map((message) => (
               <div className={"chat-message " + message.role} key={message.id}>
                 <span className="chat-avatar">
-                  {message.role === "user" ? "你" : <Compass size={15} />}
+                  {message.role === "user" ? "你" : <TripalMark size={20} />}
                 </span>
                 <div>{message.content}</div>
               </div>
@@ -394,7 +395,7 @@ export function ConversationWorkspace() {
               .map(([id, text]) => (
                 <div className="chat-message assistant" key={id}>
                   <span className="chat-avatar">
-                    <Compass size={15} />
+                    <TripalMark size={20} />
                   </span>
                   <div aria-live="polite" aria-label="正在生成的回复">
                     {text}

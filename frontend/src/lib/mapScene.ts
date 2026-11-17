@@ -45,9 +45,13 @@ function recompute() {
 }
 
 export function publishMapScene(id: string, scene: MapScene | null) {
+  const wasEmpty = scenes.size === 0;
   // delete + set 保证「最近发布的场景」排在最后。
   scenes.delete(id);
   if (scene) scenes.set(id, scene);
+  // 进入新的有地图页面时恢复默认展开：不能让上一次手动收起的状态
+  // 延续到下一页，否则用户会觉得「地图要点开才能看到」。
+  if (wasEmpty && scene) viewerOpen = true;
   recompute();
 }
 

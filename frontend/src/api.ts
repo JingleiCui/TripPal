@@ -171,3 +171,44 @@ export const post = <T>(path: string, body?: unknown) =>
     method: "POST",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+
+/**
+ * 下载导出的路书。服务端 PDF 失败时（缺字体、历史行程数据异常等）自动改用
+ * 传入的设计版 HTML 兜底，保证「下载路书」始终可用，而不是点下去毫无反应。
+ */
+export async function downloadRouteBook(
+  path: string,
+  fallbackHtml: () => string,
+  pdfFilename = "travel-roadbook.pdf",
+): Promise<"pdf" | "html"> {
+  let blob: Blob | null = null;
+  try {
+    const headers = new Headers();
+    if (csrf) headers.set("X-CSRF-Token", csrf);
+    headers.set("X-Request-Id", newRequestId());
+    const response = await fetch("/api/v1" + path, {
+      headers,
+      credentials: "same-origin",
+    });
+    if (response.ok) {
+      const candidate = await response.blob();
+      // 只认真正的 PDF：后端偶尔会以 200 返回错误页，不能把它存成 .pdf。
+      const magic = new TextDecoder().decode(await candidate.slice(0, 5).arrayBuffer());
+      if (candidate.size > 100 && magic === "%PDF-") blob = candidate;
+    }
+  } catch {
+    // 下面统一走兜底。
+  }
+  const isPdf = blob !== null;
+  const finalBlob = blob ?? new Blob([fallbackHtml()], { type: "text/html;charset=utf-8" });
+  const filename = isPdf ? pdfFilename : pdfFilename.replace(/\.pdf$/i, ".html");
+  const url = URL.createObjectURL(finalBlob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return isPdf ? "pdf" : "html";
+}

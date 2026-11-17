@@ -17,7 +17,9 @@ import {
   RefreshCw,
   Search,
   Star,
+  Sun,
   Utensils,
+  Wallet,
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -109,6 +111,16 @@ const slotNames: Record<string, string> = {
   dinner: "晚餐",
   hotel: "住宿",
 };
+
+/** 当天真实预报（高德 casts 按日期匹配），未查到返回 null，绝不编造。 */
+function dayWeather(plan: Plan, date?: string) {
+  const casts = plan.weather?.forecasts?.flatMap((f) => f.casts ?? []) ?? [];
+  if (!date) return null;
+  const short = date.slice(5);
+  const hit = casts.find((c) => c.date === date || c.date?.endsWith(short));
+  if (!hit) return null;
+  return `${hit.dayweather || "天气"}${hit.daytemp ? ` ${hit.daytemp}°` : ""}`;
+}
 
 function PlaceFacts({ place, kind }: { place: Place; kind?: string }) {
   return (
@@ -562,6 +574,25 @@ export function TripExperience({
                   </span>
                   {data.fixture && <em>合成体验</em>}
                 </div>
+                {/* 当日天气 · 花费 · 步行：与当天路线同屏（对应设计稿） */}
+                <div className="day-context">
+                  <span className="dc-item">
+                    <Sun size={13} />
+                    {dayWeather(plan, current.date) || (plan.weather?.note ? "天气待核实" : "出行前查询预报")}
+                  </span>
+                  <span className="dc-sep">｜</span>
+                  <span className="dc-item dc-cost">
+                    <Wallet size={13} />
+                    当日已知交通 {data.known_transport_cny_per_person > 0
+                      ? `¥${data.known_transport_cny_per_person}`
+                      : "待核实"}
+                  </span>
+                  <span className="dc-sep">｜</span>
+                  <span className="dc-item">
+                    <Footprints size={13} />
+                    步行 {(data.walking_meters / 1000).toFixed(1)} km
+                  </span>
+                </div>
                 {trip && view !== "budget" && (
                   <BudgetNotice
                     trip={trip}
@@ -638,6 +669,11 @@ export function TripExperience({
                                 place={entry.place}
                                 kind={entry.kind === "meal" ? "food" : ""}
                               />
+                              {entry.place.price_text && (
+                                <span className="stop-cost">
+                                  费用参考：{entry.place.price_text}
+                                </span>
+                              )}
                               {entry.kind === "place" && (
                                 <div className="timeline-actions">
                                   <span>建议停留 {entry.duration} 分钟</span>

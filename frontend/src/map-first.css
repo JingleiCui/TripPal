@@ -41,10 +41,29 @@ body:has(.mf-shell) {
   color: #232b27;
 }
 
-/* ---------- 页面层：普通文档流，不再穿透给地图 ---------- */
+/* ---------- 页面层：左侧信息卡片 + 右侧地图，共处一个真实两栏网格 ----------
+   地图不再是 position:fixed 浮层：它占据自己的列，和卡片文档流互不叠压。
+   用户点「收起」后网格退回单栏，由右下角按钮恢复。 */
+.mf-shell.mf-travel-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  min-height: 100vh;
+}
+body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view {
+  grid-template-columns: minmax(0, 1fr) minmax(0, clamp(420px, 44vw, 860px));
+}
+.mf-shell.mf-travel-view > .app-main {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
 .mf-shell .app-main {
   position: relative;
-  z-index: 2;
+  /* 不要在这里建立层叠上下文：否则页面内的详情抽屉 / 弹窗（z-index 60）
+     会被页眉（z-index 40）盖住，顶部标题和关闭按钮点不到。 */
+  z-index: auto;
   padding-top: 122px;
   min-height: 100vh;
   background: transparent;
@@ -192,26 +211,25 @@ body:has(.mf-shell) {
 }
 
 /* ==========================================================================
-   右侧常驻地图面板：默认显示、占比大；不是模态框，页面照常上下滚动
+   右侧常驻地图面板：默认显示、占比大；它是布局中的一列，不是浮层。
    ========================================================================== */
 .mf-map-viewer {
-  position: fixed;
-  top: 116px;
-  right: 18px;
-  bottom: 18px;
-  width: min(56vw, 920px);
-  z-index: 6;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease;
+  /* 无场景 / 用户主动收起时彻底不参与布局，避免产生隐式第二列 */
+  display: none;
 }
 .mf-map-viewer.is-open {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+  display: block;
+  box-sizing: border-box;
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 116px;
+  align-self: start;
+  width: auto;
+  height: calc(100vh - 134px);
+  min-width: 0;
+  padding: 0 14px 16px 0;
+  z-index: 1;
 }
 .mf-map-dialog {
   position: relative;
@@ -226,13 +244,8 @@ body:has(.mf-shell) {
   box-shadow: 0 14px 38px rgba(35, 43, 39, 0.16);
 }
 
-/* 有地图的页面：左侧内容让出右侧面板宽度，内部两栏收成单栏 */
-body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
-body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
-body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
-  max-width: none;
-  padding-right: calc(min(56vw, 920px) + 42px);
-}
+/* 左侧信息区内部收成单栏：所有行程卡片/详情卡完整排在地图左侧，
+   不再有卡片被地图盖住、内容看不全的情况。 */
 body:has(.mf-map-viewer.is-open)
   .mf-travel-view
   .app-main
@@ -243,7 +256,7 @@ body:has(.mf-map-viewer.is-open)
     .explore-layout,
     .discovery-grid
   ) {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 .mf-map-dialog-bar {
   flex: 0 0 auto;
@@ -736,13 +749,8 @@ body:has(.consent-banner) .mf-map-fab {
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 1250px) {
-  .mf-map-viewer {
-    width: min(52vw, 720px);
-  }
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
-    padding-right: calc(min(52vw, 720px) + 34px);
+  body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view {
+    grid-template-columns: minmax(0, 1fr) minmax(0, clamp(380px, 46vw, 720px));
   }
 }
 
@@ -778,22 +786,27 @@ body:has(.consent-banner) .mf-map-fab {
   .mf-steps {
     display: none;
   }
-  /* 移动端：地图默认占据上半屏，内容顺延到下方，两者互不遮挡 */
-  .mf-map-viewer {
-    top: 74px;
-    left: 12px;
-    right: 12px;
-    bottom: auto;
+  /* 移动端：地图在上、内容在下，同为文档流，互不遮挡 */
+  .mf-shell.mf-travel-view,
+  body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mf-map-viewer.is-open {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    top: auto;
     width: auto;
     height: 44vh;
+    margin-top: 74px;
+    padding: 0 12px 12px;
   }
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main {
-    padding-top: calc(74px + 44vh + 14px);
+  .mf-shell.mf-travel-view > .app-main {
+    grid-column: 1;
+    grid-row: 2;
   }
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .page,
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .planner,
-  body:has(.mf-map-viewer.is-open) .mf-shell .app-main .chat-page {
-    padding-right: 14px;
+  body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view > .app-main {
+    padding-top: 14px;
   }
   .mf-map-dialog-bar {
     padding: 10px 12px;

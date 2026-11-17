@@ -1,0 +1,462 @@
+/* ==========================================================================
+   Tripal 旅伴 · 品牌视觉落地层
+   --------------------------------------------------------------------------
+   对应 Ardot 设计稿 v2（file 748410942732274）：奶油底 / 珊瑚 / 薄荷 / 奶油黄
+   柔和、圆润、可爱，但保持信息层级清晰。本层在最后引入，覆盖旧品牌样式。
+   ========================================================================== */
+
+:root {
+  --tp-cream: #fff7f1;
+  --tp-coral: #ff8a6b;
+  --tp-coral-deep: #ea6e4e;
+  --tp-mint: #5fc9ac;
+  --tp-butter: #ffce73;
+  --tp-ink: #3b3432;
+  --tp-muted: #8a817c;
+  --tp-line: #f0e3d9;
+  --tp-card: #ffffff;
+}
+
+/* ---------- 统一品牌字标：全站 Logo 均来自 TripalLogo.tsx ---------- */
+.tripal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--tp-ink);
+}
+.tripal-brand .tripal-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.tripal-brand .tripal-brand-text b {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 17px;
+}
+.tripal-brand .tripal-brand-cn {
+  margin-left: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tp-coral-deep);
+}
+.tripal-brand .tripal-brand-text small {
+  margin-top: 3px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--tp-muted);
+}
+.tripal-brand-light,
+.tripal-brand-light .tripal-brand-text b,
+.tripal-brand-light .tripal-brand-cn {
+  color: #fffaf6;
+}
+.tripal-brand-light .tripal-brand-text small {
+  color: #ffe4da;
+}
+
+/* 页眉品牌：让统一 Logo 替换原 Compass 图形 */
+.app-brand .app-brand-mark,
+.mf-shell .app-brand-mark {
+  width: auto;
+  height: auto;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-brand .app-brand-mark svg {
+  width: 34px;
+  height: 34px;
+}
+.app-brand .app-brand-cn {
+  margin-left: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tp-coral-deep);
+}
+
+/* 登录页故事区品牌 */
+.login-story .brand {
+  display: inline-flex;
+}
+.login-story .tripal-brand,
+.login-story .tripal-brand .tripal-brand-text b {
+  color: #fffaf6;
+}
+.login-story .tripal-brand-cn {
+  color: #ffe4da;
+}
+
+/* 初始加载态品牌 */
+.ui-initial-loading .tripal-brand {
+  justify-content: center;
+}
+
+/* ---------- 首页：旅行灵感卡片柔和化 ---------- */
+.discovery-home .category-chip {
+  border-radius: 999px;
+}
+.home-composer {
+  border-radius: 22px;
+}
+.destination-card {
+  border-radius: 20px;
+}
+
+/* ---------- 每日行程：当日天气 / 花费 / 步行 与路线同屏 ---------- */
+.day-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 2px 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #fff3ec 0%, #f0f9f5 100%);
+  border: 1px solid var(--tp-line);
+  font-size: 12px;
+  color: var(--tp-ink);
+}
+.day-context .dc-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.day-context .dc-item svg {
+  color: var(--tp-coral-deep);
+}
+.day-context .dc-sep {
+  color: #e4d6cd;
+}
+.day-context .dc-cost {
+  color: var(--tp-coral-deep);
+  font-weight: 700;
+}
+.day-cost-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #ecf8f4;
+  color: #2e9e82;
+  font-size: 12px;
+}
+.day-cost-detail b {
+  font-weight: 700;
+}
+.day-cost-detail span {
+  color: #5e7a72;
+}
+/* 站点花费贴在对应路线上 */
+.timeline-entry .stop-cost,
+.draft-place .stop-cost {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--tp-mint);
+  font-weight: 600;
+}
+
+/* ---------- 导出路书页 ---------- */
+.rb-page {
+  position: relative;
+  z-index: 3;
+  --rb-cream: #fff7f1;
+  --rb-coral: #ff8a6b;
+  --rb-coral-deep: #ea6e4e;
+  --rb-mint: #5fc9ac;
+  --rb-blue: #7b8bd8;
+  --rb-ink: #3b3432;
+  --rb-muted: #988d87;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 0 60px;
+  background: var(--rb-cream);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(59, 52, 50, 0.14);
+}
+.rb-header {
+  background: linear-gradient(135deg, #ff8a6b 0%, #fa7a58 100%);
+  color: #fff;
+  padding: 26px 40px 30px;
+}
+.rb-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+/* 珊瑚色箱体不能直接压在橙色页眉上：加一块奶油白底托，Logo 本身保持全局唯一版本 */
+.rb-mark-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  background: #fffdf9;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 17px;
+  box-shadow: 0 7px 18px rgba(120, 48, 30, 0.2);
+}
+.rb-download-note {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  color: #fff;
+  font-size: 12px;
+}
+.rb-header-doc {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: #ffe4da;
+  font-weight: 700;
+}
+.rb-header h1 {
+  margin: 18px 0 6px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.rb-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #ffe4da;
+}
+.rb-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rb-actions .rb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.rb-actions .rb-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.rb-actions .rb-btn:disabled {
+  opacity: 0.62;
+  cursor: progress;
+}
+
+.rb-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 22px 40px 0;
+  padding: 18px;
+  background: #fff;
+  border-radius: 16px;
+}
+.rb-stat {
+  text-align: center;
+}
+.rb-stat b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+}
+.rb-stat span {
+  font-size: 11px;
+  color: var(--rb-muted);
+}
+.rb-stat:nth-child(1) b { color: var(--rb-coral-deep); }
+.rb-stat:nth-child(2) b { color: var(--rb-mint); }
+.rb-stat:nth-child(3) b { color: #e8a93c; }
+.rb-stat:nth-child(4) b { color: var(--rb-blue); }
+
+.rb-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  padding: 24px 40px 0;
+  align-items: start;
+}
+.rb-left,
+.rb-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.rb-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--rb-ink);
+  letter-spacing: 0.02em;
+}
+.rb-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+}
+.rb-day {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+}
+.rb-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.rb-day-head b {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--rb-coral-deep);
+}
+.rb-day-head small {
+  font-size: 11px;
+  color: var(--rb-muted);
+}
+/* 天气 + 花费与路线同一天块内 */
+.rb-day-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.rb-day.d0 .rb-day-context { background: #fff3ec; color: #8a6e2e; }
+.rb-day.d1 .rb-day-context { background: #ecf8f4; color: #5e7a72; }
+.rb-day.d2 .rb-day-context { background: #f0f2fc; color: #5d6796; }
+.rb-day.d0 .rb-day-head b { color: var(--rb-coral-deep); }
+.rb-day.d1 .rb-day-head b { color: var(--rb-mint); }
+.rb-day.d2 .rb-day-head b { color: var(--rb-blue); }
+.rb-day-context .rb-cost {
+  font-weight: 800;
+  margin-left: auto;
+}
+.rb-day.d0 .rb-cost { color: var(--rb-coral-deep); }
+.rb-day.d1 .rb-cost { color: #2e9e82; }
+.rb-day.d2 .rb-cost { color: var(--rb-blue); }
+.rb-day-context .rb-sep { color: #d8cec8; }
+
+.rb-stop {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px dashed #f0e6de;
+  font-size: 12px;
+}
+.rb-stop:first-of-type { border-top: 0; }
+.rb-stop .rb-time { color: var(--rb-coral-deep); font-weight: 700; }
+.rb-stop.d1 .rb-time { color: #2e9e82; }
+.rb-stop.d2 .rb-time { color: var(--rb-blue); }
+.rb-stop .rb-place b { display: block; color: var(--rb-ink); }
+.rb-stop .rb-place small { color: var(--rb-muted); }
+.rb-stop .rb-price { color: var(--rb-mint); font-weight: 700; white-space: nowrap; }
+
+.rb-notes {
+  background: #fff4de;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.rb-notes b { font-size: 12px; color: #8a6e2e; }
+.rb-notes p { margin: 6px 0 0; font-size: 12px; color: #7a6540; line-height: 1.7; }
+
+.rb-info-card h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--rb-ink);
+}
+.rb-info-card p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #6b625e;
+  line-height: 1.65;
+}
+.rb-info-card .rb-muted { color: var(--rb-muted); }
+.rb-budget-row {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.rb-budget-row .rb-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: #f3ece6;
+  overflow: hidden;
+}
+.rb-budget-row .rb-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* 右侧大幅插画路线图 */
+.rb-map-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+}
+.rb-map-card h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--rb-ink);
+}
+.rb-map-canvas {
+  width: 100%;
+  border-radius: 14px;
+  display: block;
+  background: #eaf2ec;
+}
+.rb-map-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: var(--rb-muted);
+}
+.rb-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.rb-map-legend i { width: 9px; height: 9px; border-radius: 50%; }
+
+.rb-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 26px 40px 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--tp-line);
+  font-size: 11px;
+  color: var(--rb-muted);
+}
+
+@media (max-width: 900px) {
+  .rb-grid { grid-template-columns: 1fr; padding: 18px; }
+  .rb-header, .rb-stats, .rb-footer { padding-left: 20px; padding-right: 20px; }
+  .rb-stats { margin-left: 20px; margin-right: 20px; grid-template-columns: repeat(2, 1fr); }
+  .rb-header h1 { font-size: 26px; }
+}

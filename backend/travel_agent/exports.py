@@ -50,13 +50,6 @@ def markdown(plan):
             )
     lines.extend(
         [
-            f"- {p['planned_start']}—{p['planned_end']} {p['name']}",
-            f"  {p.get('address', '')}；开放信息：{p.get('opening_text') or '待核实'}",
-            f"  来源：{source.get('url') or source.get('provider')}，获取于 {source.get('retrieved_at', '未知')}",
-        ]
-    )
-    lines.extend(
-        [
             "",
             "## 待确认事项",
             *["- " + w for w in plan.get("warnings", [])],
