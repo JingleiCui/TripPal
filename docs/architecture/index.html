@@ -1,0 +1,128 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tripal · 架构图选集</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;color:#263743;font:15px/1.65 "PingFang SC",Arial,sans-serif}main{max-width:1440px;margin:auto;padding:32px}h1{font-size:32px;margin:0}h2{font-size:22px;margin:0}p{margin:8px 0}small{color:#637582}nav{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}a{color:#355e78}section{background:white;border:1px solid #d8e0e6;border-radius:8px;padding:24px;margin:24px 0}header{display:flex;justify-content:space-between;gap:24px}header>label{white-space:nowrap}.tools{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:20px 0}figure{margin:0;height:580px;overflow:auto;border:1px solid #e3e8ed;background:#fff}figure img{width:100%;max-width:none;display:block}pre{overflow:auto;padding:16px;background:#f4f6f8;font-size:13px}summary{cursor:pointer;margin-top:16px}input[type=range]{vertical-align:middle;width:120px}.selection{position:sticky;top:0;background:#eaf1f6;padding:12px 20px;border:1px solid #c8d3db;z-index:2}@media(max-width:700px){main{padding:16px}header{display:block}figure{height:440px}.tools{gap:12px}}
+</style><main><h1>Tripal 架构图选集</h1><p>五种视角，同一份实现。参照课程文档中的工程图画法：虚线分区、浅蓝模块、蓝色调用箭头、标准流程符号。可放大检查、下载素材；01 与 03 已用于中英文 README。</p><p>当前 README：01 整体架构 + 03 LangGraph 工作流。图的边界和源码核对说明见 <a href="README.md">选集说明</a>。</p><p>新版提供可编辑的 draw.io、SVG 和高清 PNG。生成脚本：<a href="../../scripts/draw_architecture.py">Python / SVG</a> · <a href="../../scripts/export_architecture.mjs">PNG 导出脚本</a></p><nav><a href="#d01">01 整体架构</a><a href="#d02">02 分层架构</a><a href="#d03">03 LangGraph 工作流</a><a href="#d04">04 业务架构</a><a href="#d05">05 技术架构</a></nav><div class="selection" aria-live="polite">已选编号：<b id="selection">01、03</b></div><section id="d01"><header><div><h2>01 · 整体架构</h2><p>回答系统由哪些部分组成，以及一次规划如何形成反馈闭环。</p><small>适合 README 的第一张架构图。</small></div><label><input type="checkbox" value="01" checked> 选择此图</label></header><div class="tools"><a href="../assets/architecture/structured/01-overall.svg">打开 SVG 原图</a><a href="../assets/architecture/structured/01-overall.png" download>下载 PNG</a><a href="../assets/architecture/structured/01-overall.drawio" download>下载可编辑 draw.io</a><label>缩放 <input type="range" min="45" max="220" value="100" aria-label="整体架构缩放" oninput="this.closest('section').querySelector('img').style.width=this.value+'%'"></label></div><figure><img src="../assets/architecture/structured/01-overall.svg" alt="整体架构"></figure><details><summary>旧版 Mermaid 逻辑参考（布局与新版不同）</summary><pre>flowchart TB
+  WEB[&quot;旅行工作台 · React&lt;br/&gt;描述需求 / 探索地点 / 调整行程 / 查看依据&quot;]
+  API[&quot;FastAPI 接口&lt;br/&gt;身份认证 / 行程权限 / REST / SSE&quot;]
+  BIZ[&quot;旅行业务服务&lt;br/&gt;确定性访谈 / 吃住行 / 收藏 / 资料与导出&quot;]
+  RUN[&quot;异步规划引擎&lt;br/&gt;Celery Worker + LangGraph + Harness&lt;br/&gt;调查 → 编排 → 约束校验 → 审阅&quot;]
+  MODEL[&quot;可切换模型网关&quot;]
+  TOOLS[&quot;旅行事实工具&lt;br/&gt;高德 / 美团&quot;]
+  KB[&quot;私人资料检索&lt;br/&gt;解析 / BGE / 混合召回&quot;]
+  SQL[(&quot;MySQL&lt;br/&gt;任务 / 行程版本 / 图检查点 / 事件&quot;)]
+  REDIS[(&quot;Redis&lt;br/&gt;Celery broker / 临时缓存&quot;)]
+  ES[(&quot;Elasticsearch&lt;br/&gt;全文与向量派生索引&quot;)]
+  WEB --&gt;|HTTP 请求| API --&gt; BIZ
+  BIZ --&gt;|生成 / 调整任务| RUN
+  BIZ --&gt;|查询与写入业务状态| SQL
+  RUN --&gt; MODEL &amp; TOOLS &amp; KB
+  RUN &lt;--&gt;|队列投递 / 消息消费| REDIS
+  RUN &lt;--&gt;|读取任务 / 恢复检查点 / 保存结果| SQL
+  KB --&gt; ES
+  SQL -.-&gt;|读取消息与执行事件| API
+  API -.-&gt;|SSE 持续反馈| WEB
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  class RUN accent
+  class SQL,REDIS,ES store
+</pre></details></section><section id="d02"><header><div><h2>02 · 分层架构</h2><p>按职责划分交互、业务、编排、适配和数据层，突出模块边界。</p><small>适合工程设计说明；与整体图可二选一。</small></div><label><input type="checkbox" value="02"> 选择此图</label></header><div class="tools"><a href="../assets/architecture/structured/02-layered.svg">打开 SVG 原图</a><a href="../assets/architecture/structured/02-layered.png" download>下载 PNG</a><a href="../assets/architecture/structured/02-layered.drawio" download>下载可编辑 draw.io</a><label>缩放 <input type="range" min="45" max="220" value="100" aria-label="分层架构缩放" oninput="this.closest('section').querySelector('img').style.width=this.value+'%'"></label></div><figure><img src="../assets/architecture/structured/02-layered.svg" alt="分层架构"></figure><details><summary>旧版 Mermaid 逻辑参考（布局与新版不同）</summary><pre>flowchart TB
+  L1[&quot;交互层 · React 旅行工作台&lt;br/&gt;对话规划 / 地点探索与地图 / 每日行程与路书&quot;]
+  L2[&quot;接入与业务层 · FastAPI&lt;br/&gt;认证与成员权限 / 确定性访谈 / 行程版本 / 吃住行与导出&quot;]
+  L3[&quot;异步编排层 · Celery Worker + LangGraph&lt;br/&gt;任务派发与租约 / 领域调查 / 行程编排 / 约束校验与恢复&quot;]
+  L4[&quot;能力适配层 · 可替换能力&lt;br/&gt;模型网关与结构化输出 / 高德与美团 / 文档解析与混合检索&quot;]
+  L5[&quot;数据基础层 · 职责分离&lt;br/&gt;MySQL：业务事实与检查点 / Redis：消息与缓存 / ES：派生索引&quot;]
+  L1 --&gt; L2 --&gt; L3 --&gt; L4 --&gt; L5
+  G[&quot;横切关注点&lt;br/&gt;用户隔离 / 来源与未知信息 / 事件记录&lt;br/&gt;执行阶段：Harness 调用预算与能力授权&quot;]
+  G -.-&gt; L2
+  G -.-&gt; L3
+  class L3,G accent
+  class L5 store
+
+classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3
+</pre></details></section><section id="d03"><header><div><h2>03 · LangGraph 工作流</h2><p>逐一对应实际节点、纯模型分支、约束回路和持久化中断。</p><small>适合突出 Agent 实现，与整体图搭配。</small></div><label><input type="checkbox" value="03" checked> 选择此图</label></header><div class="tools"><a href="../assets/architecture/structured/03-langgraph.svg">打开 SVG 原图</a><a href="../assets/architecture/structured/03-langgraph.png" download>下载 PNG</a><a href="../assets/architecture/structured/03-langgraph.drawio" download>下载可编辑 draw.io</a><label>缩放 <input type="range" min="45" max="220" value="100" aria-label="LangGraph 工作流缩放" oninput="this.closest('section').querySelector('img').style.width=this.value+'%'"></label></div><figure><img src="../assets/architecture/structured/03-langgraph.svg" alt="LangGraph 工作流"></figure><details><summary>旧版 Mermaid 逻辑参考（布局与新版不同）</summary><pre>flowchart TB
+  START([&quot;START&quot;]) --&gt; REQ[&quot;requirements · 需求确认&lt;br/&gt;日期 / 出发地；允许无日期草案时可跳过&quot;]
+  REQ --&gt; STRATEGY{&quot;strategy = pure&lt;br/&gt;且满足纯模型条件？&quot;}
+  STRATEGY --&gt;|是| PURE[&quot;pure · 无工具模型草案&lt;br/&gt;明确标记未经事实核验&quot;] --&gt; END([&quot;END&quot;])
+  STRATEGY --&gt;|否| DEL[&quot;delegate · 选择必要调查领域&quot;]
+  DEL --&gt; DEST[&quot;destination · 检索候选地点&lt;br/&gt;保留已锁定地点与来源&quot;]
+  DEST --&gt; RES[&quot;research · 按需顺序调查&lt;br/&gt;天气 / 住宿商品 / 私人资料&quot;]
+  RES --&gt; ARR[&quot;arrange · 按日编排候选地点 ID&quot;]
+  ARR --&gt; VAL[&quot;validate · 查询实际路线并校验约束&quot;]
+  VAL --&gt; REV[&quot;review · 审阅冲突与警告&quot;]
+  REV --&gt; CHANGE{&quot;需求是否不同于&lt;br/&gt;当前 plan.requirements？&quot;}
+  CHANGE --&gt;|已改变| ARR
+  CHANGE --&gt;|未改变| VAR[&quot;variants · 按需生成 A/B&lt;br/&gt;复用研究结果；内部再次编排与校验&quot;]
+  VAR --&gt; NAR[&quot;narrate · 生成说明 / 流式输出&quot;] --&gt; END
+  REQ -.-&gt;|必要信息缺失时 interrupt| WAIT[&quot;图暂停 · MySQL checkpoint&lt;br/&gt;等待补充 / 取舍&lt;br/&gt;Command resume 在原中断节点恢复&quot;]
+  REV -.-&gt;|首次发现相关冲突时 interrupt| WAIT
+  END -.-&gt; POST[&quot;图外业务处理 · Worker / API&lt;br/&gt;有候选：waiting_choice → 用户选择后保存&lt;br/&gt;无候选：版本复查 → 保存 Revision&quot;]
+  class REQ,ARR,VAL,REV accent
+  class WAIT,POST note
+
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3
+</pre></details></section><section id="d04"><header><div><h2>04 · 业务架构</h2><p>从需求、推荐、确认、调整到导出，说明产品闭环与支撑能力。</p><small>适合 README 项目简介之后。</small></div><label><input type="checkbox" value="04"> 选择此图</label></header><div class="tools"><a href="../assets/architecture/structured/04-business.svg">打开 SVG 原图</a><a href="../assets/architecture/structured/04-business.png" download>下载 PNG</a><a href="../assets/architecture/structured/04-business.drawio" download>下载可编辑 draw.io</a><label>缩放 <input type="range" min="45" max="220" value="100" aria-label="业务架构缩放" oninput="this.closest('section').querySelector('img').style.width=this.value+'%'"></label></div><figure><img src="../assets/architecture/structured/04-business.svg" alt="业务架构"></figure><details><summary>旧版 Mermaid 逻辑参考（布局与新版不同）</summary><pre>flowchart TB
+  USER[&quot;旅行者的目标：把需求变成可调整的每日行程&quot;]
+  subgraph PLAN[&quot;规划主闭环&quot;]
+    direction LR
+    NEED[&quot;描述需求&lt;br/&gt;城市 / 日期 / 预算 / 偏好&quot;] --&gt; CAND[&quot;调查与推荐&lt;br/&gt;有来源的候选与方案&quot;]
+    CAND --&gt; CONF[&quot;确认方案&lt;br/&gt;需要比较时先选 A/B&quot;]
+    CONF --&gt; TRIP[&quot;管理行程&lt;br/&gt;按天查看 / 锁定 / 调整&quot;]
+    TRIP --&gt; BOOK[&quot;带走路书&lt;br/&gt;分享 / PDF / Markdown&quot;]
+    TRIP --&gt;|提出新要求| NEED
+  end
+  USER --&gt; PLAN
+  subgraph SUPPORT[&quot;支撑旅行规划的业务能力&quot;]
+    direction LR
+    EXP[&quot;地点探索与收藏&lt;br/&gt;景点 / 餐饮 / 住宿&quot;]
+    DAILY[&quot;每日吃住行与预算&lt;br/&gt;替换餐厅 / 住宿 / 交通方式&quot;]
+    DOC[&quot;私人资料&lt;br/&gt;导入攻略 / 检索原文位置&quot;]
+    COL[&quot;账户与行程协作&lt;br/&gt;owner / editor / viewer&quot;]
+  end
+  SUPPORT -.-&gt;|候选 / 证据 / 吃住行 / 协作授权| PLAN
+  RULE[&quot;业务底线：未知信息待核实 · 修改保留版本 · 来源可以检查&lt;br/&gt;预订只记录意向，不执行付款&quot;] -.-&gt; PLAN
+  class CAND,TRIP accent
+  class RULE note
+
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3
+</pre></details></section><section id="d05"><header><div><h2>05 · 技术架构</h2><p>列出客户端、Python 服务、执行组件、基础服务和外部平台的技术组合。</p><small>适合技术栈说明，或与分层图二选一。</small></div><label><input type="checkbox" value="05"> 选择此图</label></header><div class="tools"><a href="../assets/architecture/structured/05-technical.svg">打开 SVG 原图</a><a href="../assets/architecture/structured/05-technical.png" download>下载 PNG</a><a href="../assets/architecture/structured/05-technical.drawio" download>下载可编辑 draw.io</a><label>缩放 <input type="range" min="45" max="220" value="100" aria-label="技术架构缩放" oninput="this.closest('section').querySelector('img').style.width=this.value+'%'"></label></div><figure><img src="../assets/architecture/structured/05-technical.svg" alt="技术架构"></figure><details><summary>旧版 Mermaid 逻辑参考（布局与新版不同）</summary><pre>flowchart TB
+  subgraph CLIENT[&quot;客户端技术&quot;]
+    direction LR
+    C1[&quot;React 18 / TypeScript / Vite&lt;br/&gt;Router / TanStack Query&quot;] ~~~ C2[&quot;AMap JS SDK&lt;br/&gt;真实地图与路线&quot;] ~~~ C3[&quot;外部 MCP 客户端&lt;br/&gt;可选入口&quot;]
+  end
+  subgraph ACCESS[&quot;应用接入 · Python 3.11&quot;]
+    direction LR
+    A1[&quot;FastAPI + Uvicorn&lt;br/&gt;REST / SSE / 认证授权&quot;] ~~~ A2[&quot;自实现 MCP stdio 服务&lt;br/&gt;JSON-RPC / scope / AuditLog&quot;]
+  end
+  subgraph EXEC[&quot;异步执行与能力组件&quot;]
+    direction LR
+    E1[&quot;Celery + LangGraph&lt;br/&gt;任务 / 检查点 / 中断恢复&quot;] ~~~ E2[&quot;模型网关 + Provider 适配器&lt;br/&gt;LangChain / 结构化输出 / 高德 / 美团 CLI&quot;] ~~~ E3[&quot;文档 RAG&lt;br/&gt;解析 / BGE / BM25 + kNN / RRF&quot;]
+  end
+  subgraph DATA[&quot;本地基础服务与文件&quot;]
+    direction LR
+    D1[(&quot;MySQL 8.4&lt;br/&gt;SQLAlchemy / Alembic&quot;)] ~~~ D2[(&quot;Redis 7.4&lt;br/&gt;broker / 临时缓存&quot;)] ~~~ D3[(&quot;Elasticsearch 8.17&lt;br/&gt;全文 / 512 维向量&quot;)] ~~~ D4[&quot;本地 data 文件 / Mailpit&lt;br/&gt;原文附件 / 测试邮件&quot;]
+  end
+  subgraph EXT[&quot;外部平台 · 按凭证与配置启用&quot;]
+    direction LR
+    X1[&quot;模型提供者&lt;br/&gt;OpenAI 兼容 / Gemini / Ollama 等&quot;] ~~~ X2[&quot;高德地图服务&lt;br/&gt;POI / 路线 / 天气 / 底图&quot;] ~~~ X3[&quot;美团官方 CLI&lt;br/&gt;酒旅 / 美食信息查询&quot;]
+  end
+  CLIENT --&gt;|HTTP / SSE 或 stdio| ACCESS
+  ACCESS --&gt;|业务请求与工具调用| EXEC
+  EXEC --&gt;|状态 / 检索 / 队列与缓存| DATA
+  EXEC --&gt;|模型推理与平台查询| EXT
+  class E1,E2 accent
+  class D1,D2,D3 store
+
+classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3
+</pre></details></section><script>document.querySelectorAll('input[type=checkbox]').forEach(el=>el.addEventListener('change',()=>{document.getElementById('selection').textContent=[...document.querySelectorAll('input[type=checkbox]:checked')].map(e=>e.value).join('、')||'尚未选择'}));</script></main></html>

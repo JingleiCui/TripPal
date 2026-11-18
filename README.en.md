@@ -1,81 +1,72 @@
 <div align="center">
-  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="Tripal 旅伴 · Say it. Plan it. Go. · 一句话，安排好下一程。" />
+  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="Tripal · Say it. Plan it. Go. · 一句话，安排好下一程。" />
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
     <img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.8+" />
     <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black" alt="React 18.3" />
-    <img src="https://img.shields.io/badge/FastAPI-0.162.5-009688?logo=fastapi&logoColor=white" alt="FastAPI 0.162.5 in requirements.lock.txt" />
-    <img src="https://img.shields.io/badge/LangGraph-1.2.20-24745D" alt="LangGraph 1.2.20 in requirements.lock.txt" />
-    <a href="#-license"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="Project licensed under AGPL-3.0" /></a>
+    <img src="https://img.shields.io/badge/FastAPI-0.162.5-009688?logo=fastapi&logoColor=white" alt="FastAPI 0.162.5" />
+    <img src="https://img.shields.io/badge/LangGraph-1.2.20-24745D" alt="LangGraph 1.2.20" />
+    <a href="#-license"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" /></a>
   </p>
   <p><a href="README.md">简体中文</a> | <strong>English</strong></p>
 </div>
 
-Tripal turns travel requirements into editable, day-by-day itineraries for trips in China.
-It combines conversational planning, destination discovery, route checks and private-document
-retrieval, with sources and unknown facts kept visible.
+**Tripal is a self-hosted AI travel-planning agent for trips within China.** Describe your destination, dates, budget and preferences to start planning. Tripal gathers missing essentials, researches places and routes, consults your own travel documents, and creates an editable daily itinerary.
 
-<p align="center"><a href="docs/assets/demo/tripal-demo.webm"><img src="docs/assets/demo/tripal-demo.gif" width="1000" alt="Real page recording: the full workflow — describe a trip, daily plan on a live Amap, dining, lodging, routes, budget, sources, route book, discovery, saved places and document retrieval" /></a></p>
-<p align="center"><sub>HD screen recording · Main features in their normal usage order, with a live Amap and real place/document data; itinerary is local demo data · <a href="docs/assets/demo/tripal-demo.webm">Watch HD video</a></sub></p>
+Compare candidate plans, lock places you want to keep, arrange meals, stays and transport, then export a travel guide from the same workspace. Places and routes retain their sources, edits retain itinerary versions, and unsupported prices, opening hours and reservation details are marked for verification.
+
+<p align="center"><a href="docs/assets/demo/tripal-demo.webm"><img src="docs/assets/demo/tripal-demo.gif" width="1000" alt="Running app: describe a trip, select a plan, inspect daily arrangements and maps, adjust meals and stays, check sources and retrieve private documents" /></a></p>
+<p align="center"><sub>Local app recording: synthetic itineraries, a live AMap and sample-document retrieval · <a href="docs/assets/demo/tripal-demo.webm">Watch HD video</a></sub></p>
 
 ## ✨ Features
 
-| | What you can do | How it works |
-|---|---|---|
-| 💬 | **Describe a trip** | Extract destination, dates, budget and preferences; a deterministic interview asks for missing essentials. |
-| 🧭 | **Compare and refine plans** | A bounded LangGraph workflow researches, arranges and validates itineraries; changes retain versions. |
-| 🗺️ | **Explore continuously** | Places, food and stays load in real pages as you scroll; failed pages can be retried without losing earlier results. A sticky map uses about 58% of the desktop workspace. |
-| 🍜 | **Plan meals and stays** | Replace meals, browse paged hotel candidates, save a selected stay with version checks, and inspect transport details. |
-| 📚 | **Use your own documents** | Import TXT, MD, PDF or DOCX; BGE embeddings + Elasticsearch BM25/kNN + RRF return original excerpts and anchors. |
-| 🔎 | **Check the evidence** | Inspect provider, retrieval time and source links. Missing prices and opening hours stay unverified. |
-| 📖 | **Take a route book** | Preview a route book, export PDF/Markdown, and check that downloaded route books are valid PDF files. |
-| 🔐 | **Keep control** | Per-user document access, trip roles, scoped MCP tools, task budgets and an append-only event trail. |
+| Feature | What it does |
+|---|---|
+| 💬 **Conversational planning** | Collect destinations, dates, budget and preferences; ask for missing essentials. |
+| 🧭 **Plan comparison and refinement** | Research candidate places, arrange daily itineraries and validate constraints. Compare plans when needed, lock places and keep refining. |
+| 🗺️ **Maps and discovery** | Browse attractions, food and stays beside a large map. Load more as you scroll, retain earlier results and retry failed pages. |
+| 🍜 **Daily travel services** | Inspect transport and costs, replace restaurants and browse accommodation pages. Version checks protect saved changes. |
+| 📚 **Private-document retrieval** | Import TXT, MD, PDF or DOCX. BGE embeddings and Elasticsearch hybrid search return excerpts with their original locations. |
+| 🔎 **Inspectable sources** | Check providers, query times and links for places, routes and other supported information. Missing details remain explicit. |
+| 📖 **Travel guides and exports** | Preview daily plans, share itineraries and export PDF or Markdown. |
+| 🔐 **Access and execution controls** | Isolate documents by user, control trip access through member roles, and constrain tool execution through MCP scopes, call budgets and event records. |
 
-> Without model/map credentials, explicitly select **synthetic data** to exercise the flow.
-> These fixtures demonstrate the engineering workflow and cannot support real travel decisions.
-> Booking integrations create intents; they do not pay for reservations.
+For a credential-free introduction, select **使用合成资料体验** (synthetic-data experience) when creating a trip. Synthetic content demonstrates the planning and editing flow; live place queries and maps require AMap configuration. Booking integrations record intent without placing orders or making payments.
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart TB
-  UI["React + Vite<br/>Planning · Discovery · Itinerary · Sources"]
-  API["FastAPI<br/>Auth · Permissions · SSE"]
-  GATE["Deterministic interview<br/>Destination · Dates · Preferences"]
-  QUEUE["Redis + Celery"]
-  GRAPH["LangGraph<br/>Research → Arrange → Validate → Review"]
-  HARNESS["Execution harness<br/>Budgets · Capabilities · Audit events"]
-  MODEL["Model gateway<br/>Chat · Structured · Vision · Voice"]
-  TOOLS["AMap / Meituan / Scoped MCP"]
-  RAG["Private-document retrieval<br/>Parse → Chunk → BGE → BM25 + kNN → RRF"]
-  ES[("Elasticsearch")]
-  DB[("MySQL<br/>Trips · Revisions · Checkpoints · Events")]
-  UI -->|HTTP| API
-  API --> GATE --> QUEUE --> GRAPH --> HARNESS
-  HARNESS --> MODEL & TOOLS & RAG
-  RAG --> ES
-  API --> DB
-  GRAPH -->|Checkpoint / interrupt / resume| DB
-  HARNESS -->|Persist events| DB
-  DB -.->|SSE through API| UI
-  classDef coral fill:#FFEDE4,stroke:#B84830,color:#3B3432
-  classDef mint fill:#EAF6F0,stroke:#24745D,color:#3B3432
-  class GATE,GRAPH,HARNESS coral
-  class RAG,DB,ES mint
-```
+### System overview
 
-Research results are evidence, not instructions. Owner/version filters constrain retrieval;
-validation and review precede a saved revision. Details: [design decisions](docs/架构与设计取舍.md),
-[features and engineering checks](docs/功能与工程验证.md), [model gateway](docs/模型网关与Provider切换.md).
+The React workspace sends REST requests and receives execution updates through SSE. FastAPI handles authentication, trip permissions and business operations. Planning and revision tasks are written to MySQL before a dispatcher delivers them through Redis / Celery to a Worker. LangGraph coordinates planning; the execution harness applies call budgets, tool permissions and execution checks.
+
+![Tripal system architecture: access, application services, planning runtime, models and tools, and data storage](docs/assets/architecture/structured/01-overall.en.svg)
+
+[Full-size diagram](docs/assets/architecture/structured/01-overall.en.svg) · [Editable draw.io source](docs/assets/architecture/structured/01-overall.en.drawio)
+
+MySQL stores tasks, itinerary versions, checkpoints and events. Redis handles messages and temporary caches; Elasticsearch holds rebuildable search indexes. Private-document retrieval respects user and document-version boundaries. The optional MCP stdio entry point can call providers and RAG directly without running the planning graph.
+
+### LangGraph workflow
+
+The default path confirms requirements, selects research domains, investigates destinations, performs additional research, arranges daily plans, validates routes and reviews conflicts. Research domains run sequentially. Changed requirements return the workflow to itinerary arrangement.
+
+![Tripal LangGraph workflow: planning nodes, conditional branches, requirement-change loop and persistent interrupt recovery](docs/assets/architecture/structured/03-langgraph.en.svg)
+
+[Full-size diagram](docs/assets/architecture/structured/03-langgraph.en.svg) · [Editable draw.io source](docs/assets/architecture/structured/03-langgraph.en.drawio)
+
+The graph can pause for missing information or a user decision, persist a checkpoint, and resume the original node using `Command(resume=...)` on the same task. Candidate generation is conditional: two distinct plans are not guaranteed. Plan selection and final version commits happen outside the graph in the Worker / API. Restoring a checkpoint does not replace permission, lease and version checks before saving.
+
+Further reading: [other architecture views](docs/architecture/README.md), [design decisions](docs/架构与设计取舍.md), and [model gateway and provider configuration](docs/模型网关与Provider切换.md).
 
 ## 🚀 Quickstart
 
 ### 1. Prerequisites
 
+Commands below use macOS / Linux paths.
+
 - **Python 3.11** (`>=3.11,<3.12`).
-- **Node.js 22+ and npm**; this visual update was built using Node.js 24.10.
+- **Node.js 22+ and npm**.
 - **Docker with Compose**, running before you launch the app.
-- Optional model credentials and AMap Web Service / JS keys for live planning and maps.
+- A configured model service for live planning, and AMap keys for live place queries and maps.
 
 ### 2. Install
 
@@ -85,23 +76,27 @@ cd TripPal
 python3.11 scripts/bootstrap.py
 ```
 
-Bootstrap creates `.venv`, installs the Python lockfile and both npm projects, and creates
-`config.local.json` **only if absent**. Run these commands from the repository root.
+Bootstrap creates `.venv`, installs pinned Python dependencies and the `frontend` and `integrations` npm dependencies, then creates `config.local.json` from the template if it does not already exist. Run subsequent commands from the repository root.
 
 ### 3. Configure
 
-Open `config.local.json` in your editor. The generated configuration has no credentials and
-allows synthetic-data mode. For live planning, configure the active model profile's
-`model_api_key`, set `model_enabled` to `true`, and fill in `amap_key`, `amap_js_key` and
-`amap_security_code` as required. Restart after editing. `TRAVEL_<SETTING_NAME>` environment
-variables override file values. Keep credentials in the ignored local file.
+For an initial demo, keep the defaults and explicitly select synthetic data in the UI. To connect live services, edit the Git-ignored `config.local.json`:
+
+| Purpose | Configuration |
+|---|---|
+| Model planning | Select a `model_profiles` entry with `active_model_profile`. Set `model_api_key`, an available model name and `model_enabled: true` inside that profile. |
+| Places, routes and weather | Set the top-level `amap_key` to an AMap Web Service key. |
+| Map display | Set the top-level `amap_js_key` and `amap_security_code` for the JS API. |
+| Meituan queries (optional) | Configure official CLI credentials and enable `meituan_enabled`; see [platform setup](docs/平台申请与配置.md#5-美团酒旅推荐). |
+
+Restart the application and Worker after editing. `TRAVEL_<SETTING_NAME>` environment variables override file configuration. Check configuration parsing with:
 
 ```bash
-# Configuration validation only; no provider network calls.
+# Does not call model APIs or verify credentials, quota or model availability.
 .venv/bin/python scripts/check_providers.py --all-profiles
 ```
 
-[Platform keys](docs/平台申请与配置.md) · [Provider/slot configuration](docs/模型网关与Provider切换.md)
+Details: [platform setup](docs/平台申请与配置.md) and [model profiles and capability slots](docs/模型网关与Provider切换.md).
 
 ### 4. Run
 
@@ -109,40 +104,53 @@ variables override file values. Keep credentials in the ignored local file.
 .venv/bin/python run_project.py
 ```
 
-The launcher starts Compose services, waits for MySQL, applies migrations, sets up graph
-checkpoints, builds the frontend and starts Celery + Uvicorn. Register a local account, select
-**New trip → synthetic-data experience** for a credential-free planning demo, then send:
+The launcher starts Compose services, waits for MySQL, runs migrations, initializes graph checkpoints, builds the frontend when needed, and starts the Celery Worker and Uvicorn.
+
+Open [the app](http://127.0.0.1:8808/), create a local account, and choose **新建旅行 → 使用合成资料体验** (New trip → synthetic-data experience). Try:
 
 ```text
 去北京玩三天，两个人，总预算3000元，喜欢历史文化，少走路，直接规划。
 ```
 
-Open [the app](http://127.0.0.1:8808/) or [API docs](http://127.0.0.1:8808/docs).
-For PyCharm, select `.venv/bin/python` and run `run_project.py` directly; its configuration is
-at the top of the file. Stop with Ctrl+C or `.venv/bin/python stop_project.py`.
+This asks for three days in Beijing for two people, a total budget of CNY 3,000, a focus on history and culture, and less walking. The current UI is in Chinese.
+
+In PyCharm, select `.venv/bin/python` and run `run_project.py` directly; common settings such as the port are at the top of the file. API docs are at [http://127.0.0.1:8808/docs](http://127.0.0.1:8808/docs).
 
 | Service | Local port |
 |---|---|
-| App / Vite development | `8808` / `8809` |
+| Application / Vite development server | `8808` / `8809` |
 | MySQL / Redis / Elasticsearch | `13316` / `16389` / `19220` |
 | Mailpit inbox | `18026` |
 
+Stop application processes with **Ctrl+C** or `.venv/bin/python stop_project.py`. Containers keep running; use `docker compose stop` from the repository root to stop this project's containers.
+
 <details>
-<summary>Development & checks</summary>
+<summary>Enable private-document retrieval</summary>
+
+Indexing and retrieval require Elasticsearch and a local BGE model. The default `embedding_local_only: true` loads cached models only. Before first use, run this once with access to the model repository:
 
 ```bash
-# Requires the local service stack for integration cases.
+.venv/bin/python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-zh-v1.5', device='cpu')"
+```
+
+This downloads and caches the default embedding model. Restart the application and Worker, upload a file on the **资料** (Documents) page, and wait for **已索引** (Indexed) before searching. Check index configuration before changing the embedding model or dimensions.
+</details>
+
+<details>
+<summary>Development, tests and deployment</summary>
+
+Keep the application and Compose services running, then use another terminal:
+
+```bash
 .venv/bin/python -m pytest -q
 .venv/bin/ruff check backend migrations
 npm run build --prefix frontend
-npm run dev --prefix frontend
-# In another terminal, against the running app:
 npm run test:e2e --prefix frontend
 ```
 
-The browser suite uses installed Chrome. See [verification history](docs/验收结果.md) and
-[deployment](docs/部署与运维.md) for operational details. These commands describe checks;
-this README does not claim that every integration test ran during this visual update.
+For frontend hot reload, run `npm run dev --prefix frontend` and open `http://127.0.0.1:8809/`. Browser tests use installed Chrome and target port `8808` by default.
+
+The full test suite may require cached models and configured external services; see [features and engineering checks](docs/功能与工程验证.md). Server setup is covered in [deployment and operations](docs/部署与运维.md).
 </details>
 
 ## 📁 Project structure
@@ -150,83 +158,72 @@ this README does not claim that every integration test ran during this visual up
 ```text
 TripPal/
 ├── backend/
-│   ├── travel_agent/          # FastAPI application and domain logic
-│   │   ├── agent/            # LangGraph workflow, harness and structured output
-│   │   ├── models/           # Provider registry and model gateway
-│   │   ├── providers/        # AMap, commerce, booking and explicit fixtures
-│   │   ├── mcp/              # Scoped JSON-RPC / stdio tool server
+│   ├── travel_agent/         # FastAPI application and domain logic
+│   │   ├── agent/            # LangGraph, execution harness and structured output
+│   │   ├── models/           # Model registry, providers and invocation gateway
+│   │   ├── providers/        # AMap, Meituan, booking intents and synthetic data
+│   │   ├── mcp/              # Scoped, audited stdio tool server
 │   │   ├── parsers/          # Order, GPX and screenshot parsing
-│   │   ├── interview.py      # Slot merging and deterministic interview gate
-│   │   ├── roles.py          # Trip membership role checks
-│   │   ├── signals.py        # Behavioral signal aggregation and portrait
-│   │   └── variants.py       # Candidate comparison decision
+│   │   ├── knowledge.py      # Document parsing, chunking and hybrid retrieval
+│   │   ├── interview.py      # Requirement merging and question gating
+│   │   └── worker.py         # Async tasks, leases and version commits
 │   └── tests/                # Backend unit and integration tests
 ├── frontend/
-│   ├── src/                  # HomeDiscovery, paged Discovery/HotelSelector and itinerary screens
-│   ├── public/               # City photos and canonical logo favicon
-│   ├── design/               # Earlier design tokens and references
-│   └── e2e/                  # Playwright browser flows
+│   ├── src/                  # Planning conversations, discovery maps and daily plans
+│   ├── public/               # City images and logo favicon
+│   └── e2e/                  # Playwright browser tests
 ├── integrations/             # Official Meituan CLI npm dependency
 ├── migrations/               # Alembic database migrations
-├── scripts/                  # Bootstrap, checks, capture, evaluation and backup
-├── docs/                     # Design, configuration and operations guides
-│   └── assets/               # Project logos, concepts, screenshots and demo
+├── scripts/                  # Bootstrap, checks, recording, diagrams and backups
+├── docs/                     # Design, configuration, verification and operations
+│   ├── architecture/         # Architecture documentation and diagram collection
+│   └── assets/               # Logo, demos, screenshots and editable diagrams
 ├── eval/                     # Evaluation cases and instructions
-├── config.example.json       # Safe local configuration template
+├── config.example.json       # Local configuration template without credentials
 ├── requirements.lock.txt     # Pinned Python dependencies
-├── compose.yaml              # Local database, queue, search and mail services
-├── run_project.py            # IDE-friendly launcher with in-code configuration
-└── stop_project.py           # Shutdown limited to this project's processes
+├── compose.yaml              # Local database, messaging, search and mail services
+├── run_project.py            # IDE-friendly launcher
+└── stop_project.py           # Stops application processes owned by this project
 ```
 
-`.venv/`, `node_modules/`, `data/`, `reports/`, local secrets and build outputs are ignored.
+Local configuration, credentials, `.venv/`, `node_modules/`, `data/`, `reports/` and build outputs are Git-ignored.
 
-## 🧪 Examples & evidence
+## 🧪 Examples and verification
 
-**Real retrieval, inspectable source.** A self-authored [sample document](docs/assets/demo/sample-guide.md)
-is uploaded and indexed; search returns the original filename, text anchor, RRF score and
-excerpt. The sample is labelled demonstration content and makes no live travel claims.
+### Private-document retrieval and provenance
 
-![Real document retrieval with filename, anchor, score and excerpt](docs/assets/ui/retrieval.png)
+Upload and index the self-authored [sample guide](docs/assets/demo/sample-guide.md) to reproduce retrieval. Results show the filename, original location, RRF score and text excerpt.
 
-**Running discovery workspace.** Real Hangzhou POI results and AMap markers, with the larger
-map beside the scrollable list. Results arrive 20 at a time, with ID deduplication, filter reset,
-loading feedback and an explicit end state. The hotel picker also loads additional pages.
+![Private-document retrieval: filename, original location, RRF score and excerpt](docs/assets/ui/retrieval.png)
 
-![Running paged discovery with a large real AMap canvas](docs/assets/ui/explore-live.png)
+### Place discovery and maps
 
-AMap exposes a bounded result window for each search; narrowing the city, category or keyword
-starts a new query. See [AMap POI documentation](https://lbs.amap.com/api/webservice/guide/api-advanced/search).
+The screenshot below shows Hangzhou place results alongside AMap. Each page loads 20 items; scrolling appends and deduplicates results. Filters start a new query, failed pages can be retried, and loading stops at the last available page. The accommodation picker also supports additional pages.
 
-This update passed **39 related backend tests and 7 browser tests**, plus the frontend build.
-The [verification record](docs/assets/demo/core-ui-checks.json) states the exact scope; these are
-engineering checks, not a live-model travel-quality benchmark.
+![Hangzhou discovery: paged place results and AMap](docs/assets/ui/explore-live.png)
+
+AMap limits the result window for each query. Narrow the city, category or keyword to search further; see [API documentation](https://lbs.amap.com/api/webservice/guide/api-advanced/search).
+
+The included [verification record dated 2026-11-17](docs/assets/demo/core-ui-checks.json) reports **39 related backend tests, 7 browser tests and a passing frontend build**. Coverage includes discovery pagination, retry, deduplication, responsive layout and accommodation selection. This records engineering checks rather than live-model planning quality.
 
 <details>
-<summary>More running-app screenshots & reproduction</summary>
+<summary>More screenshots and demo reproduction</summary>
 
 - [Plan comparison](docs/assets/ui/recommendations.png) · [Saved itinerary](docs/assets/ui/itinerary.png)
-- [Provider/time sources panel](docs/assets/ui/sources.png) · [Mobile homepage](docs/assets/ui/home-mobile.png)
-- [Browser verification](docs/assets/demo/verification.json)
+- [Sources panel](docs/assets/ui/sources.png) · [Mobile homepage](docs/assets/ui/home-mobile.png)
+- [Browser verification record](docs/assets/demo/verification.json)
+
+With the application and containers running and the BGE model cached:
 
 ```bash
-# With the application and containers running; creates an isolated local QA account.
 node scripts/capture_brand_demo.mjs
 ```
 
-The capture script uses synthetic planning, real document upload/retrieval and no API mocks.
-It saves PNGs and a WebM recording; [the media guide](docs/brand-guide.md#demo-reproduction)
-contains the GIF conversion command. No live model or booking quality benchmark is implied.
+The script creates an isolated local QA account, uses synthetic itineraries, and performs actual document upload, indexing and retrieval without intercepting API requests. It saves screenshots and WebM; GIF conversion commands are in the [media guide](docs/brand-guide.md#demo-reproduction).
 </details>
 
 ## 📄 License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-See the root [LICENSE](LICENSE) for the full text.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](LICENSE) for the full terms.
 
 Copyright (c) 2026 崔静蕾.
-
-AGPL-3.0 permits copying, modification and redistribution, including commercial use. If you
-modify the project and make it available to users over a network, you must offer the corresponding
-source code under AGPL-3.0. The project is mainly intended for learning and exchange; please
-honor the source-disclosure obligation when offering it as an online service.

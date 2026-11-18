@@ -1,0 +1,17 @@
+flowchart TB
+  L1["交互层 · React 旅行工作台<br/>对话规划 / 地点探索与地图 / 每日行程与路书"]
+  L2["接入与业务层 · FastAPI<br/>认证与成员权限 / 确定性访谈 / 行程版本 / 吃住行与导出"]
+  L3["异步编排层 · Celery Worker + LangGraph<br/>任务派发与租约 / 领域调查 / 行程编排 / 约束校验与恢复"]
+  L4["能力适配层 · 可替换能力<br/>模型网关与结构化输出 / 高德与美团 / 文档解析与混合检索"]
+  L5["数据基础层 · 职责分离<br/>MySQL：业务事实与检查点 / Redis：消息与缓存 / ES：派生索引"]
+  L1 --> L2 --> L3 --> L4 --> L5
+  G["横切关注点<br/>用户隔离 / 来源与未知信息 / 事件记录<br/>执行阶段：Harness 调用预算与能力授权"]
+  G -.-> L2
+  G -.-> L3
+  class L3,G accent
+  class L5 store
+
+classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3

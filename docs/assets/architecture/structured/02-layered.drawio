@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="24.7.17">
+  <diagram id="02-layered" name="Tripal 分层架构">
+    <mxGraphModel dx="1440" dy="940" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="940" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Tripal 分层架构" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=left;verticalAlign=middle;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="1380" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="system" value="旅行规划智能体系统" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="1380" height="830" as="geometry" />
+        </mxCell>
+        <mxCell id="row0" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="130" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="row1" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="254" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="row2" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="378" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="row3" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="502" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="row4" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="626" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="row5" value="" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="750" width="1150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="layer0" value="交互层" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="130" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l0m0" value="React / TypeScript&#10;需求对话 / 地点探索" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="146" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l0m1" value="AMap JS SDK&#10;地图 / 路线展示" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="146" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l0m2" value="行程工作台&#10;每日安排 / 路书" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="146" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="layer1" value="接入与业务层" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="254" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l1m0" value="FastAPI / REST / SSE&#10;认证 / 会话 / 成员权限" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="270" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l1m1" value="旅行业务服务&#10;需求访谈 / 行程版本 / 吃住行" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="270" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l1m2" value="MCP stdio&#10;工具接口 / scope / 审计" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="270" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="layer2" value="执行与编排层" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="378" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l2m0" value="任务派发 / Celery&#10;queued 扫描 / 租约 / 心跳" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="394" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l2m1" value="LangGraph / LangChain&#10;领域调查 / 编排 / 约束校验" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="394" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l2m2" value="状态恢复 / 候选方案&#10;interrupt / resume / A/B" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="394" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="layer3" value="能力适配层" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="502" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l3m0" value="模型网关&#10;结构化输出 / 模型适配" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="518" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l3m1" value="高德 / 美团 Provider&#10;地点 / 路线 / 天气 / 商品查询" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="518" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l3m2" value="文档 RAG&#10;解析 / BGE / BM25 + kNN" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="518" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="layer4" value="数据与文件层" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="626" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l4m0" value="MySQL / Redis&#10;业务事实 / 检查点 / 消息 / 缓存" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="642" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l4m1" value="Elasticsearch&#10;512 维向量 / 全文派生索引" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="642" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l4m2" value="本地文件 / Mailpit&#10;原文附件 / 测试邮件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="642" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="layer5" value="执行保障" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=20;fillColor=#315bff;strokeColor=#8ca4ff;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="750" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="l5m0" value="工具授权 / 调用预算&#10;Harness 能力边界" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="766" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l5m1" value="权限 / 租约 / 基准版本&#10;结果提交前复查" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="636" y="766" width="350" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="l5m2" value="事件 / 业务审计&#10;任务状态与修改记录" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1012" y="766" width="350" height="68" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

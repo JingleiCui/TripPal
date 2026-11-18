@@ -1,0 +1,27 @@
+flowchart TB
+  USER["旅行者的目标：把需求变成可调整的每日行程"]
+  subgraph PLAN["规划主闭环"]
+    direction LR
+    NEED["描述需求<br/>城市 / 日期 / 预算 / 偏好"] --> CAND["调查与推荐<br/>有来源的候选与方案"]
+    CAND --> CONF["确认方案<br/>需要比较时先选 A/B"]
+    CONF --> TRIP["管理行程<br/>按天查看 / 锁定 / 调整"]
+    TRIP --> BOOK["带走路书<br/>分享 / PDF / Markdown"]
+    TRIP -->|提出新要求| NEED
+  end
+  USER --> PLAN
+  subgraph SUPPORT["支撑旅行规划的业务能力"]
+    direction LR
+    EXP["地点探索与收藏<br/>景点 / 餐饮 / 住宿"]
+    DAILY["每日吃住行与预算<br/>替换餐厅 / 住宿 / 交通方式"]
+    DOC["私人资料<br/>导入攻略 / 检索原文位置"]
+    COL["账户与行程协作<br/>owner / editor / viewer"]
+  end
+  SUPPORT -.->|候选 / 证据 / 吃住行 / 协作授权| PLAN
+  RULE["业务底线：未知信息待核实 · 修改保留版本 · 来源可以检查<br/>预订只记录意向，不执行付款"] -.-> PLAN
+  class CAND,TRIP accent
+  class RULE note
+
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3

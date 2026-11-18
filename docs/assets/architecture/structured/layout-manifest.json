@@ -1,0 +1,51 @@
+[
+  {
+    "name": "01-overall",
+    "width": 1520,
+    "height": 1000,
+    "nodes": 16,
+    "edges": 12
+  },
+  {
+    "name": "01-overall.en",
+    "width": 1520,
+    "height": 1000,
+    "nodes": 16,
+    "edges": 12
+  },
+  {
+    "name": "02-layered",
+    "width": 1440,
+    "height": 940,
+    "nodes": 24,
+    "edges": 0
+  },
+  {
+    "name": "03-langgraph",
+    "width": 1560,
+    "height": 1550,
+    "nodes": 20,
+    "edges": 19
+  },
+  {
+    "name": "03-langgraph.en",
+    "width": 1560,
+    "height": 1550,
+    "nodes": 20,
+    "edges": 19
+  },
+  {
+    "name": "04-business",
+    "width": 1520,
+    "height": 1030,
+    "nodes": 17,
+    "edges": 5
+  },
+  {
+    "name": "05-technical",
+    "width": 1710,
+    "height": 1020,
+    "nodes": 21,
+    "edges": 17
+  }
+]

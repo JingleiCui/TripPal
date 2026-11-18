@@ -1,0 +1,219 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="24.7.17">
+  <diagram id="05-technical" name="Tripal 技术架构">
+    <mxGraphModel dx="1710" dy="1020" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1710" pageHeight="1020" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Tripal 技术架构" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=left;verticalAlign=middle;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="1650" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="client" value="客户端" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="240" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="backend" value="后端服务" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="310" y="70" width="300" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="execution" value="任务与工作流" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="650" y="70" width="320" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="adapter" value="能力适配" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="70" width="300" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="external" value="外部平台" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="70" width="330" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="data" value="基础服务与文件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">
+          <mxGeometry x="310" y="830" width="1370" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="web" value="React / TypeScript&#10;Vite / TanStack Query" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="160" width="200" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="map" value="AMap JS SDK&#10;浏览器直连高德底图" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="340" width="200" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp_client" value="MCP 客户端&#10;可选 stdio 接入" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="50" y="520" width="200" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="FastAPI + Uvicorn&#10;REST / SSE" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="160" width="260" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="business" value="业务服务&#10;认证 / 成员权限&#10;需求访谈 / 行程版本&#10;吃住行 / 资料 / 导出" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="310" width="260" height="134" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp" value="自实现 MCP stdio&#10;JSON-RPC / scope / 审计&#10;Provider / RAG / 行程工具" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=17;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="520" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dispatch" value="任务派发器&#10;SQL queued 扫描" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="670" y="160" width="280" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" value="Celery Worker&#10;租约 / 心跳 / 版本复查" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="670" y="310" width="280" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="graph" value="LangGraph / LangChain&#10;编排 / 校验 / 中断恢复" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="670" y="460" width="280" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="harness" value="Harness&#10;预算 / 能力授权 / 事件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="670" y="620" width="280" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="model_gateway" value="模型网关&#10;模型适配 / 结构化输出" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="160" width="260" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="provider" value="Provider 适配器&#10;高德 / 美团 CLI" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="310" width="260" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="rag" value="文档 RAG&#10;解析 / BGE 512 维&#10;BM25 + kNN / RRF" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="460" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="models" value="模型 API&#10;OpenAI 兼容 / Gemini / Ollama" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="160" width="290" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="amap" value="高德地图服务&#10;地点 / 路线 / 天气 / 底图" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="310" width="290" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="meituan" value="美团官方 CLI&#10;酒旅 / 美食查询" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=18;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="460" width="290" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql" value="MySQL 8.4&#10;SQLAlchemy / Alembic" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;shape=cylinder;size=11;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="890" width="230" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="Redis 7.4&#10;broker / 候选与缓存" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;shape=cylinder;size=11;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="600" y="890" width="230" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="es" value="Elasticsearch 8.17&#10;全文 / 向量索引" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;shape=cylinder;size=11;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="870" y="890" width="230" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="files" value="本地 data 文件&#10;原文 / 附件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="890" width="230" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="mail" value="Mailpit&#10;本地测试邮件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=0;fontSize=16;fillColor=#e2edff;strokeColor=#8ca4ff;fontColor=#151515;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1410" y="890" width="230" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" edge="1" parent="1" source="web" target="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge1" edge="1" parent="1" source="api" target="business" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge2" edge="1" parent="1" source="api" target="dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge3" edge="1" parent="1" source="dispatch" target="worker" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge4" edge="1" parent="1" source="worker" target="graph" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge5" edge="1" parent="1" source="harness" target="graph" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=0.0;entryX=0.5;entryY=1.0;exitPerimeter=0;entryPerimeter=0;dashed=1;dashPattern=6 5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge6" edge="1" parent="1" source="graph" target="model_gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="502" />
+              <mxPoint x="990" y="202" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge7" edge="1" parent="1" source="graph" target="provider" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="502" />
+              <mxPoint x="990" y="352" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge8" edge="1" parent="1" source="graph" target="rag" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="990" y="502" />
+              <mxPoint x="990" y="510" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge9" edge="1" parent="1" source="model_gateway" target="models" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge10" edge="1" parent="1" source="provider" target="amap" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge11" edge="1" parent="1" source="provider" target="meituan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1330" y="352" />
+              <mxPoint x="1330" y="502" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge12" edge="1" parent="1" source="mcp_client" target="mcp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.42;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge13" edge="1" parent="1" source="mcp" target="adapter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.95;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="630" y="570" />
+              <mxPoint x="630" y="735" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge14" edge="1" parent="1" source="backend" target="data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.10948905109489052;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge15" edge="1" parent="1" source="execution" target="data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.36496350364963503;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge16" edge="1" parent="1" source="adapter" target="data" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#315bff;strokeWidth=1.4;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;entryX=0.6204379562043796;entryY=0.0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label0" value="HTTP / SSE" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="244.0" y="171" width="92" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label1" value="异步任务" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="592.0" y="171" width="76" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label2" value="Redis / Celery" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="748.0" y="263" width="124" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label3" value="stdio" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="264.0" y="531" width="52" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label4" value="工具调用" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="772.0" y="704" width="76" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label5" value="业务数据" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="422.0" y="788" width="76" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label6" value="消息 / 检查点" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="752.0" y="788" width="116" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="label7" value="资料索引 / 文件" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=center;verticalAlign=middle;fontSize=16;fontColor=#315bff;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1094.0" y="788" width="132" height="27" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

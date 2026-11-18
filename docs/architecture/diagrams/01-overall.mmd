@@ -1,0 +1,25 @@
+flowchart TB
+  WEB["旅行工作台 · React<br/>描述需求 / 探索地点 / 调整行程 / 查看依据"]
+  API["FastAPI 接口<br/>身份认证 / 行程权限 / REST / SSE"]
+  BIZ["旅行业务服务<br/>确定性访谈 / 吃住行 / 收藏 / 资料与导出"]
+  RUN["异步规划引擎<br/>Celery Worker + LangGraph + Harness<br/>调查 → 编排 → 约束校验 → 审阅"]
+  MODEL["可切换模型网关"]
+  TOOLS["旅行事实工具<br/>高德 / 美团"]
+  KB["私人资料检索<br/>解析 / BGE / 混合召回"]
+  SQL[("MySQL<br/>任务 / 行程版本 / 图检查点 / 事件")]
+  REDIS[("Redis<br/>Celery broker / 临时缓存")]
+  ES[("Elasticsearch<br/>全文与向量派生索引")]
+  WEB -->|HTTP 请求| API --> BIZ
+  BIZ -->|生成 / 调整任务| RUN
+  BIZ -->|查询与写入业务状态| SQL
+  RUN --> MODEL & TOOLS & KB
+  RUN <-->|队列投递 / 消息消费| REDIS
+  RUN <-->|读取任务 / 恢复检查点 / 保存结果| SQL
+  KB --> ES
+  SQL -.->|读取消息与执行事件| API
+  API -.->|SSE 持续反馈| WEB
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  class RUN accent
+  class SQL,REDIS,ES store

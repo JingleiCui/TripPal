@@ -1,0 +1,32 @@
+flowchart TB
+  subgraph CLIENT["客户端技术"]
+    direction LR
+    C1["React 18 / TypeScript / Vite<br/>Router / TanStack Query"] ~~~ C2["AMap JS SDK<br/>真实地图与路线"] ~~~ C3["外部 MCP 客户端<br/>可选入口"]
+  end
+  subgraph ACCESS["应用接入 · Python 3.11"]
+    direction LR
+    A1["FastAPI + Uvicorn<br/>REST / SSE / 认证授权"] ~~~ A2["自实现 MCP stdio 服务<br/>JSON-RPC / scope / AuditLog"]
+  end
+  subgraph EXEC["异步执行与能力组件"]
+    direction LR
+    E1["Celery + LangGraph<br/>任务 / 检查点 / 中断恢复"] ~~~ E2["模型网关 + Provider 适配器<br/>LangChain / 结构化输出 / 高德 / 美团 CLI"] ~~~ E3["文档 RAG<br/>解析 / BGE / BM25 + kNN / RRF"]
+  end
+  subgraph DATA["本地基础服务与文件"]
+    direction LR
+    D1[("MySQL 8.4<br/>SQLAlchemy / Alembic")] ~~~ D2[("Redis 7.4<br/>broker / 临时缓存")] ~~~ D3[("Elasticsearch 8.17<br/>全文 / 512 维向量")] ~~~ D4["本地 data 文件 / Mailpit<br/>原文附件 / 测试邮件"]
+  end
+  subgraph EXT["外部平台 · 按凭证与配置启用"]
+    direction LR
+    X1["模型提供者<br/>OpenAI 兼容 / Gemini / Ollama 等"] ~~~ X2["高德地图服务<br/>POI / 路线 / 天气 / 底图"] ~~~ X3["美团官方 CLI<br/>酒旅 / 美食信息查询"]
+  end
+  CLIENT -->|HTTP / SSE 或 stdio| ACCESS
+  ACCESS -->|业务请求与工具调用| EXEC
+  EXEC -->|状态 / 检索 / 队列与缓存| DATA
+  EXEC -->|模型推理与平台查询| EXT
+  class E1,E2 accent
+  class D1,D2,D3 store
+
+classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3

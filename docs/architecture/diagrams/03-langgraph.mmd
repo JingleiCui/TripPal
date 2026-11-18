@@ -1,0 +1,24 @@
+flowchart TB
+  START(["START"]) --> REQ["requirements · 需求确认<br/>日期 / 出发地；允许无日期草案时可跳过"]
+  REQ --> STRATEGY{"strategy = pure<br/>且满足纯模型条件？"}
+  STRATEGY -->|是| PURE["pure · 无工具模型草案<br/>明确标记未经事实核验"] --> END(["END"])
+  STRATEGY -->|否| DEL["delegate · 选择必要调查领域"]
+  DEL --> DEST["destination · 检索候选地点<br/>保留已锁定地点与来源"]
+  DEST --> RES["research · 按需顺序调查<br/>天气 / 住宿商品 / 私人资料"]
+  RES --> ARR["arrange · 按日编排候选地点 ID"]
+  ARR --> VAL["validate · 查询实际路线并校验约束"]
+  VAL --> REV["review · 审阅冲突与警告"]
+  REV --> CHANGE{"需求是否不同于<br/>当前 plan.requirements？"}
+  CHANGE -->|已改变| ARR
+  CHANGE -->|未改变| VAR["variants · 按需生成 A/B<br/>复用研究结果；内部再次编排与校验"]
+  VAR --> NAR["narrate · 生成说明 / 流式输出"] --> END
+  REQ -.->|必要信息缺失时 interrupt| WAIT["图暂停 · MySQL checkpoint<br/>等待补充 / 取舍<br/>Command resume 在原中断节点恢复"]
+  REV -.->|首次发现相关冲突时 interrupt| WAIT
+  END -.-> POST["图外业务处理 · Worker / API<br/>有候选：waiting_choice → 用户选择后保存<br/>无候选：版本复查 → 保存 Revision"]
+  class REQ,ARR,VAL,REV accent
+  class WAIT,POST note
+
+  classDef default fill:#ffffff,stroke:#9aa9b4,color:#263743,stroke-width:1px
+  classDef accent fill:#eaf1f6,stroke:#426b86,color:#203b4d,stroke-width:1.5px
+  classDef store fill:#f0f2f4,stroke:#889aa7,color:#263743
+  classDef note fill:#fbf5e9,stroke:#b39660,color:#594a32,stroke-dasharray:4 3
