@@ -177,16 +177,6 @@ TripPal/
 └── stop_project.py           # 停止本项目持有的应用进程
 ```
 
-## 🧪 效果示例与验证
-
-### 地点探索与地图联动
-
-下图展示杭州地点查询与高德地图。列表每页加载 20 条，滚动追加结果、跨页去重；切换条件时重新查询，失败时可重试，到达结果末页后停止加载。住宿选择窗口也支持追加加载。
-
-![杭州地点探索：分页列表与高德地图](docs/assets/ui/explore-live.png)
-
-单次查询的可翻页范围由高德接口限制；到达末页后，可细化城市、分类或关键词继续查询。[接口说明](https://lbs.amap.com/api/webservice/guide/api-advanced/search)。
-
 ## 📄 License
 
 本项目采用 **GNU Affero General Public License v3.0（AGPL-3.0）**，完整条款见 [LICENSE](LICENSE)。
