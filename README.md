@@ -1,5 +1,7 @@
 <div align="center">
-  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="Tripal 旅伴 · 一句话，安排好下一程。 · Say it. Plan it. Go." />
+  <img src="docs/assets/brand/tripal-mark.svg" width="80" alt="TripPal 旅伴" />
+  <h1>TripPal 旅伴</h1>
+  <p><strong>一句话，安排好下一程。</strong></p>
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
     <img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.8+" />
@@ -11,7 +13,7 @@
   <p><strong>简体中文</strong> | <a href="README.en.md">English</a></p>
 </div>
 
-**Tripal 旅伴是一款可自托管的 AI 旅行规划智能体助手，面向中国境内旅行。**
+**TripPal 旅伴是一款可自托管的 AI 旅行规划智能体助手，面向中国境内旅行。**
 告诉它目的地、日期、预算和偏好，即可开始规划：收集必要条件，查询地点与路线，参考自己的攻略，生成可查看、可调整的每日行程。
 
 从比较候选方案、锁定想去的地点，到安排每天的吃住行、导出旅行路书，规划与修改都在同一工作台完成。地点和路线附带来源，行程修改保留版本，缺少依据的价格、开放时间与预约信息标记为待核实。
@@ -38,7 +40,7 @@
 
 React 工作台通过 REST 发起请求，通过 SSE 接收执行进度。FastAPI 处理身份认证、成员权限与旅行业务；生成和调整任务先写入 MySQL，再由派发器经 Redis / Celery 投递给 Worker。LangGraph 组织规划过程，Harness 控制调用预算、工具授权与执行检查。
 
-![Tripal 整体架构：用户接入、应用服务、规划执行、模型工具与数据存储](docs/assets/architecture/structured/01-overall.svg)
+![TripPal 整体架构：用户接入、应用服务、规划执行、模型工具与数据存储](docs/assets/architecture/structured/01-overall.svg)
 
 [查看原图](docs/assets/architecture/structured/01-overall.svg) · [编辑 draw.io 源文件](docs/assets/architecture/structured/01-overall.drawio)
 
@@ -48,7 +50,7 @@ MySQL 保存任务、行程版本、检查点与事件；Redis 承担消息与�
 
 默认流程依次完成需求确认、领域选择、目的地调查、按需研究、行程编排、路线校验与冲突审阅。领域调查按顺序执行；当需求发生变化时，回到编排节点重新安排。
 
-![Tripal LangGraph 工作流：规划节点、条件分支、需求变更回路与持久化中断恢复](docs/assets/architecture/structured/03-langgraph.svg)
+![TripPal LangGraph 工作流：规划节点、条件分支、需求变更回路与持久化中断恢复](docs/assets/architecture/structured/03-langgraph.svg)
 
 ## 🚀 Quickstart
 

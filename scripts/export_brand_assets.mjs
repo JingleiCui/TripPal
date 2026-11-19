@@ -22,7 +22,7 @@ const svg = match[0]
   .replace("className={className}", "")
   .replace("width={size}", 'width="120"')
   .replace("height={size}", 'height="120"')
-  .replace("aria-label={title}", 'aria-label="Tripal 旅伴"')
+  .replace("aria-label={title}", 'aria-label="TripPal 旅伴"')
   .replaceAll("strokeWidth=", "stroke-width=")
   .replaceAll("strokeLinecap=", "stroke-linecap=")
   .replaceAll("strokeDasharray=", "stroke-dasharray=");

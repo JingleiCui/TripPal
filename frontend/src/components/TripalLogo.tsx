@@ -1,5 +1,6 @@
+import { BRAND } from "../brand";
 /**
- * Tripal 旅伴 —— 唯一官方 Logo 组件（对应设计稿 page1 slogan 旁的版本）。
+ * TripPal 旅伴 —— 唯一官方 Logo 组件（对应设计稿 page1 slogan 旁的版本）。
  *
  * 全站任何需要展示 Logo 的地方都必须引用本组件，禁止再用 Compass 等图标
  * 临时代替，以保证「方形微圆角行李箱 + 黄色星光 + 居中五官」完全一致。
@@ -10,7 +11,7 @@
 export function TripalMark({
   size = 40,
   className,
-  title = "Tripal 旅伴",
+  title = BRAND.fullName,
 }: {
   size?: number;
   className?: string;
@@ -101,9 +102,9 @@ export function TripalBrand({
       <TripalMark size={size} />
       <span className="tripal-brand-text">
         <b>
-          Tripal<span className="tripal-brand-cn">旅伴</span>
+          {BRAND.name}<span className="tripal-brand-cn">{BRAND.nameCn}</span>
         </b>
-        {showSlogan && <small>一句话，安排好下一程。</small>}
+        {showSlogan && <small>{BRAND.slogan}</small>}
       </span>
     </span>
   );

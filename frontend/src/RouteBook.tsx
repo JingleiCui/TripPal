@@ -1,3 +1,4 @@
+import { BRAND } from "./brand";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -138,7 +139,7 @@ export function RouteBook() {
       <header className="rb-header">
         {/* 高密度页眉：Logo 与右侧标题/元信息同一行，不额外占一整行 */}
         <div className="rb-header-top">
-          <span className="rb-mark-badge"><TripalMark size={40} title="Tripal 旅伴" /></span>
+          <span className="rb-mark-badge"><TripalMark size={40} title={BRAND.fullName} /></span>
           <div className="rb-header-copy">
             <h1>{plan.title}</h1>
             <p>
@@ -146,7 +147,7 @@ export function RouteBook() {
               <span className="rb-header-dot">·</span>
               {plan.requirements.start_date || "日期待定"}
               <span className="rb-header-dot">·</span>
-              由 Tripal AI 生成
+              由 {BRAND.name} AI 生成
               <span className="rb-header-dot">·</span>
               {days.length} 天 {knownStops} 站
             </p>
@@ -248,8 +249,8 @@ export function RouteBook() {
       </div>
 
       <footer className="rb-footer">
-        <span>Tripal 旅伴 · 一句话，安排好下一程。</span>
-        <span>由 Tripal AI 生成 · 出行前请核实营业、预约与价格</span>
+        <span>{BRAND.fullName} · {BRAND.slogan}</span>
+        <span>由 {BRAND.name} AI 生成 · 出行前请核实营业、预约与价格</span>
       </footer>
     </div>
   );

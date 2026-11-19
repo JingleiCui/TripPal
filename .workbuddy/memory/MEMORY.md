@@ -13,3 +13,10 @@
 - README 中**只允许出现真实运行界面截图**；AI 生成的概念图（`*-concept.png`）是假图，必须删除、不得出现在 README。
 - 品牌 Banner（`tripal-banner.png`）是设计稿，不是界面图，不应作为 README 首图。
 - demo.gif 要求清晰（旧版 860×597 模糊），更新时用高分辨率录制 + ffmpeg 导出。
+
+## PyCharm 环境约定
+- 真实项目路径始终是 `TripPal`；`travel_agent` 只是历史遗留软链，仅用于兼容旧 IDE 工作区，不再写入任何新配置。
+- PyCharm 2026.1 全局 SDK 名称固定为 `Python 3.11 (TripPal)`，homePath 为
+  `$USER_HOME$/PycharmProjects/TripPal/.venv/bin/python`；`.idea/tripal.iml` 的 `jdkName` 与
+  `.idea/misc.xml` 的 Black `sdkName` 必须与之一致，否则 run configuration 会报找不到解释器。
+- 修改全局 SDK 配置前必须先完全退出 PyCharm（Cmd+Q），否则运行中的 IDE 会用内存状态覆盖文件。

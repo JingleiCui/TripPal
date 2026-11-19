@@ -103,7 +103,7 @@ def pdf(plan, map_png=None):
     pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=(595, 842))
-    c.setTitle(plan.get("title", "Tripal 路书"))
+    c.setTitle(plan.get("title", "TripPal 路书"))
 
     CREAM = HexColor("#FFF7F1")
     CORAL = HexColor("#FF8A6B")
@@ -207,15 +207,15 @@ def pdf(plan, map_png=None):
             logo(LEFT, H - 62, 0.62)
             tx = LEFT + 44
             txt(tx, H - 24, plan.get("title", "行程路书"), 15, WHITE, 430)
-            txt(tx, H - 42, "Tripal 旅伴 · ROUTE BOOK / 路书", 7.5, HexColor("#FFE4DA"), 430)
+            txt(tx, H - 42, "TripPal 旅伴 · ROUTE BOOK / 路书", 7.5, HexColor("#FFE4DA"), 430)
             days = plan.get("days", [])
             stops = sum(len(d.get("stops", [])) for d in days)
             start = (plan.get("requirements") or {}).get("start_date") or "日期待定"
-            txt(tx, H - 57, f"{start} · 由 Tripal AI 生成 · {len(days)} 天 {stops} 站", 7.5, HexColor("#FFE4DA"), 430)
+            txt(tx, H - 57, f"{start} · 由 TripPal AI 生成 · {len(days)} 天 {stops} 站", 7.5, HexColor("#FFE4DA"), 430)
         else:
             c.setFillColor(CORAL)
             c.rect(0, H - 28, W, 28, fill=1, stroke=0)
-            txt(LEFT, H - 19, "Tripal 旅伴 · " + plan.get("title", "路书"), 8.5, WHITE, 430)
+            txt(LEFT, H - 19, "TripPal 旅伴 · " + plan.get("title", "路书"), 8.5, WHITE, 430)
         return H - (90 if first else 40)
 
     def weather(date):
@@ -241,8 +241,8 @@ def pdf(plan, map_png=None):
         c.setStrokeColor(LINE)
         c.setLineWidth(0.6)
         c.line(LEFT, 38, RIGHT, 38)
-        txt(LEFT, 26, "Tripal 旅伴 · 一句话，安排好下一程。", 7, MUTED, 250)
-        right_txt(RIGHT, 26, "由 Tripal AI 生成 · 出行前请核实营业、预约与价格", 7, MUTED)
+        txt(LEFT, 26, "TripPal 旅伴 · 一句话，安排好下一程。", 7, MUTED, 250)
+        right_txt(RIGHT, 26, "由 TripPal AI 生成 · 出行前请核实营业、预约与价格", 7, MUTED)
 
     try:
         y = page_header(first=True)
@@ -372,7 +372,7 @@ def _plain_pdf(plan):
     pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=(595, 842))
-    c.setTitle(plan.get("title", "Tripal 路书"))
+    c.setTitle(plan.get("title", "TripPal 路书"))
     y = 800
     for line in markdown(plan).splitlines():
         for offset in range(0, max(1, len(line)), 45):

@@ -1,3 +1,4 @@
+import { BRAND } from "./brand";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -141,7 +142,7 @@ export function HomeDiscovery({
           <div className="travel-home-ticket">
             <TripalMark size={96} />
             <div>
-              <b>想法交给 Tripal，</b>
+              <b>想法交给 {BRAND.name}，</b>
               <span>行程按你的节奏安排。</span>
             </div>
           </div>

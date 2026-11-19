@@ -1,4 +1,4 @@
-# Tripal 旅伴 · 品牌与界面规范
+# TripPal 旅伴 · 品牌与界面规范
 
 定位：**AI 旅行规划智能体助手**。主流程是「描述需求 → 比较方案 → 确认并调整行程」。
 角色的亲和感用于降低规划门槛；产品内容围绕地点、路线、时间、预算与来源组织。
@@ -7,9 +7,9 @@
 
 | 项目 | 规范 |
 |---|---|
-| 英文名称 | **Tripal**，使用首字母大写，保持简短、易读写 |
+| 英文名称 | **TripPal**，由 Trip + Pal 组成，T 与 P 大写，与仓库名保持一致 |
 | 中文名称 | **旅伴**，和英文名称一起展示 |
-| 首次出现 | **Tripal 旅伴 · AI 旅行规划智能体助手** |
+| 首次出现 | **TripPal 旅伴 · AI 旅行规划智能体助手** |
 | 主标语 | **一句话，安排好下一程。** |
 | 英文标语 | **Say it. Plan it. Go.** |
 | 核心动词 | 描述、生成、推荐、比较、确认、调整、导出 |
@@ -25,7 +25,7 @@
 
 - 单一源码：[TripalLogo.tsx](../frontend/src/components/TripalLogo.tsx)。
 - [独立 SVG](assets/brand/tripal-mark.svg) / [透明 PNG](assets/brand/tripal-mark.png)。
-- [README Banner](assets/brand/tripal-banner.png)：1280×360 版式、按 2 倍导出（2560×720），左侧品牌文案 + 右侧吉祥物与路线，左上角小 Logo 与大吉祥物同样带两只脚；作为两版 README 的首图，顶部不再重复 Logo 与标题。设计源文件为 Ardot `748487864699747`。
+- README 顶部使用正式 Logo、原生文字标题 **TripPal 旅伴** 和 slogan。旧版 `tripal-banner.png` 及既有录屏、截图作为历史素材保留；不通过修改录屏或验证截图来追溯改名。
 - 页面 favicon：[正式 SVG 副本](../frontend/public/tripal-mark.svg)。
 - 浅底正常展示，珊瑚色或深底使用白色底托；保持原始比例，四周至少留出 1/8 图形宽度。
 - 界面图中的 AI 渲染角色只是概念表现，正式应用与 README 使用源码导出的 SVG/PNG。

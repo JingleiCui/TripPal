@@ -14,7 +14,7 @@ import {
 
 type MapState = "loading" | "ready" | "no-key" | "error" | "fixture";
 
-/** Semantic route colors shared with Tripal's coral, mint and secondary accents. */
+/** Semantic route colors shared with TripPal's coral, mint and secondary accents. */
 const DAY_COLORS = [
   "#b84830",
   "#24745d",

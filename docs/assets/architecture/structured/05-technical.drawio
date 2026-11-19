@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <mxfile host="app.diagrams.net" version="24.7.17">
-  <diagram id="05-technical" name="Tripal 技术架构">
+  <diagram id="05-technical" name="TripPal 技术架构">
     <mxGraphModel dx="1710" dy="1020" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1710" pageHeight="1020" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="Tripal 技术架构" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=left;verticalAlign=middle;fontSize=24;" vertex="1" parent="1">
+        <mxCell id="title" value="TripPal 技术架构" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;text;align=left;verticalAlign=middle;fontSize=24;" vertex="1" parent="1">
           <mxGeometry x="30" y="10" width="1650" height="40" as="geometry" />
         </mxCell>
         <mxCell id="client" value="客户端" style="html=0;fontFamily=Arial;fontColor=#151515;strokeWidth=1.2;rounded=1;arcSize=3;dashed=1;dashPattern=6 5;fillColor=none;strokeColor=#2196ff;fontSize=20;verticalAlign=top;spacingTop=10;container=0;" vertex="1" parent="1">

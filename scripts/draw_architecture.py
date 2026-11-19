@@ -185,7 +185,7 @@ class Diagram:
 
 
 OVERALL_EN = {
-    'title': 'Tripal System Architecture',
+    'title': 'TripPal System Architecture',
     'frames': {'client':'User access', 'app':'Application services', 'execution':'Planning runtime',
                'capabilities':'Models / Tools / Documents', 'data':'Data storage'},
     'nodes': {
@@ -212,7 +212,7 @@ OVERALL_EN = {
 }
 
 WORKFLOW_EN = {
-    'title':'Tripal LangGraph Workflow',
+    'title':'TripPal LangGraph Workflow',
     'frames': {'flow':'Planning workflow', 'recovery':'Interrupt and resume'},
     'nodes': {
         'start':['START'], 'end':['END'], 'pure_end':['END'],
@@ -239,7 +239,7 @@ WORKFLOW_EN = {
 
 
 def overall():
-    d = Diagram('01-overall', 'Tripal 整体架构', 1520, 1000)
+    d = Diagram('01-overall', 'TripPal 整体架构', 1520, 1000)
     d.frame('client',30,70,230,690,'用户接入')
     d.frame('app',310,70,400,690,'应用服务')
     d.frame('execution',760,70,350,690,'规划执行')
@@ -274,7 +274,7 @@ def overall():
 
 
 def layered():
-    d = Diagram('02-layered', 'Tripal 分层架构', 1440, 940)
+    d = Diagram('02-layered', 'TripPal 分层架构', 1440, 940)
     d.frame('system',30,70,1380,830,'旅行规划智能体系统')
     rows = [
         ('交互层',[['React / TypeScript','需求对话 / 地点探索'],['AMap JS SDK','地图 / 路线展示'],['行程工作台','每日安排 / 路书']]),
@@ -294,7 +294,7 @@ def layered():
 
 
 def workflow():
-    d = Diagram('03-langgraph','Tripal LangGraph 工作流',1560,1550)
+    d = Diagram('03-langgraph','TripPal LangGraph 工作流',1560,1550)
     d.frame('flow',30,70,1100,1440,'规划工作流')
     d.frame('recovery',1180,70,350,1440,'中断与恢复')
     d.node('start',460,130,120,44,'START',shape='terminal')
@@ -335,7 +335,7 @@ def workflow():
 
 
 def business():
-    d = Diagram('04-business','Tripal 业务架构',1520,1030)
+    d = Diagram('04-business','TripPal 业务架构',1520,1030)
     d.frame('planning',30,70,1460,270,'行程规划业务')
     phases=[('need','需求确认\n城市 / 日期 / 预算 / 偏好'),('recommend','调查与推荐\n候选地点 / 草案 / 缺口'),
             ('confirm','方案确认\n比较候选 / 保存版本'),('manage','管理与调整\n按天安排 / 锁定地点'),
@@ -360,7 +360,7 @@ def business():
 
 
 def technical():
-    d = Diagram('05-technical','Tripal 技术架构',1710,1020)
+    d = Diagram('05-technical','TripPal 技术架构',1710,1020)
     for key,x,w,title in [('client',30,240,'客户端'),('backend',310,300,'后端服务'),
                            ('execution',650,320,'任务与工作流'),('adapter',1010,300,'能力适配'),
                            ('external',1350,330,'外部平台')]:

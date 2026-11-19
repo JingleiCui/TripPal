@@ -1,5 +1,7 @@
 <div align="center">
-  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="Tripal · Say it. Plan it. Go. · 一句话，安排好下一程。" />
+  <img src="docs/assets/brand/tripal-mark.svg" width="80" alt="TripPal 旅伴" />
+  <h1>TripPal 旅伴</h1>
+  <p><strong>Say it. Plan it. Go.</strong></p>
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
     <img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.8+" />
@@ -11,7 +13,7 @@
   <p><a href="README.md">简体中文</a> | <strong>English</strong></p>
 </div>
 
-**Tripal is a self-hosted AI travel-planning agent for trips within China.** Describe your destination, dates, budget and preferences to start planning. Tripal gathers missing essentials, researches places and routes, consults your own travel documents, and creates an editable daily itinerary.
+**TripPal is a self-hosted AI travel-planning agent for trips within China.** Describe your destination, dates, budget and preferences to start planning. TripPal gathers missing essentials, researches places and routes, consults your own travel documents, and creates an editable daily itinerary.
 
 Compare candidate plans, lock places you want to keep, arrange meals, stays and transport, then export a travel guide from the same workspace. Places and routes retain their sources, edits retain itinerary versions, and unsupported prices, opening hours and reservation details are marked for verification.
 
@@ -39,7 +41,7 @@ For a credential-free introduction, select **使用合成资料体验** (synthet
 
 The React workspace sends REST requests and receives execution updates through SSE. FastAPI handles authentication, trip permissions and business operations. Planning and revision tasks are written to MySQL before a dispatcher delivers them through Redis / Celery to a Worker. LangGraph coordinates planning; the execution harness applies call budgets, tool permissions and execution checks.
 
-![Tripal system architecture: access, application services, planning runtime, models and tools, and data storage](docs/assets/architecture/structured/01-overall.en.svg)
+![TripPal system architecture: access, application services, planning runtime, models and tools, and data storage](docs/assets/architecture/structured/01-overall.en.svg)
 
 [Full-size diagram](docs/assets/architecture/structured/01-overall.en.svg) · [Editable draw.io source](docs/assets/architecture/structured/01-overall.en.drawio)
 
@@ -49,7 +51,7 @@ MySQL stores tasks, itinerary versions, checkpoints and events. Redis handles me
 
 The default path confirms requirements, selects research domains, investigates destinations, performs additional research, arranges daily plans, validates routes and reviews conflicts. Research domains run sequentially. Changed requirements return the workflow to itinerary arrangement.
 
-![Tripal LangGraph workflow: planning nodes, conditional branches, requirement-change loop and persistent interrupt recovery](docs/assets/architecture/structured/03-langgraph.en.svg)
+![TripPal LangGraph workflow: planning nodes, conditional branches, requirement-change loop and persistent interrupt recovery](docs/assets/architecture/structured/03-langgraph.en.svg)
 
 [Full-size diagram](docs/assets/architecture/structured/03-langgraph.en.svg) · [Editable draw.io source](docs/assets/architecture/structured/03-langgraph.en.drawio)
 

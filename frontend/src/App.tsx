@@ -1,3 +1,4 @@
+import { BRAND } from "./brand";
 import { useEffect, useState, useRef } from "react";
 import {
   Link,
@@ -352,7 +353,7 @@ export default function App() {
     return (
       <div className="initial-loading ui-initial-loading">
         <TripalMark size={44} />
-        <b>Tripal 旅伴</b>
+        <b>{BRAND.fullName}</b>
         <span className="ui-initial-hint">一句话，安排好下一程。</span>
         <Skeleton lines={2} compact />
       </div>
