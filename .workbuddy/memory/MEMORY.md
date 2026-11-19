@@ -10,8 +10,9 @@
 - 用户默认中文回复。
 
 ## README / 素材发布口径
-- README 中**只允许出现真实运行界面截图**；AI 生成的概念图（`*-concept.png`）是假图，必须删除、不得出现在 README。
-- 品牌 Banner（`tripal-banner.png`）是设计稿，不是界面图，不应作为 README 首图。
+- 项目名统一为 **TripPal**（T、P 大写），不要再写 `Tripal`。 Banner 图内标题也必须与之一致。
+- README 首图 = 品牌 Banner `docs/assets/brand/tripal-banner.png`（用户 2026-11-19 明确要求显示，覆盖此前"banner 不作首图"的旧约定）。两版 README（中/英）顶部都用这张图，去掉重复的顶部文字标题。
+- README 中的**运行界面截图必须是真实截图**；AI 生成的概念图（`*-concept.png`）是假图，必须删除、不得出现在 README。Banner 是品牌设计稿、用于首图，与"真实界面截图"分开展示，不冲突。
 - demo.gif 要求清晰（旧版 860×597 模糊），更新时用高分辨率录制 + ffmpeg 导出。
 
 ## PyCharm 环境约定

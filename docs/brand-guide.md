@@ -25,7 +25,7 @@
 
 - 单一源码：[TripalLogo.tsx](../frontend/src/components/TripalLogo.tsx)。
 - [独立 SVG](assets/brand/tripal-mark.svg) / [透明 PNG](assets/brand/tripal-mark.png)。
-- README 顶部使用正式 Logo、原生文字标题 **TripPal 旅伴** 和 slogan。旧版 `tripal-banner.png` 及既有录屏、截图作为历史素材保留；不通过修改录屏或验证截图来追溯改名。
+- README 顶部使用品牌 Banner `tripal-banner.png`（已更新为 **TripPal 旅伴**），内含 Logo、品牌标题和 slogan；徽章与语言切换紧随其后。Banner 中不含真实界面，真实运行截图单独展示；不通过修改录屏或验证截图来追溯改名。
 - 页面 favicon：[正式 SVG 副本](../frontend/public/tripal-mark.svg)。
 - 浅底正常展示，珊瑚色或深底使用白色底托；保持原始比例，四周至少留出 1/8 图形宽度。
 - 界面图中的 AI 渲染角色只是概念表现，正式应用与 README 使用源码导出的 SVG/PNG。

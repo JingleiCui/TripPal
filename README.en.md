@@ -1,7 +1,5 @@
 <div align="center">
-  <img src="docs/assets/brand/tripal-mark.svg" width="80" alt="TripPal 旅伴" />
-  <h1>TripPal 旅伴</h1>
-  <p><strong>Say it. Plan it. Go.</strong></p>
+  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="TripPal · Say it. Plan it. Go." />
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
     <img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.8+" />

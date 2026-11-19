@@ -1,7 +1,5 @@
 <div align="center">
-  <img src="docs/assets/brand/tripal-mark.svg" width="80" alt="TripPal 旅伴" />
-  <h1>TripPal 旅伴</h1>
-  <p><strong>一句话，安排好下一程。</strong></p>
+  <img src="docs/assets/brand/tripal-banner.png" width="100%" alt="TripPal 旅伴 · 一句话，安排好下一程。 · Say it. Plan it. Go." />
   <p>
     <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11" />
     <img src="https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.8+" />
@@ -10,7 +8,7 @@
     <img src="https://img.shields.io/badge/LangGraph-1.2.20-24745D" alt="LangGraph 1.2.20" />
     <a href="#-license"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" /></a>
   </p>
-  <p><strong>简体中文</strong> | <a href="README.en.md">English</a></p>
+  <p><a href="README.md">简体中文</a> | <a href="README.en.md">English</a></p>
 </div>
 
 **TripPal 旅伴是一款可自托管的 AI 旅行规划智能体助手，面向中国境内旅行。**
