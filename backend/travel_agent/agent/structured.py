@@ -3,7 +3,7 @@
 import re
 from pydantic import ValidationError
 from langchain_core.messages import HumanMessage
-from ..config import settings
+from ..config import settings, model_settings_snapshot
 from ..providers.base import ProviderError
 from ..models import specs
 from ..models.registry import ConfigurationError, resolve
@@ -17,10 +17,10 @@ def is_ollama():
         return False
 
 
-def structured_method():
+def structured_method(configuration=None):
     """结构化输出方式由供应商能力决定，仍允许 structured_output_method 全局覆盖。"""
     try:
-        return resolve("structured").structured_method
+        return resolve("structured", configuration).structured_method
     except ConfigurationError:
         return "json_schema" if is_ollama() or settings.model_provider == "gemini" else "function_calling"
 
@@ -63,11 +63,14 @@ def diagnostic(result, method):
 def generate(schema, messages, label, harness=None, validator=None):
     from .harness import model
 
-    method = structured_method()
+    configuration = model_settings_snapshot()
+    method = structured_method(configuration)
     prompts = list(messages)
     last = None
     for attempt in range(2):
-        runnable = model("structured").with_structured_output(schema, method=method, include_raw=True)
+        runnable = model("structured", configuration=configuration).with_structured_output(
+            schema, method=method, include_raw=True
+        )
         result = (
             harness.invoke(runnable, prompts, label, allow_unparsed=True)
             if harness

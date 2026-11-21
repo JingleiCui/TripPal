@@ -18,7 +18,7 @@
 | `embedding` | 私有资料 RAG 向量化 | 本地 `BAAI/bge-small-zh-v1.5`（512 维） | 进程内 `sentence-transformers` | **否** | `knowledge.py::embed()` |
 | `rerank` | 检索结果重排（默认关闭） | 本地 `BAAI/bge-reranker-base` | 进程内 `CrossEncoder` | **否** | `knowledge.py::rerank()` |
 
-**关键点**：`chat` 与 `structured` 共用一份凭证；`vision` / 语音各自独立，避免把对话 Key 发到未授权域名；`embedding` / `rerank` 完全本地，不消耗任何 API 额度。
+**关键点**：`structured` 默认跟随主模型，也可独立配置供应商与凭证；`vision` / 语音各自独立，避免把对话 Key 发到未授权域名；`embedding` / `rerank` 完全本地，不消耗任何 API 额度。
 
 ---
 
@@ -103,7 +103,7 @@ config.local.json / TRAVEL_* 环境变量
 
 ## 四、切换机制（4 种，任选其一）
 
-**① 改一行（推荐）**：编辑 `config.local.json` 的 `active_model_profile`，重启 API 与 worker。
+**① 改一行（推荐）**：编辑 `config.local.json` 的 `active_model_profile`，默认在下次模型入口解析时热加载。首次部署本次代码仍需重启 API 与 worker。详见 [模型接入审计与热切换](模型接入审计与热切换.md)。
 
 **② 环境变量临时切换，不改文件**：
 
@@ -207,7 +207,7 @@ vision.recognize / voice.transcribe / voice.synthesize
 
 1. 打开 `config.local.json`，找到已预置的 `model_profiles.openrouter_free`，把 `model_api_key` 填成你的 `sk-or-v1-...`。
 2. 把顶层 `active_model_profile` 从 `current` 改成 `openrouter_free`（或只设环境变量，不改文件）。
-3. 重启 API 与 worker。
+3. 首次部署代码后重启 API 与 worker；后续模型配置保存后在各进程下次模型入口解析时热加载。
 
 **不要写 `model_name: "openrouter/free"` 当默认**。`openrouter_free` 只是**本机 profile 的名字**；`openrouter/free` 是 OpenRouter 真实存在的一个「免费模型自动路由器」，但它每次请求可能落到不同模型（本机实测同一轮三次调用分别落到 `particle-1` / `nemotron-3.5-lightning` / `nemotron-3-ultra`），`json_schema` 与 tool calling 的行为不可复现。项目默认已改成具体的 `inclusionai/ling-3.2-flash:free`，完整分配见第 3.3 / 四③ 节与 `config.openrouter.example.json`。
 

@@ -1,6 +1,5 @@
 """Versioned, owner-filtered hybrid retrieval. MySQL is the visibility authority."""
 
-from functools import lru_cache
 from pathlib import Path
 import io
 import json
@@ -8,6 +7,7 @@ import httpx
 from sqlalchemy import select
 from .db import Session, Document
 from .config import settings
+from .models import gateway
 
 
 def es(method, path, **kwargs):
@@ -17,16 +17,9 @@ def es(method, path, **kwargs):
     return response.json()
 
 
-@lru_cache(maxsize=1)
 def embedder():
-    import torch
-
-    torch.set_num_threads(2)
-    from sentence_transformers import SentenceTransformer
-
-    return SentenceTransformer(
-        settings.embedding_model, device="cpu", local_files_only=settings.embedding_local_only
-    )
+    """Compatibility entry point; loading and caching belong to the model gateway."""
+    return gateway.local_model("embedding")
 
 
 def embed(texts):
@@ -215,11 +208,8 @@ def search(owner, query, limit=5):
     }
 
 
-@lru_cache(maxsize=1)
 def reranker():
-    from sentence_transformers import CrossEncoder
-
-    return CrossEncoder(settings.reranker_model, device="cpu", local_files_only=settings.embedding_local_only)
+    return gateway.local_model("rerank")
 
 
 def rerank(query, hits):

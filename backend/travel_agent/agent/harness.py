@@ -193,11 +193,11 @@ class Harness:
             raise
 
 
-def model(slot="chat"):
+def model(slot="chat", configuration=None):
     """唯一的 LLM 构造入口。
 
     具体实现（协议分派、实例缓存、额外 headers）统一收在 models.gateway；
     这里只注入 ChatOpenAI 驱动，保持对既有测试与调用方的接口不变。
     ``slot=\"structured\"`` 时返回独立的结构化输出模型实例。
     """
-    return gateway.chat_model(drivers={"openai": ChatOpenAI}, slot=slot)
+    return gateway.chat_model(drivers={"openai": ChatOpenAI}, slot=slot, configuration=configuration)

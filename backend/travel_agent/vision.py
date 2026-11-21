@@ -142,6 +142,7 @@ def recognize(raw, mime):
         label="视觉识别",
         failure_code="vision_failed",
         unavailable_code="vision_unavailable",
+        spec=spec,
     )
     try:
         fields, unknowns = normalize_fields(_extract_json(content))

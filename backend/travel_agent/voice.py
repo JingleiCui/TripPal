@@ -13,8 +13,8 @@ from .models.registry import ConfigurationError, ready as slot_ready, resolve
 TTS_PATH = "/api/v1/services/aigc/multimodal-generation/generation"
 
 
-def enabled():
-    if not slot_ready("asr"):
+def enabled(slot="asr"):
+    if not slot_ready(slot):
         raise ProviderError("disabled", "语音尚未启用，需要先完成模型账号与额度配置")
 
 
@@ -123,12 +123,13 @@ def transcribe(raw):
         label="语音识别",
         failure_code="asr_failed",
         unavailable_code="asr_unavailable",
+        spec=spec,
     )
     return {"text": text, "requires_confirmation": True, "model": spec.model}
 
 
 def synthesize(text):
-    enabled()
+    enabled("tts")
     if not text.strip() or len(text) > 800:
         raise ValueError("朗读文字应为 1—800 字")
     try:
@@ -145,6 +146,7 @@ def synthesize(text):
         label="语音合成",
         failure_code="tts_failed",
         unavailable_code="tts_unavailable",
+        spec=spec,
     )
     output = payload.get("output") or {}
     audio_info = output.get("audio") or {} if isinstance(output, dict) else {}

@@ -82,7 +82,9 @@ python3.11 scripts/bootstrap.py
 | 地图展示 | 在文件顶层填写高德 JS Key：`amap_js_key`，以及安全密钥 `amap_security_code`。 |
 | 美团查询（可选） | 配置官方 CLI 凭证并开启 `meituan_enabled`，步骤见[平台配置](docs/平台申请与配置.md#5-美团酒旅推荐)。 |
 
-修改配置后重启应用和 Worker；`TRAVEL_<SETTING_NAME>` 环境变量优先于文件配置。可先检查配置解析：
+模型接入清单、统一网关、配置热更新边界与迁移步骤见 [模型接入审计与热切换](docs/模型接入审计与热切换.md)。
+
+模型配置默认在下次调用时热加载；首次部署新代码和修改非模型配置后需重启应用和 Worker；`TRAVEL_<SETTING_NAME>` 环境变量优先于文件配置。可先检查配置解析：
 
 ```bash
 # 不调用模型 API；不会验证凭证、额度或模型的实际可用性。

@@ -11,21 +11,33 @@
         "chat": {
           "provider": "openrouter",
           "model": "inclusionai/ling-3.2-flash:free",
-          "extra_body": { "reasoning": { "enabled": false } }
+          "extra_body": {
+            "reasoning": {
+              "enabled": false
+            }
+          }
         },
         "structured": {
           "provider": "openrouter",
           "model": "inclusionai/ling-3.2-flash:free",
           "use_main_key": true,
           "structured_method": "json_schema",
-          "extra_body": { "reasoning": { "enabled": false } }
+          "extra_body": {
+            "reasoning": {
+              "enabled": false
+            }
+          }
         },
         "vision": {
           "provider": "openrouter",
           "model": "nvidia/nemotron-3.5-super-vl:free",
           "use_main_key": true,
           "enabled": true,
-          "extra_body": { "reasoning": { "enabled": false } }
+          "extra_body": {
+            "reasoning": {
+              "enabled": false
+            }
+          }
         }
       }
     },
@@ -34,7 +46,18 @@
       "model_name": "qwen3.5:9b",
       "model_base_url": "http://127.0.0.1:11434",
       "model_api_key": "ollama",
-      "model_enabled": true
+      "model_enabled": true,
+      "model_slots": {
+        "vision": {
+          "enabled": false
+        },
+        "asr": {
+          "enabled": false
+        },
+        "tts": {
+          "enabled": false
+        }
+      }
     },
     "google_gemini": {
       "model_provider": "gemini",
@@ -48,6 +71,31 @@
       "model_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "model_api_key": "",
       "model_enabled": true
+    },
+    "local_openai_compatible": {
+      "model_provider": "local_compatible",
+      "model_name": "replace-with-your-installed-model",
+      "model_enabled": true,
+      "model_slots": {
+        "vision": {
+          "enabled": false
+        },
+        "asr": {
+          "enabled": false
+        },
+        "tts": {
+          "enabled": false
+        }
+      }
+    }
+  },
+  "model_auto_reload": true,
+  "model_providers": {
+    "local_compatible": {
+      "protocol": "openai",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "requires_key": false,
+      "structured_method": "json_schema"
     }
   }
 }

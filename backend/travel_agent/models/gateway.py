@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import httpx
+from functools import lru_cache
 
 from ..providers.base import ProviderError
 from . import specs
@@ -36,15 +37,16 @@ def _driver(protocol, drivers):
     return ChatOpenAI
 
 
-def chat_model(drivers=None, slot="chat"):
+def chat_model(drivers=None, slot="chat", configuration=None):
     """返回缓存的 LangChain BaseChatModel。凭证缺失不在此拦截（由 Harness 统一门控）。
 
     ``slot`` 允许 structured 槽位真正使用自己的模型，而不是复用 chat 实例；
     缓存键自带 slot，因此两种配置各自持有一个连接实例，互不覆盖。
     """
-    from ..config import settings
+    from ..config import model_settings_snapshot
 
-    spec = resolve(slot)
+    settings = configuration if configuration is not None else model_settings_snapshot()
+    spec = resolve(slot, settings)
     driver = _driver(spec.protocol, drivers)
     key = (spec.fingerprint, driver, getattr(settings, "model_output_tokens", 4096),
            getattr(settings, "model_context_tokens", 8192),
@@ -140,15 +142,15 @@ def _http_error(code, label, failure_code):
     )
 
 
-def _post(slot, path, body, *, label, failure_code, unavailable_code):
+def _post(slot, path, body, *, label, failure_code, unavailable_code, spec=None):
     """所有 HTTP 模型调用的唯一出口：统一鉴权、URL、错误映射。"""
-    spec = resolve(slot)
+    spec = spec if spec is not None else resolve(slot)
     if not spec.ready:
         raise ProviderError("disabled", f"{label}尚未启用或缺少凭证")
     body = {**body, **spec.extra_body}
     url = spec.base_url.rstrip("/") + "/" + path.lstrip("/")
     headers = {
-        "Authorization": "Bearer " + spec.api_key,
+        **({"Authorization": "Bearer " + spec.api_key} if spec.api_key else {}),
         "Content-Type": "application/json",
         **{k: v for k, v in spec.extra_headers.items() if v},
     }
@@ -162,9 +164,9 @@ def _post(slot, path, body, *, label, failure_code, unavailable_code):
     return response
 
 
-def post_chat(slot, body, *, label, failure_code, unavailable_code, path=None):
+def post_chat(slot, body, *, label, failure_code, unavailable_code, path=None, spec=None):
     """走 chat/completions 的槽位（vision / asr / 自定义），直接返回文本 content。"""
-    spec = resolve(slot)
+    spec = spec if spec is not None else resolve(slot)
     response = _post(
         slot,
         path or spec.chat_path,
@@ -172,11 +174,12 @@ def post_chat(slot, body, *, label, failure_code, unavailable_code, path=None):
         label=label,
         failure_code=failure_code,
         unavailable_code=unavailable_code,
+        spec=spec,
     )
     return chat_content(response)
 
 
-def post_json(slot, path, body, *, label, failure_code, unavailable_code):
+def post_json(slot, path, body, *, label, failure_code, unavailable_code, spec=None):
     """非标准响应体（如百炼原生 TTS）用这个，返回完整 JSON dict。"""
     response = _post(
         slot,
@@ -185,6 +188,7 @@ def post_json(slot, path, body, *, label, failure_code, unavailable_code):
         label=label,
         failure_code=failure_code,
         unavailable_code=unavailable_code,
+        spec=spec,
     )
     try:
         payload = response.json()
@@ -240,3 +244,28 @@ def reset():
 
 def cache_stats():
     return {"chat_models": len(_chat_cache), "http_clients": len(_client_cache)}
+
+
+@lru_cache(maxsize=2)
+def _local_model(slot, name, local_only):
+    """Process-local retrieval adapters; model changes require a controlled restart."""
+    if slot == "embedding":
+        import torch
+        from sentence_transformers import SentenceTransformer
+
+        torch.set_num_threads(2)
+        return SentenceTransformer(name, device="cpu", local_files_only=local_only)
+    from sentence_transformers import CrossEncoder
+
+    return CrossEncoder(name, device="cpu", local_files_only=local_only)
+
+
+def local_model(slot):
+    """Single loader for the existing local embedding and reranking entry points."""
+    from ..config import model_settings_snapshot
+
+    if slot not in {"embedding", "rerank"}:
+        raise ValueError("local_model only supports embedding/rerank")
+    configuration = model_settings_snapshot()
+    spec = resolve(slot, configuration)
+    return _local_model(slot, spec.model, configuration.embedding_local_only)

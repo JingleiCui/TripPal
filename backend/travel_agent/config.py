@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import os
+from threading import RLock
 from pydantic import BaseModel, Field
 from .models.specs import known_names
 
@@ -24,10 +25,15 @@ MODEL_PROFILE_FIELDS = {
     # profile 可自带按能力槽位的模型分配；切换 profile 时随 profile 一起生效/失效，
     # 避免顶层 model_slots 污染其它 profile（例如本地 Ollama）。
     "model_slots",
+    "vision_provider", "vision_enabled", "vision_model", "vision_api_key",
+    "vision_api_base_url", "vision_timeout",
+    "voice_provider", "voice_enabled", "voice_api_key", "voice_api_base_url",
+    "asr_model", "tts_model",
 }
 
 
 class Settings(BaseModel):
+    model_auto_reload: bool = True  # 下一次模型解析检查配置文件；仅热更新模型相关字段
     active_model_profile: str = ""  # 空值兼容原配置；填写 model_profiles 中的配置名即可切换
     model_profiles: dict[str, dict] = Field(default_factory=dict)
     structured_output_method: str = "auto"  # auto / json_schema / function_calling
@@ -179,3 +185,101 @@ def load_settings() -> Settings:
 
 
 settings = load_settings()
+
+# Stable settings identity preserves all existing `from config import settings` users.
+# Publish a complete dictionary in one assignment; readers in the gateway use a snapshot.
+_model_reload_lock = RLock()
+_MODEL_RUNTIME_FIELDS = MODEL_PROFILE_FIELDS | {
+    "model_providers", "model_profiles", "active_model_profile", "model_auto_reload",
+}
+_model_generation = 0
+_model_reload_error = None
+_restart_required = []
+
+
+def _model_file_signature():
+    path = ROOT / "config.local.json"
+    try:
+        stat = path.stat()
+        return (str(path), stat.st_mtime_ns, stat.st_size, stat.st_ino)
+    except FileNotFoundError:
+        return (str(path), None)
+
+
+_model_file_seen = _model_file_signature()
+
+
+def reload_model_settings():
+    """Validate then atomically publish model settings in this process; never makes API calls.
+
+    Existing invocations retain their client. A bad edit leaves the last working settings
+    active. Environment overrides are re-read; changing another process's environment
+    still requires a restart. Non-model settings are reported, never hot-applied.
+    """
+    global _model_file_seen, _model_generation, _model_reload_error, _restart_required
+    from .models.registry import SLOTS, resolve
+    from .models import specs
+
+    with _model_reload_lock:
+        signature = _model_file_signature()
+        try:
+            candidate = load_settings()
+            unknown = set(candidate.model_slots) - set(SLOTS)
+            if unknown:
+                raise ValueError("未知模型槽位")
+            for name in candidate.model_providers:
+                provider = specs.provider_spec(name, candidate.model_providers)
+                if provider.protocol not in specs.LANGCHAIN_PROTOCOLS | specs.HTTP_PROTOCOLS | {specs.PROTOCOL_LOCAL}:
+                    raise ValueError("不支持的模型协议")
+            for slot in SLOTS:
+                resolved = resolve(slot, candidate)
+                override = candidate.model_slots.get(slot, {})
+                if slot in {"embedding", "rerank"} and override:
+                    raise ValueError("embedding/rerank 暂不支持槽位覆盖；修改本地模型后需重建索引并重启")
+                if resolved.timeout < 0 or (slot not in {"embedding", "rerank"} and resolved.timeout == 0):
+                    raise ValueError("模型超时必须为正数")
+                if resolved.structured_method not in {"auto", "json_schema", "function_calling"}:
+                    raise ValueError("不支持的结构化输出模式")
+                if slot in {"chat", "structured"} and resolved.protocol not in specs.LANGCHAIN_PROTOCOLS:
+                    raise ValueError("对话槽位协议不支持")
+                if resolved.protocol != specs.PROTOCOL_LOCAL and not resolved.model:
+                    raise ValueError("缺少模型名称")
+            if candidate.model_context_tokens <= 0 or candidate.model_output_tokens <= 0:
+                raise ValueError("模型 token 预算必须为正数")
+            changed = {name for name in Settings.model_fields
+                       if getattr(candidate, name) != getattr(settings, name)}
+            # Changing retrieval models without reindexing silently corrupts similarity scores,
+            # even when the new model has the same dimension. Refuse the entire switch.
+            if changed & {"embedding_model", "embedding_local_only", "reranker_model"}:
+                raise ValueError("检索模型变更需要重建索引并重启")
+            _restart_required = sorted(changed - _MODEL_RUNTIME_FIELDS)
+            published = dict(settings.__dict__)
+            for name in _MODEL_RUNTIME_FIELDS:
+                published[name] = getattr(candidate, name)
+            settings.__dict__ = published
+            _model_generation += 1
+            _model_reload_error = None
+        except (ValueError, TypeError, OSError, KeyError):
+            # Never expose validation inputs or JSON fragments: they may contain API keys.
+            _model_reload_error = "模型配置重载失败，已保留原配置；请检查 JSON、供应商、槽位和检索模型重启要求"
+            raise ValueError(_model_reload_error) from None
+        finally:
+            _model_file_seen = signature
+        return model_reload_status()
+
+
+def model_settings_snapshot():
+    """Poll on model entry, not a background thread; each worker observes the shared file."""
+    with _model_reload_lock:
+        if settings.model_auto_reload and _model_file_signature() != _model_file_seen:
+            try:
+                reload_model_settings()
+            except ValueError:
+                pass  # Last good configuration remains available; status exposes rejection.
+        return settings.model_copy()
+
+
+def model_reload_status():
+    with _model_reload_lock:
+        return {"generation": _model_generation, "auto_reload": settings.model_auto_reload,
+                "error": _model_reload_error, "restart_required": list(_restart_required)}

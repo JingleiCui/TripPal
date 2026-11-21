@@ -13,7 +13,6 @@ import os
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
-from ..config import settings
 from . import specs
 
 SLOTS = ("chat", "structured", "vision", "asr", "tts", "embedding", "rerank")
@@ -100,11 +99,20 @@ class ConfigurationError(ValueError):
     """配置写错时显式失败，而不是静默回落到别的供应商。"""
 
 
-def _slot_override(slot):
+def _slot_override(slot, settings):
     raw = (settings.model_slots or {}).get(slot, {})
     unknown = set(raw) - SLOT_FIELDS
     if unknown:
         raise ConfigurationError(f"model_slots.{slot} 含不支持的字段：{', '.join(sorted(unknown))}")
+    for name in {"enabled", "use_main_key"} & raw.keys():
+        if not isinstance(raw[name], bool):
+            raise ConfigurationError(f"model_slots.{slot}.{name} 必须为布尔值")
+    for name in {"provider", "model", "base_url", "api_key", "structured_method"} & raw.keys():
+        if not isinstance(raw[name], str):
+            raise ConfigurationError(f"model_slots.{slot}.{name} 必须为字符串")
+    for name in {"extra_headers", "extra_body"} & raw.keys():
+        if not isinstance(raw[name], dict):
+            raise ConfigurationError(f"model_slots.{slot}.{name} 必须为对象")
     return dict(raw)
 
 
@@ -124,18 +132,18 @@ def _same_host(left, right):
         return False
 
 
-def _chat_base_url():
+def _chat_base_url(settings):
     """轻量取当前对话槽位的 base_url（不递归调用 resolve），供同源凭证复用判定。"""
     override = (settings.model_slots or {}).get("chat", {})
     if override.get("base_url"):
         return override["base_url"]
-    name = settings.model_provider
-    if name in LEGACY_PROVIDERS:
-        return settings.model_base_url
+    name = override.get("provider") or settings.model_provider
+    if name in LEGACY_PROVIDERS and name == settings.model_provider:
+        return settings.model_base_url or specs.provider_spec(name, settings.model_providers).base_url
     return specs.provider_spec(name, settings.model_providers).base_url
 
 
-def _provider_name(slot, override, default, setting_field=None):
+def _provider_name(slot, override, default, settings, setting_field=None):
     field = setting_field or f"{slot}_provider"
     name = override.get("provider") or getattr(settings, field, "") or default
     if name not in specs.known_names(settings.model_providers):
@@ -145,14 +153,14 @@ def _provider_name(slot, override, default, setting_field=None):
     return name
 
 
-def _key(slot, override, spec, *, explicit="", use_main=False, same_host_required=False):
+def _key(slot, override, spec, settings, *, explicit="", use_main=False, same_host_required=False):
     """凭证解析：显式 key > 槽位 key > 主对话 key（仅同源/显式授权）> 供应商环境变量。"""
     if override.get("api_key"):
         return override["api_key"], f"model_slots.{slot}.api_key"
     if explicit:
         return explicit, f"{slot}_api_key"
     if use_main or override.get("use_main_key"):
-        if same_host_required and not _same_host(_chat_base_url(), spec.base_url):
+        if same_host_required and not _same_host(_chat_base_url(settings), override.get("base_url") or spec.base_url):
             # 避免把 OpenRouter / Gemini 的对话 Key 误发到百炼语音等第三方域名。
             return "", "main_key_rejected_cross_host"
         if settings.model_api_key:
@@ -162,8 +170,8 @@ def _key(slot, override, spec, *, explicit="", use_main=False, same_host_require
     return "", "missing"
 
 
-def _structured_method(spec, override):
-    if _is_local_ollama(spec.name, settings.model_base_url):
+def _structured_method(spec, override, settings, protocol):
+    if protocol == specs.PROTOCOL_OLLAMA:
         return "json_schema"  # 保持既有本地 Ollama 行为
     # 槽位级覆盖优先于全局：按用途给 structured 换模型/协议时，方法必须跟着槽位走。
     if override.get("structured_method"):
@@ -184,13 +192,22 @@ def _validate_capability(slot, spec):
         )
 
 
-def resolve(slot) -> ResolvedSpec:
+def resolve(slot, configuration=None) -> ResolvedSpec:
     """返回指定槽位最终生效的配置。不发起任何网络请求。"""
+    from ..config import model_settings_snapshot
+
+    settings = configuration if configuration is not None else model_settings_snapshot()
     if slot not in SLOTS:
         raise ConfigurationError(f"未知能力槽位：{slot}")
-    override = _slot_override(slot)
+    override = _slot_override(slot, settings)
+    if "timeout" in override and (not isinstance(override["timeout"], (int, float)) or override["timeout"] <= 0):
+        raise ConfigurationError("模型超时必须为正数")
+    if override.get("structured_method", "auto") not in {"auto", "json_schema", "function_calling"}:
+        raise ConfigurationError("不支持的结构化输出模式")
 
     if slot in {"embedding", "rerank"}:
+        if override:
+            raise ConfigurationError("embedding/rerank 暂不支持槽位覆盖；请修改本地模型配置并重启")
         spec = specs.provider_spec("local", settings.model_providers)
         return ResolvedSpec(
             slot=slot,
@@ -210,21 +227,23 @@ def resolve(slot) -> ResolvedSpec:
         )
 
     if slot in {"chat", "structured"}:
-        name = _provider_name(slot, override, settings.model_provider)
+        name = _provider_name(slot, override, settings.model_provider, settings)
         spec = specs.provider_spec(name, settings.model_providers)
         _validate_capability(slot, spec)
         legacy = name in LEGACY_PROVIDERS
         base_url = override.get("base_url") or (
-            settings.model_base_url if legacy else spec.base_url
+            (settings.model_base_url or spec.base_url) if legacy and name == settings.model_provider else spec.base_url
         )
         protocol = spec.protocol
+        if protocol not in specs.LANGCHAIN_PROTOCOLS:
+            raise ConfigurationError(f"对话槽位不支持协议 {protocol}")
         if _is_local_ollama(name, base_url):
             protocol = specs.PROTOCOL_OLLAMA
             base_url = base_url.rstrip("/").removesuffix("/v1")
         if protocol == specs.PROTOCOL_GEMINI:
-            base_url = settings.gemini_base_url
-        key, source = _key(slot, override, spec, explicit=settings.model_api_key, use_main=True)
-        model = override.get("model") or settings.model_name or spec.default_model
+            base_url = override.get("base_url") or settings.gemini_base_url
+        key, source = _key(slot, {**override, "base_url": base_url}, spec, settings, use_main=name == settings.model_provider, same_host_required=protocol != specs.PROTOCOL_GEMINI)
+        model = override.get("model") or (settings.model_name if name == settings.model_provider else spec.default_model)
         enabled = bool(override.get("enabled", settings.model_enabled))
         return ResolvedSpec(
             slot=slot,
@@ -235,7 +254,7 @@ def resolve(slot) -> ResolvedSpec:
             model=model,
             timeout=int(override.get("timeout", settings.model_timeout)),
             enabled=enabled,
-            structured_method=_structured_method(spec, override),
+            structured_method=_structured_method(spec, override, settings, protocol),
             extra_headers={**spec.extra_headers, **override.get("extra_headers", {})},
             extra_body={**spec.extra_body, **override.get("extra_body", {})},
             chat_path=spec.chat_path,
@@ -245,25 +264,31 @@ def resolve(slot) -> ResolvedSpec:
 
     if slot == "vision":
         default = settings.model_provider if settings.model_provider not in LEGACY_PROVIDERS else "dashscope"
-        name = _provider_name(slot, override, default)
+        if "vision" not in specs.provider_spec(default, settings.model_providers).capabilities:
+            default = "dashscope"
+        name = _provider_name(slot, override, default, settings)
         spec = specs.provider_spec(name, settings.model_providers)
         _validate_capability(slot, spec)
-        if spec.protocol not in specs.HTTP_PROTOCOLS:
+        if spec.protocol not in specs.HTTP_PROTOCOLS | {specs.PROTOCOL_OLLAMA}:
             raise ConfigurationError(f"视觉槽位需要 OpenAI-compatible HTTP 供应商，{name!r} 是 {spec.protocol}")
         key, source = _key(
             slot,
             override,
             spec,
+            settings,
             explicit=settings.vision_api_key,
             same_host_required=True,
         )
+        base_url = override.get("base_url") or (
+            settings.vision_api_base_url if name == "dashscope" else spec.base_url
+        )
+        if spec.protocol == specs.PROTOCOL_OLLAMA:
+            base_url = base_url.rstrip("/").removesuffix("/v1") + "/v1"
         return ResolvedSpec(
             slot=slot,
             provider=name,
             protocol=specs.PROTOCOL_OPENAI,
-            base_url=override.get("base_url") or (
-                settings.vision_api_base_url if name == "dashscope" else spec.base_url
-            ),
+            base_url=base_url,
             api_key=key,
             model=override.get("model") or settings.vision_model,
             timeout=int(override.get("timeout", settings.vision_timeout)),
@@ -277,7 +302,7 @@ def resolve(slot) -> ResolvedSpec:
         )
 
     # asr / tts：默认走百炼原生，凭证与对话 Key 严格隔离（同源才允许复用）。
-    name = _provider_name(slot, override, "dashscope_native", setting_field="voice_provider")
+    name = _provider_name(slot, override, "dashscope_native", settings, setting_field="voice_provider")
     spec = specs.provider_spec(name, settings.model_providers)
     _validate_capability(slot, spec)
     if spec.protocol not in specs.HTTP_PROTOCOLS:
@@ -286,6 +311,7 @@ def resolve(slot) -> ResolvedSpec:
         slot,
         override,
         spec,
+        settings,
         explicit=settings.voice_api_key,
         use_main=settings.model_provider == "openai",  # 兼容既有 voice_key() 回退语义
         same_host_required=True,
@@ -326,14 +352,18 @@ def ready(slot):
 
 def status():
     """health 视图：逐槽位状态，绝不返回凭证明文。"""
+    from ..config import model_settings_snapshot, model_reload_status
+
+    snapshot = model_settings_snapshot()
     slots = {}
     for slot in SLOTS:
         try:
-            slots[slot] = resolve(slot).public()
+            slots[slot] = resolve(slot, snapshot).public()
         except ConfigurationError as exc:
             slots[slot] = {"slot": slot, "status": "misconfigured", "error": str(exc)}
     return {
-        "active_model_profile": settings.active_model_profile,
-        "available_providers": sorted(specs.known_names(settings.model_providers)),
+        "active_model_profile": snapshot.active_model_profile,
+        "reload": model_reload_status(),
+        "available_providers": sorted(specs.known_names(snapshot.model_providers)),
         "slots": slots,
     }
