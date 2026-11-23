@@ -1,6 +1,7 @@
 """高德 Web 服务适配器。所有坐标端到端保持 GCJ-02。"""
 
 import math
+import re
 from urllib.parse import urlencode, urlparse
 from .base import ProviderError, read_json, source, safe_url
 from ..config import settings
@@ -16,6 +17,20 @@ MODE_PATHS = {
 SEARCH_MAX_RESULTS = 200
 SEARCH_MAX_PAGE_SIZE = 25
 AGENT_SEARCH_PAGE_SIZE = 8
+
+
+def strict_price_cny(value):
+    """Only an exact numeric string becomes a structured price.
+
+    Ranges, masked prices, '起', '免费' and prose notes stay as display text only.
+    """
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not re.fullmatch(r"\d+(?:\.\d{1,2})?", text):
+        return None
+    number = float(text)
+    return number if 0 <= number <= 10000000 else None
 
 
 def request(path, params, ttl=900):
@@ -203,7 +218,7 @@ def normalize_places(raw, city):
                 "description": "高德地点资料；介绍与预约要求请以原始来源为准。",
                 "opening_text": ext.get("open_time") if isinstance(ext.get("open_time"), str) else None,
                 "price_text": str(ext["cost"]) if ext.get("cost") not in (None, "", []) else None,
-                "price_cny": None,
+                "price_cny": strict_price_cny(ext.get("cost")),
                 "rating": number(ext.get("rating")),
                 "phone": item.get("tel")[:150] if isinstance(item.get("tel"), str) else "",
                 "distance_meters": number(item.get("distance")),

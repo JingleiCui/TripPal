@@ -1,0 +1,163 @@
+.note-import {
+  margin: 12px 0;
+  min-width: 0;
+}
+.note-import-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.note-auto-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--tp-selected, #fdeeea);
+  color: var(--tp-action, #b84830);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.note-import-content {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  background: var(--card, #fff);
+}
+.note-import-content label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.note-import-content textarea,
+.note-import-content input:not([type="checkbox"]),
+.note-import-content select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.note-import-content textarea {
+  resize: vertical;
+}
+.note-import-content :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 3px;
+}
+.note-import-content pre {
+  font-family: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.note-import-content summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-size: 14px;
+}
+.note-import-content p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  margin: 6px 0;
+}
+.note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.note-actions button,
+.note-place-choice {
+  min-height: 44px;
+}
+.note-result {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding-top: 14px;
+}
+.note-result header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.note-result h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.note-images img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+}
+.note-warning {
+  font-size: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #b7791f;
+  background: #fffbeb;
+  color: #713f12;
+  border-radius: 4px;
+}
+.note-facts {
+  display: grid;
+  gap: 12px;
+}
+.note-fact {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+}
+.note-fact > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.note-fact input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.note-fact blockquote {
+  border-left: 2px solid var(--border, #cbd5e1);
+  padding-left: 12px;
+  margin: 8px 0;
+}
+.note-fact.is-highlighted {
+  border-color: var(--primary, #2563eb);
+}
+.note-place-match {
+  display: grid;
+  gap: 8px;
+}
+.note-place-choice {
+  text-align: left;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 8px;
+  padding: 10px;
+  background: transparent;
+  display: flex;
+  gap: 6px;
+  align-items: start;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .note-import-content {
+    padding: 12px;
+  }
+  .note-actions > button {
+    flex: 1 1 130px;
+  }
+}

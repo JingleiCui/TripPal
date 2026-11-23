@@ -38,7 +38,8 @@ type NavItem = {
 const NAV: NavItem[] = [
   {
     to: "/chat",
-    label: "对话规划",
+    label: "继续规划",
+    secondary: true,
     icon: MessageSquare,
     hint: "用对话调整条件，候选方案确认后才会写入行程版本",
   },
@@ -223,12 +224,17 @@ export function AppHeader({
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <Link to="/" className="app-brand" aria-label={`${BRAND.fullName} · 返回工作台`}>
+        <Link
+          to="/"
+          className="app-brand"
+          aria-label={`${BRAND.fullName} · 返回工作台`}
+        >
           <span className="app-brand-mark" aria-hidden="true">
             <TripalMark size={34} />
           </span>
           <b>
-            {BRAND.name}<span className="app-brand-cn">{BRAND.nameCn}</span>
+            {BRAND.name}
+            <span className="app-brand-cn">{BRAND.nameCn}</span>
             <small className="app-brand-role">AI 旅行规划</small>
           </b>
         </Link>
@@ -329,7 +335,7 @@ export function AppHeader({
           </Dropdown>
 
           <Link
-            to="/chat"
+            to="/?new=1"
             className="app-cta"
             title="用对话说清期待，确认候选方案后才会写入行程版本"
           >

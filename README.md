@@ -82,6 +82,8 @@ python3.11 scripts/bootstrap.py
 | 地图展示 | 在文件顶层填写高德 JS Key：`amap_js_key`，以及安全密钥 `amap_security_code`。 |
 | 美团查询（可选） | 配置官方 CLI 凭证并开启 `meituan_enabled`，步骤见[平台配置](docs/平台申请与配置.md#5-美团酒旅推荐)。 |
 
+本地模型可直接运行 `.venv/bin/python scripts/setup_local.py`，自动准备并验收完整流程，详见 [本地模型一键准备与验收](docs/本地模型一键准备与验收.md)。
+
 模型接入清单、统一网关、配置热更新边界与迁移步骤见 [模型接入审计与热切换](docs/模型接入审计与热切换.md)。
 
 模型配置默认在下次调用时热加载；首次部署新代码和修改非模型配置后需重启应用和 Worker；`TRAVEL_<SETTING_NAME>` 环境变量优先于文件配置。可先检查配置解析：
@@ -145,6 +147,8 @@ npm run test:e2e --prefix frontend
 
 完整测试可能需要模型缓存及已配置的外部服务，具体范围见[功能与工程验证](docs/功能与工程验证.md)。服务器部署见[部署与运维](docs/部署与运维.md)。
 </details>
+
+项目目录、脚本入口与测试分层见 [文档导航](docs/README.md)、[脚本索引](scripts/README.md)和[测试说明](backend/tests/README.md)。
 
 ## 📁 项目结构
 

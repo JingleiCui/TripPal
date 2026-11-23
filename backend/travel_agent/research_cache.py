@@ -7,6 +7,7 @@
 import hashlib
 import json
 import re
+import httpx
 from datetime import timedelta
 from .observability import logger
 from .config import settings
@@ -100,6 +101,14 @@ def store(owner, city, query, constraints, results):
                 }
             },
         )
+    except httpx.HTTPStatusError as exc:
+        try:
+            already_exists = (exc.response.status_code == 400 and
+                              exc.response.json().get("error", {}).get("type") == "resource_already_exists_exception")
+        except (ValueError, AttributeError):
+            already_exists = False
+        if not already_exists:
+            logger.warning("semantic_cache_index_failed", exc_info=True)
     except Exception:
         logger.warning("semantic_cache_index_failed", exc_info=True)
     scope = scope_for(owner, city, constraints)

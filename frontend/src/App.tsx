@@ -2,6 +2,7 @@ import { BRAND } from "./brand";
 import { useEffect, useState, useRef } from "react";
 import {
   Link,
+  Navigate,
   NavLink,
   Route,
   Routes,
@@ -85,6 +86,12 @@ import { HomeDiscovery } from "./HomeDiscovery";
 import { MapPanel } from "./MapPanel";
 import { HotelSelector } from "./HotelSelector";
 import { VoiceControls } from "./VoiceControls";
+import {
+  readWorkspace,
+  writeWorkspace,
+  clearWorkspaceState,
+  activateWorkspaceState,
+} from "./lib/workspace";
 import { ConversationWorkspace, MemberManager } from "./ConversationWorkspace";
 import {
   ForgotPassword,
@@ -234,13 +241,13 @@ function Login({ onDone }: { onDone: (a: Account) => void }) {
             密码
             <input
               required
-              minLength={10}
+              minLength={6}
               maxLength={100}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={register ? "new-password" : "current-password"}
-              placeholder="至少 10 个字符"
+              placeholder="至少 6 个字符"
             />
           </label>
           {register && (
@@ -287,8 +294,39 @@ function Login({ onDone }: { onDone: (a: Account) => void }) {
   );
 }
 
+function LegacyConversation() {
+  const { conversationId } = useParams();
+  return (
+    <Navigate
+      replace
+      to={
+        "/?" +
+        (conversationId ? "conversation=" + encodeURIComponent(conversationId) : "")
+      }
+    />
+  );
+}
+
+function StandaloneExplore({ accountId }: { accountId: string }) {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  if (params.has("conversation") || params.has("assistant") || params.has("new"))
+    return <Navigate replace to={"/?" + params.toString()} />;
+  return (
+    <ExplorePage
+      storageKey={accountId + ":discovery"}
+      onDiscuss={(place) => {
+        const active = readWorkspace<string | null>(accountId + ":active", null);
+        writeWorkspace(accountId + ":" + (active || "new") + ":place", place);
+        navigate("/" + (active ? "?conversation=" + encodeURIComponent(active) : ""));
+      }}
+    />
+  );
+}
+
 export default function App() {
   const routeLocation = useLocation();
+  const navigate = useNavigate();
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [routeLocation.pathname]);
@@ -321,6 +359,7 @@ export default function App() {
   });
   useEffect(() => {
     if (me.data) {
+      activateWorkspaceState(me.data.name);
       setAccount(me.data);
       setCsrf(me.data.csrf);
     }
@@ -328,6 +367,7 @@ export default function App() {
   useEffect(() => {
     // 任何接口的 401 都统一收回到登录页，避免各页面各自处理过期会话。
     const onExpired = () => {
+      clearWorkspaceState(currentAccount?.name);
       setSessionExpired(true);
       setAccount(null);
       setCsrf("");
@@ -335,8 +375,9 @@ export default function App() {
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
-  }, [client]);
+  }, [client, currentAccount?.name]);
   function authenticated(a: Account) {
+    activateWorkspaceState(a.name);
     setSessionExpired(false);
     setCsrf(a.csrf);
     setAccount(a);
@@ -393,6 +434,8 @@ export default function App() {
           try {
             await post("/auth/logout");
           } finally {
+            clearWorkspaceState(currentAccount.name);
+            navigate("/", { replace: true });
             setAccount(null);
             setCsrf("");
             client.clear();
@@ -402,11 +445,14 @@ export default function App() {
       <main className="app-main">
         <ErrorBoundary resetKey={routeLocation.pathname}>
           <Routes>
-            <Route path="/chat/:conversationId?" element={<ConversationWorkspace />} />
+            <Route path="/chat/:conversationId?" element={<LegacyConversation />} />
             <Route path="/" element={<Planner />} />
             <Route path="/trips/:id" element={<Planner />} />
             <Route path="/trips/:id/routebook" element={<RouteBook />} />
-            <Route path="/explore" element={<ExplorePage />} />
+            <Route
+              path="/explore"
+              element={<StandaloneExplore accountId={currentAccount.name} />}
+            />
             <Route path="/saved" element={<SavedPlacesPage />} />
             <Route path="/assistant" element={<AssistantSetup />} />
             <Route path="/archive" element={<Archive />} />
@@ -579,39 +625,11 @@ function Planner() {
     queryFn: () => api<Account>("/auth/me"),
   });
   const seeded = useRef("");
-  const [idea, setIdea] = useState("");
-  const [starting, setStarting] = useState(false);
   function openBrief() {
     const brief = document.getElementById("trip-brief") as HTMLDetailsElement | null;
     if (brief) {
       brief.open = true;
       brief.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-  async function startChat(e: React.FormEvent) {
-    e.preventDefault();
-    if (!idea.trim()) return;
-    setStarting(true);
-    setError("");
-    try {
-      const conversation = await post<{ id: string; version: number }>(
-        "/conversations",
-        { fixture },
-      );
-      const updated = await post(`/conversations/${conversation.id}/turns`, {
-        content: idea,
-        version: conversation.version,
-        request_key: crypto.randomUUID(),
-        plan_now: false,
-        compare: false,
-        regenerate: false,
-      });
-      client.setQueryData(["conversation", conversation.id], updated);
-      navigate("/chat/" + conversation.id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setStarting(false);
     }
   }
   const previousTrip = useRef(id);
@@ -891,12 +909,15 @@ function Planner() {
       )}
       {!id && (
         <HomeDiscovery
-          idea={idea}
-          setIdea={setIdea}
-          onPlan={startChat}
-          starting={starting}
-          error={error}
           city={req.city}
+          workspace={
+            profile.data ? (
+              <ConversationWorkspace
+                key={profile.data.name}
+                accountId={profile.data.name}
+              />
+            ) : null
+          }
           onOpenBrief={openBrief}
         />
       )}
@@ -1952,7 +1973,7 @@ function SettingsPage({ health, account }: { health?: Health; account: Account }
             <li>参考价格与最终成交价不同；没有自动下单。</li>
             <li>部分开放、预约和景点内部步行数据仍需人工核对。</li>
             <li>合成流程用于测试，不能证明真实平台或模型效果。</li>
-            <li>小红书首版以用户导入资料为主，不读取私有笔记。</li>
+            <li>小红书可读取你本人会话可见的笔记；仅处理你主动提交的内容。</li>
             <li>语音功能在核心流程验收后启用，状态以实际测试为准。</li>
           </ul>
         </section>

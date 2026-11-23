@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { MapPinned } from "lucide-react";
-import { publishMapScene } from "./lib/mapScene";
+import { publishMapScene, openMapViewer } from "./lib/mapScene";
 import type { Day, Hotel, Stop } from "./types";
 
 /**
@@ -19,7 +19,11 @@ export function MapPanel({
   highlightId,
   kind = "itinerary",
   viewKey,
+  defaultOpen,
+  active = true,
 }: {
+  active?: boolean;
+  defaultOpen?: boolean;
   day?: Day;
   onSelect: (s: Stop) => void;
   fixture: boolean;
@@ -34,8 +38,13 @@ export function MapPanel({
   onSelectRef.current = onSelect;
 
   useEffect(() => {
+    if (!active) {
+      publishMapScene(id, null);
+      return;
+    }
     publishMapScene(id, {
       day,
+      defaultOpen,
       allDays,
       hotels,
       highlightId,
@@ -44,7 +53,18 @@ export function MapPanel({
       viewKey,
       onSelect: (stop) => onSelectRef.current(stop),
     });
-  }, [id, day, allDays, hotels, highlightId, fixture, kind, viewKey]);
+  }, [
+    id,
+    day,
+    allDays,
+    hotels,
+    highlightId,
+    fixture,
+    kind,
+    viewKey,
+    defaultOpen,
+    active,
+  ]);
   useEffect(() => () => publishMapScene(id, null), [id]);
 
   const stopCount = allDays?.length

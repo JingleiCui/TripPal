@@ -1,7 +1,45 @@
 """Pure domain code. LLM-selected IDs are resolved against provider facts only."""
 
 from datetime import timedelta
+import re
 from .schemas import Requirements, day_cities
+
+WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+_WEEKDAY_NUM = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
+
+
+def weekday_opening_note(text, weekday):
+    """Return a human-readable weekday closure/opening note when the source text is explicit."""
+    if not text:
+        return None
+    value = str(text)
+    closed_days = set()
+    for match in re.finditer(
+        r"周([一二三四五六日天])(?:\s*[、,，/]\s*周?([一二三四五六日天])){0,6}\s*(?:闭馆|不开放|休息|店休)",
+        value,
+    ):
+        for group in match.groups():
+            if group:
+                closed_days.add(_WEEKDAY_NUM[group])
+    match = re.search(
+        r"周([一二三四五六日天])\s*(?:至|到|-|~|～)\s*周?([一二三四五六日天])\s*(?:闭馆|不开放|休息|店休)",
+        value,
+    )
+    if match:
+        start, end = (_WEEKDAY_NUM[g] for g in match.groups())
+        closed_days.update({start, end} if start <= end else set(range(start, 7)) | set(range(end + 1)))
+    if "周末" in value and re.search(r"周末[^。；;]{0,8}(?:闭馆|不开放|休息|店休)", value) and weekday >= 5:
+        return "页面标注周末不开放"
+    if "工作日" in value and weekday < 5 and re.search(r"工作日[^。；;]{0,8}(?:闭馆|不开放|休息|店休)", value):
+        return "页面标注工作日不开放"
+    if "工作日" in value and weekday >= 5 and re.search(r"工作日[^。；;]{0,8}(?:开放|营业)", value):
+        return "页面标注仅工作日开放"
+    if weekday in closed_days:
+        return "页面标注当天闭馆或不开放"
+    match = re.search(r"周([一二三四五六日天])\s*(?:至|到|-|~|～)\s*周?([一二三四五六日天])", value)
+    if match and weekday not in {_WEEKDAY_NUM[g] for g in match.groups()}:
+        return "页面标注仅在特定星期开放"
+    return None
 
 
 def clock(minutes):
@@ -10,7 +48,7 @@ def clock(minutes):
 
 def validate_selection(selection, places, req: Requirements, old_plan=None):
     if len(selection) != req.days:
-        raise ValueError("每日安排数量不符合出游天数")
+        raise ValueError(f"每日安排数量不符合出游天数：应为 {req.days} 天，实际 {len(selection)} 天；不能合并不同城市的日期")
     by_id = {p["id"]: p for p in places}
     flattened = [x for day in selection for x in day]
     if len(set(flattened)) != len(flattened):
@@ -59,6 +97,8 @@ def build_plan(selection, places, req, route_fn, fixture=False, old_plan=None, o
     all_unknown = set()
     for day_index, ids in enumerate(selection):
         day_city = day_cities(req)[day_index]
+        day_date = req.start_date + timedelta(days=day_index) if req.start_date else None
+        weekday = day_date.weekday() if day_date else None
         current, stops, routes, walk = 540, [], [], 0
         arrival = None
         if day_index == 0 and ids and origin:
@@ -124,6 +164,14 @@ def build_plan(selection, places, req, route_fn, fixture=False, old_plan=None, o
                     warnings.append(f"{place['name']} 的计划时段超出已知开放窗口")
             else:
                 all_unknown.add("开放与预约条件")
+            weekday_note = (
+                weekday_opening_note(place.get("opening_text"), weekday) if weekday is not None else None
+            )
+            if weekday_note:
+                warnings.append(
+                    f"{place['name']}在{day_date.isoformat()}（{WEEKDAY_LABELS[weekday]}）{weekday_note}，请核对预约平台"
+                )
+                all_unknown.add("当日开放与预约条件")
             stops.append(
                 {
                     **place,
@@ -131,6 +179,7 @@ def build_plan(selection, places, req, route_fn, fixture=False, old_plan=None, o
                     "planned_end": clock(current + 90),
                     "visit_minutes": 90,
                     "visit_duration_basis": "计划停留时间，非平台事实",
+                    "weekday_opening_note": weekday_note,
                     "lunch_before": lunch,
                     "locked": ident in req.locked_ids,
                 }

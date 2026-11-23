@@ -19,7 +19,10 @@ test("conversation: gate, live candidates, choice, hotel, portrait and recovery"
   await expect(page.getByText("这次打算玩几天？", { exact: true })).toBeVisible();
   await page.getByLabel("旅行对话输入").fill("三天，直接规划");
   await page.getByRole("button", { name: "发送旅行对话" }).click();
-  await expect(page.getByRole("button", { name: "选择并保存方案 A" })).toBeEnabled({
+  await expect(page.getByText(/准备哪天出发/)).toBeVisible();
+  await page.getByLabel("旅行对话输入").fill("2027-05-01，直接规划");
+  await page.getByRole("button", { name: "发送旅行对话" }).click();
+  await expect(page.getByRole("button", { name: "确认并保存方案 A" })).toBeEnabled({
     timeout: 45000,
   });
   await page.screenshot({
@@ -27,16 +30,13 @@ test("conversation: gate, live candidates, choice, hotel, portrait and recovery"
     fullPage: true,
   });
   await page.getByRole("button", { name: /^方案 B/ }).click();
-  await page.getByRole("button", { name: "选择并保存方案 B" }).click();
-  // 生成行程后工作区自动切到「行程画布」，对话面板按设计隐藏；切回「对话」再校验消息。
-  const backToChat = () => page.getByRole("button", { name: "对话", exact: true }).click();
-  await backToChat();
+  await page.getByRole("button", { name: "确认并保存方案 B" }).click();
+  // 桌面端聊天抽屉和方案预览同时可见。
   await expect(page.getByText(/方案 B 已保存为行程版本/)).toBeVisible();
   await page.reload();
-  await backToChat();
   await expect(page.getByText(/方案 B 已保存为行程版本/)).toBeVisible();
   // 住宿选择器位于「行程画布」视图，切回后再操作。
-  await page.getByRole("button", { name: "行程画布", exact: true }).click();
+
   await page.getByRole("button", { name: "住宿地点", exact: true }).click();
   await page.getByLabel("酒店查询").fill("北京站");
   await page.getByRole("button", { name: "查询地点", exact: true }).click();
@@ -51,10 +51,9 @@ test("conversation: gate, live candidates, choice, hotel, portrait and recovery"
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  // 旧侧边栏已由顶部固定导航 + 移动抽屉替代：抽屉默认应收起。
+  // 当前工作区是文档流双栏：移动端不再有旧的「方案 / 对话」切换按钮。
   await expect(page.locator(".app-mobile-panel")).toHaveCount(0);
-  await page.getByRole("button", { name: "行程画布", exact: true }).click();
-  await expect(page.locator(".conversation-canvas")).toBeVisible();
+  await expect(page.locator(".assistant-drawer")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -64,8 +63,6 @@ test("conversation: gate, live candidates, choice, hotel, portrait and recovery"
     path: "../reports/canvas-mobile.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "对话", exact: true }).click();
-  await expect(page.locator(".conversation-chat")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -78,6 +75,9 @@ test("multi-city chat preserves per-city plan and privacy export", async ({ page
   await page.getByRole("link", { name: "新建旅行", exact: true }).click();
   await page.getByLabel(/使用合成资料体验/).check();
   await page.getByLabel("旅行对话输入").fill("北京两天，上海两天，直接规划");
+  await page.getByRole("button", { name: "发送旅行对话" }).click();
+  await expect(page.getByText(/准备哪天出发/)).toBeVisible();
+  await page.getByLabel("旅行对话输入").fill("2027-05-01，直接规划");
   await page.getByRole("button", { name: "发送旅行对话" }).click();
   await expect(
     page.getByRole("button", { name: "第 3 天 · 上海", exact: true }),

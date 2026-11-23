@@ -1,0 +1,3 @@
+# Optional offline speech stack, in addition to the normal project dependencies.
+-r requirements.txt
+faster-whisper==1.2.1

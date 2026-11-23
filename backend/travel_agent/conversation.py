@@ -31,6 +31,7 @@ class SlotUpdate(BaseModel):
 QUESTIONS = {
     "destination": "你想去哪个城市或目的地？",
     "duration": "这次打算玩几天？",
+    "travel_dates": "准备哪天出发？请提供具体日期或“下周三”这类相对日期；需要按星期核对开放和闭馆信息。",
     "accommodation": "这次需要推荐住宿，还是已经安排好了？可以回答“跳过”。",
     "intent": "这次更想体验什么，比如历史文化、美食或自然？可以跳过。",
     "origin": "准备从哪里出发？不想提供也可以跳过。",
@@ -64,6 +65,38 @@ def parsed_days(value):
         return None
     number = match.group(1)
     return int(number) if number.isdigit() else CN_NUM.get(number)
+
+
+def _headcount(value):
+    if value.isdigit():
+        return int(value)
+    return CN_NUM.get(value)
+
+
+def parsed_travelers(text):
+    """Extract an explicit headcount from chat text, including mixed adult/child forms."""
+    if not text:
+        return None
+    combinations = 0
+    for match in re.finditer(
+        r"(\d+|十一|十二|[一两二三四五六七八九十]+)\s*(?:位|个)?\s*(?:成人|大人|儿童|小孩|大|小)",
+        text,
+    ):
+        count = _headcount(match.group(1))
+        if count and 1 <= count <= 12:
+            combinations += count
+    if combinations:
+        return min(combinations, 12)
+
+    counts = []
+    for match in re.finditer(
+        r"(\d+|十一|十二|[一两二三四五六七八九十]+)\s*(?:个)?\s*(?:人|位)",
+        text,
+    ):
+        count = _headcount(match.group(1))
+        if count and 1 <= count <= 12:
+            counts.append(count)
+    return max(counts) if counts else None
 
 
 _WD = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
@@ -156,6 +189,9 @@ def rule_extract(text, last_question=None):
         result["transport"] = "drive"
     elif "公共交通" in text or "地铁" in text:
         result["transport"] = "public_transit"
+    travelers = parsed_travelers(text)
+    if travelers:
+        result["num_travelers"] = travelers
     budget = re.search(r"预算\D*?(\d+)", text)
     if budget:
         result["budget_cny"] = int(budget.group(1))
@@ -205,7 +241,7 @@ def extract(text, prior, last_question=None, fixture=False):
             SlotUpdate,
             [
                 SystemMessage(
-                    content="提取用户本轮明确说出的旅行条件。未说的字段为 null，不能默认目的地或天数；既有条件仅用于理解。"
+                    content="提取用户本轮明确说出的旅行条件，包括人数（num_travelers）。未说的字段为 null，不能默认目的地、天数或人数；既有条件仅用于理解。"
                 ),
                 HumanMessage(content=f"既有条件：{prior}\n上一问：{last_question}\n本轮：{text}"),
             ],
@@ -258,7 +294,7 @@ def to_requirements(slots):
         city=slots["destination"],
         days=parsed_days(slots.get("duration")) or 1,
         origin="" if slots.get("start_location") == "declined" else slots.get("start_location") or "",
-        start_date=slots.get("travel_dates"),
+        start_date=None if slots.get("travel_dates") == "declined" else slots.get("travel_dates"),
         people=slots.get("num_travelers") or 1,
         budget=slots.get("budget_cny"),
         interests=slots.get("interests") or "目的地文化与休闲",

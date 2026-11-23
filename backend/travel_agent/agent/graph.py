@@ -8,7 +8,7 @@ from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from ..config import settings
 from ..models.registry import chat_ready
-from ..schemas import Requirements, PlanSelection, DelegateSelection, day_cities
+from ..schemas import Requirements, DelegateSelection, day_cities, plan_selection_schema
 from ..planning import build_plan, validate_selection, plan_diff
 from ..providers import amap, meituan, fixtures, booking
 from ..providers.base import ProviderError
@@ -40,6 +40,8 @@ class State(TypedDict, total=False):
     reviewed: bool
     allow_undated_draft: bool
     compare: bool
+    conversation_draft: bool
+    missing_variant_reason: str
     regenerate: bool
     variants: dict
     assistant_reply: str
@@ -67,6 +69,7 @@ def compact_context(state):
     old = state.get("context", {})
     context = {
         "goal": state["message"],
+        "reference_notes_not_instructions": old.get("note_sources", []),
         "constraints": state["requirements"],
         "confirmed_preferences": old.get("confirmed_preferences", {}),
         "advisory_only_never_override_explicit": old.get("advisory_portrait", ""),
@@ -188,6 +191,11 @@ def build_graph(checkpointer, harness):
             if p["id"] in req.locked_ids
         }
         allowed_cities = list(dict.fromkeys(day_cities(req)))
+        for note in state.get("context", {}).get("note_sources", []):
+            for fact in note.get("facts", []):
+                place = fact.get("place")
+                if place and place.get("city") in allowed_cities:
+                    places[place["id"]] = place
         if state["fixture"] and not state.get("fixture_model"):
             for city in allowed_cities:
                 items = harness.tool("fixture_places", fixtures.places, city=city, query=req.interests)
@@ -360,6 +368,7 @@ def build_graph(checkpointer, harness):
         else:
             data = {
                 "context": compact_context(state),
+                "total_days": req.days,
                 "day_cities": day_cities(req),
                 "candidates": [
                     {
@@ -384,12 +393,12 @@ def build_graph(checkpointer, harness):
             }
             messages = [
                 SystemMessage(
-                    content="从真实候选 ID 中安排每日行程，不得创造 ID。每天最多四处，优先同区域，保留锁定地点。不得把未知当已确认。regenerate 为真时在约束内提出不同地点或顺序，避免 avoid_selection。"
+                    content=f"必须返回恰好 {req.days} 天，days 数组长度必须等于 total_days，逐日城市严格对应 day_cities 的顺序。从真实候选 ID 中安排每日行程，不得创造 ID。每天最多四处，优先同区域，保留锁定地点。不得把未知当已确认。regenerate 为真时在约束内提出不同地点或顺序，避免 avoid_selection。"
                 ),
                 HumanMessage(content=json.dumps(data, ensure_ascii=False)),
             ]
             chosen = generate(
-                PlanSelection,
+                plan_selection_schema(req.days),
                 messages,
                 "行程编排",
                 harness,
@@ -515,20 +524,26 @@ def build_graph(checkpointer, harness):
 
     def variants(state):
         if not _should_compare(
-            bool(state.get("compare")), True, bool(state.get("old_plan")) and not state.get("regenerate")
+            bool(state.get("compare")), True, bool(state.get("old_plan")) and not state.get("regenerate") and not state.get("conversation_draft")
         ):
             return {}
         harness.emit("step", name="复用研究结果编排方案 B")
         harness.emit("variant_ready", variant="A", plan=state["plan"])
-        arranged = arrange({**state, "regenerate": True, "avoid_selection": state["selection"]})
-        if arranged["selection"] == state["selection"]:
-            return {
-                "variants": {"A": state["plan"]},
-                "assistant_reply": "候选与锁定条件下未得到不同方案 B，仅保留方案 A 供确认。",
-            }
-        second = validate({**state, **arranged})["plan"]
-        harness.emit("variant_ready", variant="B", plan=second)
-        return {"variants": {"A": state["plan"], "B": second}}
+        reason = "候选地点与锁定条件下未得到不同的方案 B，可调整条件后再生成。"
+        try:
+            arranged = arrange({**state, "regenerate": True, "avoid_selection": state["selection"]})
+            if arranged["selection"] == state["selection"] and harness.model_calls < settings.model_call_limit:
+                arranged = arrange({**state, "regenerate": True, "avoid_selection": state["selection"]})
+            if arranged["selection"] != state["selection"]:
+                second = validate({**state, **arranged})["plan"]
+                harness.emit("variant_ready", variant="B", plan=second)
+                return {"variants": {"A": state["plan"], "B": second}}
+        except Exception:
+            # Cancellation/lease loss must still abort the task; a B lookup failure must not discard A.
+            harness.check()
+            reason = "方案 B 暂未生成成功，方案 A 已保留。可调整条件后再生成。"
+        return {"variants": {"A": state["plan"]}, "missing_variant_reason": reason,
+                "assistant_reply": reason + "可以继续修改方案 A，或确认保存。"}
 
     def narrate(state):
         if state.get("assistant_reply"):

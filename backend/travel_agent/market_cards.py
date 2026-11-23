@@ -6,6 +6,31 @@ from .providers.base import safe_url
 
 MARKET_LINK = re.compile(r"(?<!!)\[([^\]]+)\]\((https?://[^\s)]+)\)")
 MARKET_PHOTO = re.compile(r"!\[[^\]]*\]\((https?://[^\s)]+)\)")
+MASKED_PRICE = re.compile(r"[xX*×～~—–\-]|[〇零]")
+PRICE_NUMBER = re.compile(r"(?:[￥¥]\s*)?(\d+(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:元)?")
+
+
+def reference_price(text):
+    """Parse an unmasked single price into a reference number, never a confirmed amount."""
+    value = str(text or "").strip()
+    if not value or MASKED_PRICE.search(value):
+        return None
+    match = PRICE_NUMBER.search(value)
+    if not match:
+        return None
+    number = float(match.group(1).replace(",", ""))
+    return number if 0 <= number <= 10000000 else None
+
+
+def price_basis(text):
+    value = str(text or "")
+    if "人均" in value:
+        return "人均"
+    if "起" in value:
+        return "起价"
+    if "/晚" in value or "每晚" in value or "一晚" in value:
+        return "每晚"
+    return "参考"
 
 
 def market_url(value):
@@ -64,6 +89,8 @@ def cards_from_markdown(text):
                 "url": market_url(link.group(2)),
                 "photo": market_url(photo.group(1)) if photo else None,
                 "price_text": price.group(1).strip(),
+                "reference_price_cny": reference_price(price.group(1).strip()),
+                "price_basis": price_basis(price.group(1).strip()),
                 "specification": specification[:500],
                 "details": "\n".join(details)[:1200],
             }

@@ -11,14 +11,15 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
   await page.getByLabel("密码", { exact: true }).fill("travel-daily-test-123");
   await page.getByRole("button", { name: "创建账户", exact: true }).click();
   await page.getByRole("button", { name: "不参与统计", exact: true }).click();
-  await expect(page.getByLabel("旅行想法", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("旅行对话输入", { exact: true })).toBeVisible();
   await expect(page.getByLabel("出发位置", { exact: true })).not.toBeVisible();
   await page.getByRole("link", { name: "新建旅行", exact: true }).click();
   await page.getByLabel(/使用合成资料体验/).check();
   await page
     .getByLabel("旅行对话输入")
-    .fill("北京三天，需要酒店，喜欢本地美食，直接规划");
+    .fill("2027-05-01，北京三天，需要酒店，喜欢本地美食，直接规划");
   await page.getByRole("button", { name: "发送旅行对话" }).click();
+  await page.getByRole("button", { name: "确认并保存方案 A", exact: true }).click();
   await page.getByRole("tab", { name: "吃什么", exact: true }).click();
   await expect(page.locator(".meal-detail-card")).toHaveCount(3, {
     timeout: 45000,
@@ -105,12 +106,13 @@ test("human trip flow: chat, concrete meals, replace restaurant, hotel, route mo
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "行程画布", exact: true }).click();
+  await page.getByRole("button", { name: "方案", exact: true }).click();
   await expect(page.locator(".experience-timeline")).toBeVisible();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
-  // 地图已改为默认可见的常驻列（不再需要点「展开地图」）。
+  // 探索工作区地图按需展开。
+  await page.getByRole("button", { name: "查看地图", exact: true }).click();
   await expect(page.locator(".mf-map-viewer.is-open")).toBeVisible();
   await page.screenshot({
     path: "../reports/daily-workspace-mobile.png",

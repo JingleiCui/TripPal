@@ -10,7 +10,7 @@ from typing import Literal
 import redis
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
-from .db import Session, Trip, Revision, DailyDetailSnapshot, now
+from .db import Session, Trip, Revision, DailyDetailSnapshot, Task, Conversation, Message, now
 from .access import get_trip
 from .security import require_user
 from .config import settings
@@ -25,9 +25,50 @@ def cache():
     return redis.Redis.from_url(settings.redis_url, socket_timeout=3)
 
 
-def detail_key(actor, trip, version, day, mode, query="", replacing=""):
-    digest = hashlib.sha256(json.dumps([query, replacing]).encode()).hexdigest()[:16]
+def detail_key(actor, trip, version, day, mode, query="", replacing="", people=None):
+    digest = hashlib.sha256(json.dumps([query, replacing, people]).encode()).hexdigest()[:16]
     return f"day-detail:{actor}:{trip}:{version}:{day}:{mode}:{digest}"
+
+
+def market_quotes(actor, ident):
+    """Read unmasked, parseable Meituan quotes cached for a trip or draft."""
+    quotes = []
+    try:
+        keys = cache().keys(f"market-detail:{actor}:{ident}:*")
+    except redis.RedisError:
+        return quotes
+    for raw_key in keys or []:
+        key = raw_key.decode() if isinstance(raw_key, bytes) else str(raw_key)
+        try:
+            raw = cache().get(key)
+        except redis.RedisError:
+            continue
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except (ValueError, TypeError):
+            continue
+        meta = data.get("market_query") or {}
+        if not meta or data.get("venue_warning"):
+            continue
+        for item in data.get("items") or []:
+            price = item.get("reference_price_cny")
+            if price is None:
+                continue
+            quotes.append(
+                {
+                    "day": meta.get("day"),
+                    "place_id": meta.get("place_id", ""),
+                    "kind": meta.get("kind", ""),
+                    "title": str(item.get("title") or "")[:200],
+                    "price_cny": price,
+                    "price_text": str(item.get("price_text") or "")[:100],
+                    "price_basis": str(item.get("price_basis") or "参考")[:20],
+                    "url": item.get("url", ""),
+                }
+            )
+    return quotes
 
 
 def day_plan(db, ident, actor, day, edit=False):
@@ -50,8 +91,13 @@ def details(
     with Session() as db:
         trip = day_plan(db, ident, actor, day)
         plan, version = copy.deepcopy(trip.plan), trip.version
+    return plan_details(plan, ident, version, actor, day, mode, query, replacing, refresh)
+
+
+def plan_details(plan, ident, version, actor, day, mode=None, query="", replacing="", refresh=False, persist=True):
     mode = mode or plan["days"][day - 1].get("transport_mode") or plan["requirements"]["transport"]
-    key = detail_key(actor, ident, version, day, mode, query, replacing)
+    people = plan["requirements"].get("people", 1)
+    key = detail_key(actor, ident, version, day, mode, query, replacing, people)
     try:
         raw = None if refresh else cache().get(key)
         if raw:
@@ -59,33 +105,45 @@ def details(
     except redis.RedisError:
         raise HTTPException(503, "吃住行资料暂存服务不可用，请稍后重试")
     result = None
-    if not query and not replacing and not refresh:
+    if persist and not query and not replacing and not refresh:
         with Session() as db:
-            snapshot = db.scalar(
-                select(DailyDetailSnapshot).where(
-                    DailyDetailSnapshot.trip_id == ident,
-                    DailyDetailSnapshot.version == version,
-                    DailyDetailSnapshot.day == day,
-                    DailyDetailSnapshot.mode == mode,
-                )
-            )
-            if snapshot and snapshot.created > now() - timedelta(seconds=DETAIL_CACHE_SECONDS):
-                result = snapshot.data
-    if result is None:
-        if replacing:
-            base_key = detail_key(actor, ident, version, day, mode)
-            base_raw = cache().get(base_key)
-            if base_raw:
-                base = json.loads(base_raw)
-            else:
-                with Session() as db:
-                    snapshot = db.scalar(
+            snapshot = next(
+                (
+                    s for s in db.scalars(
                         select(DailyDetailSnapshot).where(
                             DailyDetailSnapshot.trip_id == ident,
                             DailyDetailSnapshot.version == version,
                             DailyDetailSnapshot.day == day,
                             DailyDetailSnapshot.mode == mode,
                         )
+                    ).all()
+                    if s.data.get("stay", {}).get("people", 1) == people
+                ),
+                None,
+            )
+            if snapshot and snapshot.created > now() - timedelta(seconds=DETAIL_CACHE_SECONDS):
+                result = snapshot.data
+    if result is None:
+        if replacing:
+            base_key = detail_key(actor, ident, version, day, mode, people=people)
+            base_raw = cache().get(base_key)
+            if base_raw:
+                base = json.loads(base_raw)
+            else:
+                with Session() as db:
+                    snapshot = next(
+                        (
+                            s for s in db.scalars(
+                                select(DailyDetailSnapshot).where(
+                                    DailyDetailSnapshot.trip_id == ident,
+                                    DailyDetailSnapshot.version == version,
+                                    DailyDetailSnapshot.day == day,
+                                    DailyDetailSnapshot.mode == mode,
+                                )
+                            ).all()
+                            if s.data.get("stay", {}).get("people", 1) == people
+                        ),
+                        None,
                     )
                     base = copy.deepcopy(snapshot.data) if snapshot else None
                 base = base or {**daily_details(plan, day, mode), "version": version, "trip_id": ident}
@@ -125,7 +183,7 @@ def details(
                 "version": version,
                 "trip_id": ident,
             }
-        if not query and not replacing:
+        if persist and not query and not replacing:
             with Session.begin() as db:
                 current = db.get(Trip, ident, with_for_update=True)
                 if current and current.version == version:
@@ -174,7 +232,10 @@ def choose_service(ident: str, body: ServiceChoice, actor=Depends(require_user))
             plan["days"][body.day - 1]["transport_mode"] = body.mode
             message = f"第 {body.day} 天调整交通方式"
         else:
-            key = detail_key(actor, ident, body.base_version, body.day, body.mode, body.query, body.replacing)
+            key = detail_key(
+                actor, ident, body.base_version, body.day, body.mode,
+                body.query, body.replacing, plan["requirements"].get("people", 1),
+            )
             try:
                 raw = cache().get(key)
             except redis.RedisError:
@@ -216,17 +277,163 @@ def choose_service(ident: str, body: ServiceChoice, actor=Depends(require_user))
         return {"version": trip.version, "trip_id": trip.id}
 
 
+def draft_plan(db, ident, label, actor, edit=False, lock=False):
+    task = db.get(Task, ident)
+    if not task:
+        raise HTTPException(404, "草稿不存在")
+    get_trip(db, task.trip_id, actor, edit=edit)
+    if task.status != "waiting_choice":
+        raise HTTPException(409, "该草稿已被替代或不再等待确认")
+    conv_id = task.payload.get("conversation_id")
+    conv = db.get(Conversation, conv_id, with_for_update=lock) if conv_id else None
+    if lock:
+        task = db.get(Task, ident, with_for_update=True, populate_existing=True)
+        if task.status != "waiting_choice":
+            raise HTTPException(409, "草稿已变化，请刷新后重试")
+    if conv and conv.state.get("task_id") != task.id:
+        raise HTTPException(409, "草稿正在修改，请等待最新结果")
+    plan = task.result.get("variants", {}).get(label)
+    if not plan:
+        raise HTTPException(404, "方案不存在")
+    return task, copy.deepcopy(plan)
+
+
+@router.get("/tasks/{ident}/variants/{label}/daily-details")
+def draft_details(
+    ident: str, label: str, day: int = Query(ge=1, le=14),
+    mode: Literal["public_transit", "walk", "drive"] | None = None,
+    query: str = Query(default="", max_length=80),
+    replacing: Literal["", "breakfast", "lunch", "dinner", "hotel"] = "",
+    refresh: bool = False, actor=Depends(require_user),
+):
+    with Session() as db:
+        task, plan = draft_plan(db, ident, label, actor)
+        revision = task.result.get("draft_revision", 1)
+    if day > len(plan.get("days", [])):
+        raise HTTPException(404, "当天行程尚未生成")
+    return plan_details(plan, f"draft:{ident}:{label}", revision, actor, day, mode, query, replacing, refresh, persist=False)
+
+
+@router.post("/tasks/{ident}/variants/{label}/service-choice")
+def choose_draft_service(ident: str, label: str, body: ServiceChoice, actor=Depends(require_user)):
+    with Session.begin() as db:
+        task, plan = draft_plan(db, ident, label, actor, edit=True, lock=True)
+        revision = task.result.get("draft_revision", 1)
+        if revision != body.base_version:
+            raise HTTPException(409, "草稿已更新，请刷新后重新选择")
+        if body.day > len(plan.get("days", [])):
+            raise HTTPException(404, "当天行程尚未生成")
+        current = plan["days"][body.day - 1]
+        if body.slot == "transport":
+            current["transport_mode"] = body.mode
+        else:
+            key = detail_key(
+                actor, f"draft:{ident}:{label}", revision, body.day, body.mode,
+                body.query, body.replacing, plan["requirements"].get("people", 1),
+            )
+            try:
+                raw = cache().get(key)
+            except redis.RedisError:
+                raise HTTPException(503, "候选资料暂不可用")
+            if not raw:
+                raise HTTPException(409, "候选资料已过期，请重新查询")
+            result = json.loads(raw)
+            candidates = result["hotels"] if body.slot == "hotel" else next(
+                (m["alternatives"] for m in result["meals"] if m["slot"] == body.slot), []
+            )
+            place = next((p for p in candidates if p["id"] == body.place_id), None)
+            if not place:
+                raise HTTPException(422, "请选择本次查询返回的真实候选地点")
+            if body.slot == "hotel":
+                plan["requirements"]["needs_accommodation"] = True
+                plan["hotels"] = [h for h in plan.get("hotels", []) if h.get("city") != result["city"]] + [
+                    {**place, "user_selected": True, "booking_status": "未预订"}
+                ]
+            else:
+                current["meals"] = [m for m in current.get("meals", []) if m["slot"] != body.slot] + [
+                    {"slot": body.slot, "place": place, "user_selected": True}
+                ]
+        task.result = {
+            **task.result, "variants": {**task.result["variants"], label: plan}, "draft_revision": revision + 1,
+        }
+        task.updated = now()
+        conv_id = task.payload.get("conversation_id")
+        if conv_id and (conv := db.get(Conversation, conv_id, with_for_update=True)):
+            conv.version += 1
+            conv.updated = now()
+            db.add(Message(conversation_id=conv_id, owner=actor, role="assistant",
+                           request_key=f"draft-service:{task.id}:{revision + 1}",
+                           content=f"已更新方案 {label} 第 {body.day} 天的安排，草稿已自动保存，尚未写入正式行程。"))
+        return {"draft_revision": revision + 1}
+
+
+@router.get("/tasks/{ident}/variants/{label}/budget")
+def draft_budget(ident: str, label: str, actor=Depends(require_user)):
+    from .budgeting import calculate_budget
+    with Session() as db:
+        task, plan = draft_plan(db, ident, label, actor)
+        revision = task.result.get("draft_revision", 1)
+    from .budgeting import compatible_snapshot
+
+    snapshots = []
+    for day in plan["days"]:
+        mode = day.get("transport_mode") or plan["requirements"]["transport"]
+        try:
+            raw = cache().get(
+                detail_key(
+                    actor, f"draft:{ident}:{label}", revision, day["day"], mode,
+                    people=plan["requirements"].get("people", 1),
+                )
+            )
+            if raw:
+                snapshots.append(json.loads(raw))
+        except redis.RedisError:
+            pass
+        if any(compatible_snapshot(plan, day, s) for s in snapshots):
+            continue
+        try:
+            snapshots.append(
+                plan_details(
+                    plan,
+                    f"draft:{ident}:{label}",
+                    revision,
+                    actor,
+                    day["day"],
+                    mode,
+                    persist=False,
+                )
+            )
+        except Exception:
+            continue
+    quotes = market_quotes(actor, f"draft:{ident}:{label}")
+    return {"version": revision, "daily_limits": {}, **calculate_budget(plan, snapshots, quotes)}
+
+
 class MarketQuery(BaseModel):
     day: int = Field(ge=1, le=14)
     place_id: str = Field(min_length=1, max_length=150)
-    kind: Literal["hotel", "food"] = "hotel"
+    kind: Literal["hotel", "food", "ticket"] = "hotel"
 
 
 @router.post("/trips/{ident}/market-details")
 def market_details(ident: str, body: MarketQuery, actor=Depends(require_user)):
     result = details(ident, day=body.day, mode=None, query="", replacing="", actor=actor)
+    return market_for_details(ident, body, actor, result)
+
+
+@router.post("/tasks/{ident}/variants/{label}/market-details")
+def draft_market_details(ident: str, label: str, body: MarketQuery, actor=Depends(require_user)):
+    result = draft_details(ident, label, day=body.day, mode=None, query="", replacing="", actor=actor)
+    return market_for_details(f"draft:{ident}:{label}", body, actor, result)
+
+
+def market_for_details(ident, body, actor, result):
     places = (
-        result["hotels"] if body.kind == "hotel" else [p for m in result["meals"] for p in m["alternatives"]]
+        result["hotels"]
+        if body.kind == "hotel"
+        else [entry["place"] for entry in result.get("timeline", []) if entry.get("kind") == "place"]
+        if body.kind == "ticket"
+        else [p for m in result["meals"] for p in m["alternatives"]]
     )
     place = next((p for p in places if p["id"] == body.place_id), None)
     if not place:
@@ -237,18 +444,30 @@ def market_details(ident: str, body: MarketQuery, actor=Depends(require_user)):
     question = (
         f"查询{place['name']}，地址{place['address']}，入住{stay['checkin']}，退房{stay['checkout']}，{stay['people']}人。列出可查的房型、当日价格、取消规则和官方预订入口；缺失信息明确说明。"
         if body.kind == "hotel"
+        else f"查询{place['name']}，地址{place['address']}，列出该景点的门票和预约价格、开放时间与官方入口；不要编造票价，脱敏价格原样说明。"
+        if body.kind == "ticket"
         else f"查询{place['name']}，地址{place['address']}，列出可查的菜品、参考消费、营业时间和商家入口；不要编造菜单和价格。"
     )
     query_hash = hashlib.sha256(question.encode()).hexdigest()
     market_key = f"market-detail:{actor}:{ident}:{query_hash}"
+    market_query = {
+        "ident": ident,
+        "day": body.day,
+        "place_id": body.place_id,
+        "kind": body.kind,
+        "place_name": place["name"],
+    }
     try:
         cached = cache().get(market_key)
         if cached:
-            return json.loads(cached)
+            data = json.loads(cached)
+            data["market_query"] = market_query
+            return data
     except redis.RedisError:
         pass
     try:
         response = meituan.query(result["city"], question)
+        response["market_query"] = market_query
         branch = re.search(r"[（(]([^）)]+)[）)]", place["name"])
         def normalize(value):
             return re.sub(r"[^\w\u4e00-\u9fff]", "", value).lower()

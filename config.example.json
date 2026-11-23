@@ -64,5 +64,12 @@
   "amap_js_key": "",
   "amap_security_code": "",
   "meituan_enabled": false,
+  "note_login_enabled": false,
+  "note_cookie_file": "",
+  "note_cookie_hosts": ["xiaohongshu.com", "www.xiaohongshu.com", "xhslink.com", "www.xhslink.com"],
+  "note_browser_fallback": true,
+  "note_browser_timeout": 45,
+  "note_browser_headless": false,
+  "note_browser_user_data_dir": "",
   "fixture_enabled": true
 }

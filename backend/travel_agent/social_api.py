@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import hashlib
 import json
 import re
@@ -56,6 +57,11 @@ def conversation_view(db, conv):
             "status": task.status,
             "result": {
                 **task.result,
+                "variant_count": len(task.result.get("variants", {})),
+                "variant_states": {label: (
+                    "ready" if label in task.result.get("variants", {}) else
+                    "generating" if task.status in {"queued", "running"} else "unavailable"
+                ) for label in (["A", "B"] if task.payload.get("compare") else ["A"])},
                 **(
                     {"variants": {k: safe_plan(v, False) for k, v in task.result["variants"].items()}}
                     if task.result.get("variants")
@@ -79,6 +85,10 @@ class Turn(BaseModel):
     plan_now: bool = False
     compare: bool = False
     regenerate: bool = False
+    attachment_ids: list[str] = Field(default_factory=list, max_length=5)
+    draft_task_id: str | None = None
+    draft_variant: str = Field(default="A", pattern="^[AB]$")
+    draft_revision: int | None = Field(default=None, ge=1)
 
 
 @router.post("/conversations", status_code=201)
@@ -126,6 +136,7 @@ def conversations(actor=Depends(require_user)):
                 "version": c.version,
                 "slots": c.slots,
                 "updated": c.updated.isoformat(),
+                "status": (t.status if (t := db.get(Task, c.state.get("task_id"))) else "discussing"),
             }
             for c in rows
         ]
@@ -145,16 +156,38 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
             select(Message).where(Message.conversation_id == ident, Message.request_key == body.request_key)
         )
         if old_message:
-            if old_message.content != body.content:
+            if old_message.content != body.content or old_message.meta.get("attachment_ids", []) != body.attachment_ids:
                 raise HTTPException(409, "相同请求键不能重复提交不同文字")
             return conversation_view(db, conv)
         if conv.version != body.version:
             raise HTTPException(409, "会话已有新消息，请刷新后重试")
-        snapshot = dict(conv.slots)
+        from .notes.api import confirmed_context
+        from .db import Attachment
         state = dict(conv.state)
+        note_ids = body.attachment_ids or (state.get("note_import_ids", []) if state.get("note_owner") == actor else [])
+        if not body.attachment_ids:
+            note_ids = [n for n in note_ids if (a := db.get(Attachment, n)) and a.owner == actor
+                        and a.parsed.get("confirmed_at") and a.parsed.get("status") not in {"queued", "running"}]
+        note_sources = confirmed_context(db, actor, note_ids)
+        snapshot = dict(conv.slots)
+        # Selecting a city is explicit user confirmation; author dates/costs are never seeded as user constraints.
+        note_cities = list(dict.fromkeys(f["text"] for n in note_sources for f in n["facts"] if f["kind"] == "city"))
+        if not snapshot.get("destination") and len(note_cities) == 1:
+            snapshot["destination"] = note_cities[0]
         active = db.get(Task, state.get("task_id")) if state.get("task_id") else None
-        if active and active.status in {"queued", "running", "waiting_choice"}:
-            raise HTTPException(409, "请等待本轮完成或先选择方案")
+        if active and active.status in {"queued", "running"}:
+            raise HTTPException(409, "请等待本轮生成完成")
+        draft_plan = None
+        if body.draft_task_id:
+            if not active or active.id != body.draft_task_id or active.status != "waiting_choice":
+                raise HTTPException(409, "草稿已变化，请刷新后继续修改")
+            if body.draft_revision != active.result.get("draft_revision", 1):
+                raise HTTPException(409, "草稿已有新修改，请刷新后重试")
+            draft_plan = copy.deepcopy(active.result.get("variants", {}).get(body.draft_variant))
+            if not draft_plan:
+                raise HTTPException(422, "方案不存在")
+        elif active and active.status == "waiting_choice":
+            raise HTTPException(409, "请指定要继续修改的草稿方案")
     try:
         slots, forced_key, forced_question, source = extract(
             body.content, snapshot, state.get("last_question"), state.get("fixture", False)
@@ -169,13 +202,21 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
     key, question = (
         (forced_key, forced_question)
         if forced_key
-        else gate(slots, state.get("turns", 0) + 1, state.get("asked", []), body.content, body.plan_now)
+        else gate(slots, state.get("turns", 0) + 1, state.get("asked", []), body.content, body.plan_now or bool(draft_plan))
     )
     with Session.begin() as db:
         conv = get_conversation(db, ident, actor, True)
         conv = db.get(Conversation, ident, with_for_update=True)
         if conv.version != body.version:
             raise HTTPException(409, "本轮处理期间会话发生变化，请刷新")
+        current_task = db.get(Task, state.get("task_id"), with_for_update=True) if state.get("task_id") else None
+        if current_task and current_task.status in {"queued", "running"}:
+            raise HTTPException(409, "请等待本轮生成完成")
+        if body.draft_task_id and (
+            not current_task or current_task.status != "waiting_choice"
+            or current_task.result.get("draft_revision", 1) != body.draft_revision
+        ):
+            raise HTTPException(409, "草稿已变化，请刷新后重试")
         db.add(
             Message(
                 conversation_id=ident,
@@ -183,12 +224,13 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
                 request_key=body.request_key,
                 role="user",
                 content=body.content,
+                meta={"attachment_ids": body.attachment_ids},
             )
         )
         conv.slots = slots
         conv.version += 1
         conv.updated = now()
-        new_state = {**state, "turns": state.get("turns", 0) + 1, "last_question": key, "extraction": source}
+        new_state = {**state, "note_import_ids": note_ids, "note_owner": actor, "turns": state.get("turns", 0) + 1, "last_question": key, "extraction": source}
         if key:
             new_state["asked"] = list(dict.fromkeys([*state.get("asked", []), key]))
             db.add(
@@ -214,7 +256,7 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
                 db.add(trip)
                 db.flush()
                 conv.trip_id = trip.id
-            req.locked_ids = trip.plan.get("requirements", {}).get("locked_ids", [])
+            req.locked_ids = (draft_plan or trip.plan).get("requirements", {}).get("locked_ids", [])
             run = RunRequest(
                 trip_id=trip.id,
                 base_version=trip.version,
@@ -226,8 +268,13 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
                 allow_undated_draft=True,
                 compare=body.compare,
                 regenerate=body.regenerate,
+                attachment_ids=note_ids,
             )
             canonical = run.model_dump(mode="json")
+            canonical["note_sources"] = note_sources
+            if draft_plan:
+                canonical["draft_plan"] = draft_plan
+                canonical["previous_draft_task_id"] = body.draft_task_id
             task = Task(
                 owner=actor,
                 trip_id=trip.id,
@@ -245,7 +292,8 @@ def turn(ident: str, body: Turn, actor=Depends(require_user)):
                     request_key=body.request_key + ":reply",
                     role="assistant",
                     content="条件已经齐了，开始调查并检查行程。"
-                    + ("将准备两种方案，选择后才会保存。" if body.compare else ""),
+                    + ("将尝试准备两种不同方案。" if body.compare else "")
+                    + "草稿会自动保留，确认后才写入正式行程。",
                     meta={"task_id": task.id},
                 )
             )
@@ -416,20 +464,32 @@ def portrait(actor=Depends(require_user)):
 
 class VariantChoice(BaseModel):
     base_version: int = Field(ge=0)
+    draft_revision: int | None = Field(default=None, ge=1)
 
 
 @router.post("/tasks/{ident}/variants/{label}")
 def choose_variant(ident: str, label: str, body: VariantChoice, actor=Depends(require_user)):
     with Session.begin() as db:
-        task = db.get(Task, ident, with_for_update=True)
+        task = db.get(Task, ident)
         if not task:
             raise HTTPException(404, "任务不存在")
+        conv_id = task.payload.get("conversation_id")
+        conv = None
+        if conv_id:
+            get_conversation(db, conv_id, actor, edit=True)
+            conv = db.get(Conversation, conv_id, with_for_update=True)
+        task = db.get(Task, ident, with_for_update=True, populate_existing=True)
         trip = get_trip(db, task.trip_id, actor, edit=True)
         trip = db.get(Trip, trip.id, with_for_update=True)
         if task.status == "completed" and task.result.get("chosen") == label:
             return {"trip_id": trip.id, "version": trip.version, "replayed": True}
         if task.status != "waiting_choice":
             raise HTTPException(409, "任务当前不等待方案选择")
+        if body.draft_revision is not None and body.draft_revision != task.result.get("draft_revision", 1):
+            raise HTTPException(409, "草稿已更新，请查看最新草稿后确认")
+        if conv_id:
+            if not conv or conv.state.get("task_id") != task.id:
+                raise HTTPException(409, "正在修改草稿，请等待最新结果")
         if label not in task.result.get("variants", {}):
             raise HTTPException(422, "方案不存在")
         if trip.version != body.base_version or trip.version != task.payload["base_version"]:
@@ -441,10 +501,12 @@ def choose_variant(ident: str, label: str, body: VariantChoice, actor=Depends(re
         trip.updated = now()
         db.add(Revision(trip_id=trip.id, version=trip.version, plan=plan, message="选择方案 " + label))
         task.status = "completed"
-        task.result = {"chosen": label, "trip_id": trip.id, "version": trip.version}
+        task.result = {**task.result, "chosen": label, "trip_id": trip.id, "version": trip.version}
         task.updated = now()
         conv_id = task.payload.get("conversation_id")
         if conv_id:
+            conv.version += 1
+            conv.updated = now()
             db.add(
                 Message(
                     conversation_id=conv_id,

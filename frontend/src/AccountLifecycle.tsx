@@ -89,7 +89,7 @@ export function PublicAccountAction({ kind }: { kind: "verify" | "reset" }) {
                 aria-label="新密码"
                 type="password"
                 required
-                minLength={10}
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

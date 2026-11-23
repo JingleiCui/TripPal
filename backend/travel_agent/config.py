@@ -126,6 +126,23 @@ class Settings(BaseModel):
     # 逐变更卡片确认 + 撤销窗口
     pending_change_ttl_minutes: int = 15
     # 附件驱动工具触发
+    note_public_dns_fallback: bool = True  # Resolve proxy synthetic DNS via verified public DoH, still pin public IPs
+    # 本人小红书会话：默认关闭；显式开启后只读取用户主动提交的、本人有权查看的笔记。
+    note_login_enabled: bool = False
+    note_cookie_file: str = ""
+    note_cookie_hosts: list[str] = Field(
+        default_factory=lambda: [
+            "xiaohongshu.com", "www.xiaohongshu.com", "xhslink.com", "www.xhslink.com"
+        ]
+    )
+    # 登录弹层可关闭时，用浏览器兜底读取；Cookie 仍是可选加速项，不是必需。
+    note_browser_fallback: bool = True
+    note_browser_reader: str = str(ROOT / "frontend" / "xhs-note-reader.mjs")
+    note_browser_timeout: int = 45
+    # 实测无头 Chrome 会触发小红书风控；有头浏览器能关闭弹层并读取正文，故默认关闭无头模式。
+    note_browser_headless: bool = False
+    # 首次登录后持久化浏览器 profile；后续解析直接复用，不要求每次重新登录。
+    note_browser_user_data_dir: str = str(Path.home() / ".config/tripal/xhs-browser-profile")
     attachment_parsers_enabled: bool = True
     allowed_attachment_extensions: list[str] = Field(
         default_factory=lambda: [

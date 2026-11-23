@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Compass,
@@ -21,11 +21,13 @@ import { Button } from "./components/ui/button";
 import { TripalMark } from "./components/TripalLogo";
 import { BookingManager } from "./Bookings";
 import { TripExperience } from "./TripExperience";
-import { MapPanel } from "./MapPanel";
 import { HotelSelector } from "./HotelSelector";
 import { VoiceControls } from "./VoiceControls";
-import type { Plan, Trip, Stop, Attachment, ScreenshotFacts, Health } from "./types";
+import { NoteImportPanel, isNoteShare } from "./NoteImportPanel";
+import type { Plan, Trip, Attachment, ScreenshotFacts, Health } from "./types";
 import { capture } from "./AccountLifecycle";
+import { type DiscoveryPlace } from "./Discovery";
+import { useWorkspaceState, writeWorkspace, isWorkspaceActive } from "./lib/workspace";
 
 function isScreenshot(parsed: unknown): parsed is ScreenshotFacts {
   if (!parsed || typeof parsed !== "object") return false;
@@ -120,28 +122,87 @@ type Conversation = {
       variants?: Record<string, Plan>;
       base_version?: number;
       error?: string;
+      draft_revision?: number;
+      requested_count?: number;
+      missing_variant_reason?: string;
     };
   } | null;
 };
 
-export function ConversationWorkspace() {
-  const { conversationId } = useParams(),
-    navigate = useNavigate(),
-    client = useQueryClient();
-  const [input, setInput] = useState(""),
-    [fixture, setFixture] = useState(false),
-    [compare, setCompare] = useState(false),
+export function ConversationWorkspace({ accountId }: { accountId: string }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeId, setActiveId] = useWorkspaceState<string | null>(
+    accountId + ":active",
+    null,
+  );
+  const conversationId = searchParams.has("new")
+    ? undefined
+    : searchParams.get("conversation") || activeId || undefined;
+  const sessionKey = accountId + ":" + (conversationId || "new");
+  const preview = true;
+  const [contextPlace, setContextPlace] = useWorkspaceState<DiscoveryPlace | null>(
+    sessionKey + ":place",
+    null,
+  );
+  const client = useQueryClient();
+  const [noteAutoImport, setNoteAutoImport] = useState<{
+    text: string;
+    nonce: number;
+  } | null>(null);
+  const [input, setInput] = useWorkspaceState(sessionKey + ":input", "");
+  const [compare, setCompare] = useWorkspaceState(sessionKey + ":compare", false);
+  const [fixture, setFixture] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [mobile, setMobile] = useState("chat"),
-    [variant, setVariant] = useState("A"),
-    [dayIndex, setDayIndex] = useState(0),
     [streamed, setStreamed] = useState<Record<string, string>>({});
+  const [variant, setVariant] = useWorkspaceState(sessionKey + ":variant", "A");
+  const [dayIndex, setDayIndex] = useWorkspaceState(sessionKey + ":day", 0);
+  const recent = useQuery({
+    queryKey: ["conversations"],
+    queryFn: () =>
+      api<{ id: string; slots: { destination?: string }; status?: string }[]>(
+        "/conversations",
+      ),
+  });
+  useEffect(() => {
+    if (searchParams.has("new")) {
+      setActiveId("");
+      setInput("");
+      setContextPlace(null);
+      setCompare(false);
+      setFixture(false);
+      setSearchParams(
+        (old) => {
+          const next = new URLSearchParams(old);
+          next.delete("new");
+          next.delete("conversation");
+          next.delete("assistant");
+          return next;
+        },
+        { replace: true },
+      );
+    } else {
+      if (searchParams.get("conversation"))
+        setActiveId(searchParams.get("conversation")!);
+    }
+  }, [searchParams.toString()]);
+  useEffect(() => {
+    if (
+      activeId === null &&
+      !searchParams.has("new") &&
+      !searchParams.has("conversation") &&
+      recent.data?.length
+    ) {
+      setActiveId(recent.data[0].id);
+    }
+  }, [recent.data, activeId]);
   const bottom = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const revealedPlan = useRef<string | undefined>(undefined);
-  const [attachments, setAttachments] = useState<Attachment[]>([]),
-    [attaching, setAttaching] = useState(false),
+  const [attachments, setAttachments] = useWorkspaceState<Attachment[]>(
+    sessionKey + ":attachments",
+    [],
+  );
+  const [attaching, setAttaching] = useState(false),
     [attachError, setAttachError] = useState("");
   const health = useQuery({
     queryKey: ["health"],
@@ -193,26 +254,19 @@ export function ConversationWorkspace() {
     : running
       ? stageVariants[conv?.task?.id || ""]
       : undefined;
+  useEffect(() => {
+    if (waiting && staged && !staged[variant])
+      setVariant(Object.keys(staged)[0] || "A");
+  }, [conv?.task?.id, waiting, !!staged?.[variant]]);
   const stage = stages[conv?.task?.id || ""];
   const plan = (staged?.[variant] ||
     (trip.data?.plan?.days ? trip.data.plan : null)) as Plan | null;
-  useEffect(() => {
-    if (
-      conversationId &&
-      plan?.days?.length &&
-      revealedPlan.current !== conversationId
-    ) {
-      revealedPlan.current = conversationId;
-      setMobile("canvas");
-    }
-  }, [conversationId, !!plan?.days?.length]);
   const editable = !trip.data?.role || ["owner", "editor"].includes(trip.data.role);
   useEffect(() => {
     setStreamed({});
     setStageVariants({});
     setStages({});
     setError("");
-    setDayIndex(0);
   }, [conversationId]);
   useEffect(() => {
     if (conv?.state?.fixture !== undefined) setFixture(conv.state?.fixture);
@@ -259,10 +313,19 @@ export function ConversationWorkspace() {
     client.invalidateQueries({ queryKey: ["conversations"] });
   }, [conv?.task?.status, tripId]);
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const history = bottom.current?.parentElement;
+    history?.scrollTo({ top: history.scrollHeight, behavior: "smooth" });
   }, [conv?.messages?.length, streamed]);
-  async function send(content = input, regenerate = false) {
-    if (!content.trim()) return;
+  async function send(
+    content = input,
+    regenerate = false,
+    attachmentIds: string[] = [],
+  ) {
+    if (!content.trim() || busy || running || (conversationId && !conv)) return;
+    if (isNoteShare(content) && !attachmentIds.length) {
+      setNoteAutoImport({ text: content, nonce: Date.now() });
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -271,21 +334,54 @@ export function ConversationWorkspace() {
         current = await post<Conversation>("/conversations", { fixture });
         void capture("conversation_started");
       }
+      if (!isWorkspaceActive(accountId)) return;
+      // Retain the newly created conversation even if the first turn fails.
+      if (!conversationId) {
+        client.setQueryData(["conversation", current.id], current);
+        writeWorkspace(accountId + ":" + current.id + ":input", input);
+        writeWorkspace(accountId + ":" + current.id + ":place", contextPlace);
+        writeWorkspace(accountId + ":" + current.id + ":compare", compare);
+        setActiveId(current.id);
+        setSearchParams(
+          (old) => {
+            const next = new URLSearchParams(old);
+            next.set("conversation", current!.id);
+            return next;
+          },
+          { replace: true },
+        );
+      }
+      const outgoing = contextPlace
+        ? `${content}\n参考地点：${contextPlace.name}；城市：${contextPlace.city || "待确认"}；地点 ID：${contextPlace.id}；地址：${contextPlace.address || "待核实"}。`
+        : content;
       const updated = await post<Conversation>(`/conversations/${current.id}/turns`, {
-        content,
+        content: outgoing,
         version: current.version,
         request_key: crypto.randomUUID(),
         plan_now: regenerate,
         compare,
         regenerate,
+        attachment_ids: attachmentIds,
+        ...(waiting
+          ? {
+              draft_task_id: conv?.task?.id,
+              draft_variant: variant,
+              draft_revision: conv?.task?.result.draft_revision || 1,
+            }
+          : {}),
       });
+      if (!isWorkspaceActive(accountId)) return;
       client.setQueryData(["conversation", current.id], updated);
+      writeWorkspace(accountId + ":" + current.id + ":input", "");
+      writeWorkspace(accountId + ":" + current.id + ":place", null);
       setInput("");
+      setContextPlace(null);
       if (updated.state.task_id) void capture("plan_requested");
-      if (!conversationId) navigate("/chat/" + current.id);
+
       client.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
       setError((e as Error).message);
+      if (attachmentIds.length) throw e;
     } finally {
       setBusy(false);
     }
@@ -296,6 +392,7 @@ export function ConversationWorkspace() {
     try {
       await post(`/tasks/${conv.task.id}/variants/${label}`, {
         base_version: conv.task.result.base_version,
+        draft_revision: conv.task.result.draft_revision || 1,
       });
       void capture("plan_selected");
       await client.invalidateQueries({
@@ -340,51 +437,82 @@ export function ConversationWorkspace() {
     },
   ];
   return (
-    <div className="page chat-page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">从对话到旅程</span>
-          <h1>{plan?.title || "这次旅行，我们一起安排。"}</h1>
-          <p>
-            {plan
-              ? "每天吃什么、住哪里、怎么走，都放进同一份计划。"
-              : "告诉我去哪里、什么时候出发，其他细节边聊边定。"}
-          </p>
-        </div>
-        <Button variant="secondary" size="sm" asChild>
-          <Link to="/chat">
-            <Plus size={15} />
-            新对话
-          </Link>
-        </Button>
-      </div>
-      <div
-        className="mobile-canvas-toggle workspace-view-switch"
-        aria-label="规划工作区视图"
+    <div className="planning-workspace">
+      <aside
+        id="travel-assistant"
+        aria-label="AI 旅行助手"
+        className="assistant-drawer"
       >
-        <button
-          className={mobile === "chat" ? "active" : ""}
-          aria-pressed={mobile === "chat"}
-          onClick={() => setMobile("chat")}
-        >
-          <MessageSquare size={16} />
-          对话
-        </button>
-        <button
-          className={mobile === "canvas" ? "active" : ""}
-          aria-pressed={mobile === "canvas"}
-          onClick={() => setMobile("canvas")}
-        >
-          <Map size={16} />
-          行程画布
-        </button>
-      </div>
-      {error && (
-        <div role="alert" className="notice error">
-          {error}
+        <div className="assistant-drawer-heading">
+          <div>
+            <b>{String(conv?.slots?.destination || "这次旅行")} · AI 助手</b>
+            <small role="status">
+              {running
+                ? "正在生成 · 可继续浏览"
+                : waiting
+                  ? "草稿已自动保存 · 待确认"
+                  : trip.data?.version
+                    ? "正式行程已保存"
+                    : "说说旅行想法，方案会出现在右侧"}
+            </small>
+          </div>
         </div>
-      )}
-      <div className={"conversation-layout mobile-show-" + mobile}>
+        <div className="assistant-session-tools">
+          <select
+            aria-label="切换旅行对话"
+            value={conversationId || ""}
+            onChange={(e) => {
+              const next = new URLSearchParams(searchParams);
+              next.set("conversation", e.target.value);
+              setSearchParams(next);
+              document
+                .querySelector<HTMLTextAreaElement>('[aria-label="旅行对话输入"]')
+                ?.focus();
+            }}
+          >
+            <option value="" disabled>
+              当前新对话
+            </option>
+            {(recent.data || []).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.slots.destination || "尚未确定目的地"} ·{" "}
+                {(
+                  {
+                    waiting_choice: "待确认",
+                    running: "生成中",
+                    queued: "生成中",
+                    completed: "已确认",
+                  } as Record<string, string>
+                )[item.status || ""] || "讨论中"}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            onClick={() => {
+              setActiveId("");
+              writeWorkspace(accountId + ":new:input", "");
+              writeWorkspace(accountId + ":new:place", null);
+              setSearchParams({ new: "1", assistant: "open" });
+            }}
+          >
+            <Plus size={14} />
+            新对话
+          </Button>
+        </div>
+        {error && (
+          <div role="alert" className="notice error">
+            {error}
+          </div>
+        )}
+        {conversation.isError && (
+          <div role="alert" className="notice error">
+            {conversation.error.message}
+            <button onClick={() => void conversation.refetch()}>重新加载对话</button>
+          </div>
+        )}
         <section className="card conversation-chat">
           <header>
             <MessageSquare size={17} />
@@ -392,6 +520,9 @@ export function ConversationWorkspace() {
             {fixture && <span className="status-pill">合成资料体验</span>}
           </header>
           <div className="chat-history">
+            {conversationId && conversation.isPending && (
+              <p role="status">正在恢复旅行对话…</p>
+            )}
             {messages.map((message) => (
               <div className={"chat-message " + message.role} key={message.id}>
                 <span className="chat-avatar">
@@ -438,6 +569,24 @@ export function ConversationWorkspace() {
                 <Link to={"/trips/" + tripId}>打开详情继续处理 →</Link>
               </div>
             )}
+            {plan && (
+              <div className="assistant-plan-summary" role="status">
+                <b>
+                  {waiting
+                    ? `已准备 ${Object.keys(staged || {}).length} 个方案`
+                    : running
+                      ? "草稿正在更新"
+                      : "查看已保存行程"}
+                </b>
+                {conv?.task?.result.missing_variant_reason && (
+                  <p>{conv.task.result.missing_variant_reason}</p>
+                )}
+                {running && compare && (
+                  <p>A、B 方案完成后会分别显示；你可以继续探索。</p>
+                )}
+                <small>方案已显示在预览区，可继续聊天调整。</small>
+              </div>
+            )}
             <div ref={bottom} />
           </div>
           <div className="known-slots">
@@ -477,6 +626,15 @@ export function ConversationWorkspace() {
               ))}
           </div>
           <div className="conversation-input">
+            {contextPlace && (
+              <div className="assistant-place-context">
+                <span>参考地点：{contextPlace.name}</span>
+                <button aria-label="移除参考地点" onClick={() => setContextPlace(null)}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            {waiting && <small>可以继续说哪里需要调整，满意后再确认。</small>}
             <label className="check-label">
               <input
                 type="checkbox"
@@ -534,7 +692,7 @@ export function ConversationWorkspace() {
                     <div className="attachment-actions">
                       <Button
                         size="sm"
-                        disabled={busy || running || waiting || !canAdopt(att)}
+                        disabled={busy || running || !canAdopt(att)}
                         onClick={() => adoptAttachment(att)}
                       >
                         {att.kind === "screenshot"
@@ -554,11 +712,19 @@ export function ConversationWorkspace() {
                 ))}
               </div>
             )}
-            <VoiceControls
-              onTranscript={(text) =>
-                setInput((old) => (old.trim() ? `${old.trim()}\n${text}` : text))
-              }
-              disabled={busy || running || waiting || !editable}
+            <NoteImportPanel
+              key={accountId + ":notes"}
+              scope={accountId + ":notes"}
+              disabled={busy || running || !editable || (!!conversationId && !conv)}
+              autoImport={noteAutoImport}
+              onAutoImportHandled={() => setNoteAutoImport(null)}
+              onAdopt={async (id) => {
+                await send(
+                  "我已导入一篇小红书攻略，请直接阅读附件中的笔记正文、配图转写和候选要点，概括这份攻略并给出可执行的旅行建议；作者的日期、价格和营业时间只作参考，不要当成我的硬性条件。若缺少出游城市、天数或出行人数，再简要问我。",
+                  false,
+                  [id],
+                );
+              }}
             />
             <form
               onSubmit={(e) => {
@@ -568,150 +734,201 @@ export function ConversationWorkspace() {
             >
               <textarea
                 aria-label="旅行对话输入"
+                maxLength={4000}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="比如：想去北京玩三天，喜欢博物馆，直接规划"
-                rows={3}
+                rows={4}
               />
-              <Button
-                size="icon"
-                title="发送旅行对话"
-                disabled={busy || running || waiting || !editable || !input.trim()}
-              >
-                <Send size={17} />
-              </Button>
+              <div className="planning-composer-actions">
+                <VoiceControls
+                  onTranscript={(text) =>
+                    setInput((old) => (old.trim() ? `${old.trim()}\n${text}` : text))
+                  }
+                  disabled={busy || running || !editable || (!!conversationId && !conv)}
+                />
+                <Button
+                  title="发送旅行对话"
+                  aria-label="发送旅行对话"
+                  disabled={
+                    busy ||
+                    running ||
+                    !editable ||
+                    (!!conversationId && !conv) ||
+                    !input.trim()
+                  }
+                >
+                  <Send size={17} /> 发送
+                </Button>
+              </div>
             </form>
             <small>可选条件可以跳过 · 不会把未知价格与开放信息当作事实</small>
           </div>
         </section>
-        <section className="conversation-canvas">
-          <div className="canvas-toolbar">
-            {trip.data?.plan?.days?.length && !waiting && !running ? (
-              <span className="canvas-save-status" role="status">
-                <Check size={15} /> 行程已保存 · 版本 {trip.data.version}
-              </span>
-            ) : null}
-            <h2>
-              <Map size={18} />
-              行程画布
-            </h2>
-            {tripId && (
-              <div>
-                {plan && !waiting && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={running || busy || !editable}
-                    onClick={() =>
-                      send("重新生成一个不同的安排，保留锁定条件，直接规划。", true)
-                    }
-                  >
-                    <RefreshCw size={14} />
-                    重新生成
-                  </Button>
-                )}
-                {tripId && <MemberManager tripId={tripId} />}{" "}
-                {trip.data && (
-                  <>
-                    {trip.data.role === "owner" && (
-                      <BookingManager tripId={trip.data.id} />
-                    )}
-                    <HotelSelector trip={trip.data} />
-                  </>
-                )}
-                <Button variant="secondary" size="sm" asChild>
-                  <Link to={"/trips/" + tripId}>
-                    行程详情
-                    <ArrowRight size={14} />
-                  </Link>
+      </aside>
+      <section className="conversation-canvas workspace-plan-preview" hidden={!preview}>
+        <div className="workspace-preview-heading">
+          <h2>{plan?.title || "旅行灵感与方案"}</h2>
+        </div>
+        <div className="canvas-toolbar">
+          {trip.data?.plan?.days?.length && !waiting && !running ? (
+            <span className="canvas-save-status" role="status">
+              <Check size={15} /> 行程已保存 · 版本 {trip.data.version}
+            </span>
+          ) : null}
+
+          {tripId && !waiting && !running && (
+            <div>
+              {plan && !waiting && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={running || busy || !editable}
+                  onClick={() =>
+                    send("重新生成一个不同的安排，保留锁定条件，直接规划。", true)
+                  }
+                >
+                  <RefreshCw size={14} />
+                  重新生成
                 </Button>
-              </div>
-            )}
-          </div>
-          {staged && (
-            <div className="card variant-selector">
-              <div>
-                <span className="eyebrow">比较后再出发</span>
-                <h3>选择你更喜欢的安排</h3>
-                <p>两种方案复用同一份研究资料，目前均未保存为行程。</p>
-              </div>
-              <div className="variant-options">
-                {Object.entries(staged).map(([label, candidate]) => (
-                  <button
-                    key={label}
-                    className={variant === label ? "selected" : ""}
-                    onClick={() => {
-                      setVariant(label);
-                      setDayIndex(0);
-                    }}
-                  >
-                    <b>方案 {label}</b>
-                    <span>
-                      {candidate.days
-                        .flatMap((d) => d.stops.map((s) => s.name))
-                        .slice(0, 3)
-                        .join(" · ")}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <Button
-                disabled={busy || !editable || !waiting || !staged[variant]}
-                onClick={() => choose(variant)}
-              >
-                <Check size={15} />
-                选择并保存方案 {variant}
+              )}
+              {tripId && <MemberManager tripId={tripId} />}{" "}
+              {trip.data && (
+                <>
+                  {trip.data.role === "owner" && (
+                    <BookingManager tripId={trip.data.id} />
+                  )}
+                  <HotelSelector trip={trip.data} />
+                </>
+              )}
+              <Button variant="secondary" size="sm" asChild>
+                <Link to={"/trips/" + tripId}>
+                  行程详情
+                  <ArrowRight size={14} />
+                </Link>
               </Button>
             </div>
           )}
-          {plan ? (
-            <>
-              <div className="canvas-stops experience-wrapper">
-                <TripExperience
-                  trip={trip.data}
-                  plan={plan}
-                  dayIndex={dayIndex}
-                  setDayIndex={setDayIndex}
-                  staged={!!staged}
-                />
-                {!staged && !running && tripId && <TripFeedback tripId={tripId} />}
-              </div>
-            </>
-          ) : (
-            <div className="card blank-canvas">
-              <Compass size={40} />
-              {conv?.slots?.destination ? (
-                <>
-                  <h2>已识别你的期待</h2>
-                  <ul className="recognized-slots">
-                    {conv.slots.destination ? (
-                      <li>目的地：{String(conv.slots.destination)}</li>
-                    ) : null}
-                    {conv.slots.travel_dates ? (
-                      <li>出游日期：{String(conv.slots.travel_dates)}</li>
-                    ) : null}
-                    {conv.slots.duration ? (
-                      <li>天数：{String(conv.slots.duration)}</li>
-                    ) : null}
-                    {conv.slots.budget_cny ? (
-                      <li>预算：¥{String(conv.slots.budget_cny)}/天</li>
-                    ) : null}
-                    {conv.slots.interests ? (
-                      <li>兴趣：{String(conv.slots.interests)}</li>
-                    ) : null}
-                  </ul>
-                  <p>补全剩余条件（或直接说「开始规划」）后，行程地图将在这里展开。</p>
-                </>
-              ) : (
-                <>
-                  <h2>先聊清期待，再展开地图。</h2>
-                  <p>告诉我想去哪里、玩几天；地图会在行程生成后实时显示。</p>
-                </>
+        </div>
+        {staged && (
+          <div className="card variant-selector">
+            <div>
+              <span className="eyebrow">比较后再出发</span>
+              <h3>
+                {Object.keys(staged).length > 1
+                  ? "选择你更喜欢的安排"
+                  : "查看并确认这份安排"}
+              </h3>
+              <p>
+                {running
+                  ? "方案正在生成，完成后可确认。"
+                  : `${Object.keys(staged).length} 个方案已自动保存为草稿，确认后写入正式行程。`}
+              </p>
+              {conv?.task?.result.missing_variant_reason && (
+                <p>{conv.task.result.missing_variant_reason}</p>
               )}
             </div>
-          )}
-        </section>
-      </div>
+            <div className="variant-options">
+              {Object.entries(staged).map(([label, candidate]) => (
+                <button
+                  key={label}
+                  className={variant === label ? "selected" : ""}
+                  onClick={() => {
+                    setVariant(label);
+                    setDayIndex(0);
+                  }}
+                >
+                  <b>方案 {label}</b>
+                  <span>
+                    {candidate.days
+                      .flatMap((d) => d.stops.map((s) => s.name))
+                      .slice(0, 3)
+                      .join(" · ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Button
+              disabled={
+                busy || !editable || !waiting || !staged[variant] || trip.isFetching
+              }
+              onClick={() => choose(variant)}
+            >
+              <Check size={15} />
+              确认并保存方案 {variant}
+            </Button>
+          </div>
+        )}
+        {plan && preview ? (
+          <>
+            <div className="canvas-stops experience-wrapper">
+              <TripExperience
+                trip={trip.data}
+                plan={plan}
+                dayIndex={dayIndex}
+                setDayIndex={setDayIndex}
+                staged={!!staged}
+                draft={
+                  waiting && conv?.task
+                    ? {
+                        taskId: conv.task.id,
+                        variant,
+                        revision: conv.task.result.draft_revision || 1,
+                        conversationId: conv.id,
+                      }
+                    : undefined
+                }
+                storageKey={sessionKey + ":" + variant}
+              />
+              {!staged && !running && tripId && <TripFeedback tripId={tripId} />}
+            </div>
+          </>
+        ) : (
+          <div className="card blank-canvas">
+            <Compass size={40} />
+            {conv?.slots?.destination ? (
+              <>
+                <h2>已识别你的期待</h2>
+                <ul className="recognized-slots">
+                  {conv.slots.destination ? (
+                    <li>目的地：{String(conv.slots.destination)}</li>
+                  ) : null}
+                  {conv.slots.travel_dates ? (
+                    <li>
+                      出游日期：
+                      {conv.slots.travel_dates === "declined"
+                        ? "待定（需补充）"
+                        : String(conv.slots.travel_dates)}
+                    </li>
+                  ) : null}
+                  {conv.slots.duration ? (
+                    <li>天数：{String(conv.slots.duration)}</li>
+                  ) : null}
+                  {conv.slots.budget_cny ? (
+                    <li>总预算：¥{String(conv.slots.budget_cny)}</li>
+                  ) : null}
+                  {conv.slots.interests ? (
+                    <li>兴趣：{String(conv.slots.interests)}</li>
+                  ) : null}
+                </ul>
+                <p>补全剩余条件（或直接说「开始规划」）后，行程地图将在这里展开。</p>
+              </>
+            ) : (
+              <>
+                <img
+                  className="planning-inspiration-photo"
+                  src="/images/hangzhou.jpg"
+                  alt="杭州的湖山与茶园"
+                />
+                <h2>从湖山与茶香，找一点灵感。</h2>
+                <p>
+                  告诉我想去哪里、玩几天，方案会在这里展开。下面也有更多目的地可以探索。
+                </p>
+              </>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

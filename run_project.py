@@ -123,6 +123,12 @@ def main():
                     cwd=ROOT,
                 )
             )
+        if START_WORKER:
+            children.append(subprocess.Popen(
+                [str(PYTHON), "-m", "celery", "-A", "travel_agent.notes.worker:celery", "worker",
+                 "-Q", "note_imports", "--pool=solo", "--concurrency=1", "--loglevel=WARNING",
+                 "--hostname=travel-notes@%h", "--without-gossip", "--without-mingle"], env=env, cwd=ROOT,
+            ))
         children.append(
             subprocess.Popen(
                 [

@@ -28,6 +28,7 @@ import { api, post } from "./api";
 import { Button } from "./components/ui/button";
 import { BudgetPanel, BudgetNotice } from "./BudgetPanel";
 import { MapPanel } from "./MapPanel";
+import { useWorkspaceState } from "./lib/workspace";
 import { openMapViewer } from "./lib/mapScene";
 import type { Plan, Trip, Stop, Route, PendingChange } from "./types";
 
@@ -164,7 +165,11 @@ export function TripExperience({
   setDayIndex,
   staged = false,
   onPlaceSelect,
+  draft,
+  storageKey,
 }: {
+  draft?: { taskId: string; variant: string; revision: number; conversationId: string };
+  storageKey?: string;
   trip?: Trip;
   plan: Plan;
   dayIndex: number;
@@ -182,8 +187,11 @@ export function TripExperience({
   const [marketWarning, setMarketWarning] = useState("");
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [refreshId, setRefreshId] = useState(0);
-  const [view, setView] = useState("itinerary"),
-    [detail, setDetail] = useState<Place | null>(null),
+  const [view, setView] = useWorkspaceState(
+    (storageKey || "trip:" + trip?.id) + ":view",
+    "itinerary",
+  );
+  const [detail, setDetail] = useState<Place | null>(null),
     [alternatives, setAlternatives] = useState(""),
     [search, setSearch] = useState(""),
     [searchQuery, setSearchQuery] = useState(""),
@@ -201,6 +209,9 @@ export function TripExperience({
   const facts = useQuery({
     queryKey: [
       "daily-details",
+      draft?.taskId,
+      draft?.variant,
+      draft?.revision,
       trip?.id,
       trip?.version,
       current?.day,
@@ -211,7 +222,9 @@ export function TripExperience({
     ],
     queryFn: () =>
       api<Details>(
-        `/trips/${trip!.id}/daily-details?` +
+        (draft
+          ? `/tasks/${draft.taskId}/variants/${draft.variant}/daily-details?`
+          : `/trips/${trip!.id}/daily-details?`) +
           new URLSearchParams({
             day: String(current.day),
             mode,
@@ -220,9 +233,9 @@ export function TripExperience({
             refresh: String(refreshId > 0),
           }),
       ),
-    enabled: !!trip?.version && !staged && !!current,
+    enabled: !!current && (!!draft || (!!trip?.version && !staged)),
     placeholderData: (previous) =>
-      previous?.day === current?.day ? previous : undefined,
+      !draft && previous?.day === current?.day ? previous : undefined,
     staleTime: 10 * 60 * 1000,
     retry: false,
   });
@@ -270,7 +283,7 @@ export function TripExperience({
       setBusy(false);
     }
   }
-  const editable = trip?.role !== "viewer" && !staged;
+  const editable = trip?.role !== "viewer" && (!staged || !!draft);
   async function toggleLock(place: Place) {
     if (!trip) return;
     setBusy(true);
@@ -298,22 +311,33 @@ export function TripExperience({
     setBusy(true);
     setError("");
     try {
-      await post(`/trips/${trip.id}/service-choice`, {
-        day: current.day,
-        base_version: trip.version,
-        slot,
-        place_id: p?.id || "",
-        mode: nextMode,
-        query: searchQuery,
-        replacing: alternatives,
-      });
+      await post(
+        draft
+          ? `/tasks/${draft.taskId}/variants/${draft.variant}/service-choice`
+          : `/trips/${trip.id}/service-choice`,
+        {
+          day: current.day,
+          base_version: draft?.revision || trip.version,
+          slot,
+          place_id: p?.id || "",
+          mode: nextMode,
+          query: searchQuery,
+          replacing: alternatives,
+        },
+      );
       setAlternatives("");
       setSearch("");
       setSearchQuery("");
       setDetail(null);
       setMarket("");
-      await client.invalidateQueries({ queryKey: ["trip", trip.id] });
-      await client.invalidateQueries({ queryKey: ["trips"] });
+      if (draft) {
+        await client.invalidateQueries({
+          queryKey: ["conversation", draft.conversationId],
+        });
+      } else {
+        await client.invalidateQueries({ queryKey: ["trip", trip.id] });
+        await client.invalidateQueries({ queryKey: ["trips"] });
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -367,11 +391,16 @@ export function TripExperience({
         items?: MarketItem[];
         venue_warning?: string;
         facts?: { label: string; value: string }[];
-      }>(`/trips/${trip.id}/market-details`, {
-        method: "POST",
-        signal: controller.signal,
-        body: JSON.stringify({ day: current.day, place_id: p.id, kind }),
-      });
+      }>(
+        draft
+          ? `/tasks/${draft.taskId}/variants/${draft.variant}/market-details`
+          : `/trips/${trip.id}/market-details`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          body: JSON.stringify({ day: current.day, place_id: p.id, kind }),
+        },
+      );
       if (controller.signal.aborted) return;
       setMarket(r.raw_text.split("</answer>")[0]);
       setMarketItems(r.items || []);
@@ -474,6 +503,7 @@ export function TripExperience({
                 ?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
             );
           }}
+          aria-label="查看地图"
           className="experience-map-toggle"
         >
           <MapPin size={15} />
@@ -532,12 +562,16 @@ export function TripExperience({
       )}
       <div className="experience-body">
         <div className="experience-content" ref={contentRef}>
-          {view === "budget" && trip && !staged ? (
-            <BudgetPanel trip={trip} dayNumber={current.day} />
-          ) : staged ? (
+          {view === "budget" && trip && (!staged || !!draft) ? (
+            <BudgetPanel
+              trip={draft ? { ...trip, plan } : trip}
+              dayNumber={current.day}
+              draft={draft}
+            />
+          ) : staged && !draft ? (
             <div className="service-pending">
-              <h3>先选一个喜欢的方案</h3>
-              <p>保存后会按当天景点位置查询具体餐厅、住宿与接驳。</p>
+              <h3>方案正在生成</h3>
+              <p>完成后即可预览当天的餐厅、住宿与接驳，无需先确认。</p>
               {current?.stops?.map((s) => (
                 <button className="draft-place" key={s.id} onClick={() => showPlace(s)}>
                   <span>{s.planned_start}</span>
@@ -605,7 +639,7 @@ export function TripExperience({
                     步行 {(data.walking_meters / 1000).toFixed(1)} km
                   </span>
                 </div>
-                {trip && view !== "budget" && (
+                {trip && !staged && view !== "budget" && (
                   <BudgetNotice
                     trip={trip}
                     dayNumber={current.day}
@@ -690,7 +724,7 @@ export function TripExperience({
                                 <div className="timeline-actions">
                                   <span>建议停留 {entry.duration} 分钟</span>
                                   <button
-                                    disabled={!editable || busy}
+                                    disabled={!editable || busy || staged}
                                     onClick={() => toggleLock(entry.place)}
                                   >
                                     {plan.requirements.locked_ids?.includes(
@@ -913,7 +947,7 @@ export function TripExperience({
                       <h2>每一段路，心里有数。</h2>
                       <p>餐厅、景点与住宿接驳都在这里。每段另留 10 分钟缓冲。</p>
                     </div>
-                    {trip && (
+                    {trip && !staged && (
                       <IntercitySearch
                         trip={trip}
                         day={current.day}
@@ -1017,6 +1051,7 @@ export function TripExperience({
         </div>
         <aside className="experience-map">
           <MapPanel
+            defaultOpen={!storageKey}
             day={mapDay}
             hotels={mapHotels}
             highlightId={detail?.id}

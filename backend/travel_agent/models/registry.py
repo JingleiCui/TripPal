@@ -305,7 +305,7 @@ def resolve(slot, configuration=None) -> ResolvedSpec:
     name = _provider_name(slot, override, "dashscope_native", settings, setting_field="voice_provider")
     spec = specs.provider_spec(name, settings.model_providers)
     _validate_capability(slot, spec)
-    if spec.protocol not in specs.HTTP_PROTOCOLS:
+    if spec.protocol not in specs.HTTP_PROTOCOLS | {specs.PROTOCOL_LOCAL}:
         raise ConfigurationError(f"语音槽位需要 HTTP 供应商，{name!r} 是 {spec.protocol}")
     key, source = _key(
         slot,

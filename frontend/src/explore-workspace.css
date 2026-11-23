@@ -1,0 +1,337 @@
+/* Home: keep the conversation and preview in the document, without a drawer. */
+.planning-workspace {
+  --planning-height: 640px;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+  min-width: 0;
+}
+.planning-home-heading {
+  margin-bottom: 24px;
+}
+.planning-home-heading h1 {
+  font-size: clamp(28px, 3vw, 40px);
+  margin: 0 0 12px;
+}
+.planning-home-heading p {
+  color: var(--tp-muted);
+  margin: 0;
+}
+.planning-brief-link {
+  margin-top: 18px;
+  min-height: 44px;
+}
+.planning-workspace [hidden] {
+  display: none !important;
+}
+.planning-workspace .assistant-drawer {
+  position: relative;
+  z-index: 90;
+  height: var(--planning-height);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--tp-card);
+  border: 1px solid var(--tp-line);
+  border-radius: var(--tp-radius);
+  overflow: hidden;
+}
+.assistant-drawer-heading {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--tp-line);
+}
+.assistant-drawer-heading b {
+  font-size: 16px;
+}
+.assistant-drawer-heading small {
+  display: block;
+  color: var(--tp-muted);
+  font-size: 12px;
+  margin-top: 6px;
+}
+.assistant-session-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--tp-line);
+}
+.assistant-session-tools select {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+.mf-shell .planning-workspace .conversation-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.planning-workspace .conversation-chat > header {
+  display: none;
+}
+.planning-workspace .chat-history {
+  flex: 1;
+  min-height: 100px;
+  overflow-y: auto;
+  padding: 16px 20px;
+  overscroll-behavior: contain;
+}
+.planning-workspace .chat-message {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.planning-workspace .known-slots {
+  padding: 6px 16px;
+  max-height: 60px;
+  overflow-y: auto;
+  flex-wrap: wrap;
+}
+.planning-workspace .conversation-input {
+  flex: 0 0 auto;
+  max-height: 53%;
+  overflow-y: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--tp-line);
+}
+.planning-workspace .conversation-input form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.planning-workspace .conversation-input textarea {
+  width: 100%;
+  min-height: 96px;
+  max-height: 180px;
+  font-size: 16px;
+}
+.planning-composer-actions {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  justify-content: space-between;
+}
+.planning-composer-actions .voice-controls {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.planning-composer-actions .voice-controls button {
+  min-height: 44px;
+}
+.planning-workspace .conversation-input form .planning-composer-actions > .btn {
+  position: static;
+  flex: 0 0 auto;
+  width: auto;
+  height: 44px;
+  min-width: 88px;
+  border-radius: 10px;
+}
+.planning-workspace .attachment-row {
+  margin: 8px 0;
+}
+.planning-workspace .input-channel-hint {
+  display: none;
+}
+.assistant-place-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  background: var(--tp-selected);
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.assistant-place-context button {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+.assistant-plan-summary {
+  padding: 12px;
+  margin: 12px 0;
+  background: var(--tp-selected);
+  border-left: 3px solid var(--tp-action);
+}
+.assistant-plan-summary p {
+  font-size: 13px;
+}
+.mf-shell .planning-workspace .workspace-plan-preview {
+  height: var(--planning-height);
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+  margin: 0;
+  border: 1px solid var(--tp-line);
+  border-radius: var(--tp-radius);
+  background: var(--tp-card);
+  overscroll-behavior: contain;
+}
+.workspace-preview-heading h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+.workspace-plan-preview .canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workspace-plan-preview .canvas-toolbar:empty {
+  display: none;
+}
+.workspace-plan-preview .variant-selector {
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.workspace-plan-preview .variant-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.mf-shell .workspace-plan-preview .experience-body {
+  display: block;
+  height: auto;
+  min-height: 0;
+}
+.mf-shell .workspace-plan-preview .experience-content {
+  overflow: visible;
+  max-height: none;
+}
+.mf-shell .workspace-plan-preview .experience-nav {
+  flex-wrap: wrap;
+}
+.mf-shell .workspace-plan-preview .experience-nav [role="tablist"] {
+  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.mf-shell .workspace-plan-preview .experience-nav [role="tab"] {
+  min-height: 44px;
+  white-space: nowrap;
+}
+.mf-shell .workspace-plan-preview .experience-map-toggle {
+  display: inline-flex !important;
+  min-height: 44px;
+}
+.planning-workspace .blank-canvas {
+  min-height: 0;
+  border: 0;
+  padding: 0;
+}
+.planning-workspace .blank-canvas > svg {
+  display: none;
+}
+.planning-inspiration-photo {
+  width: 100%;
+  height: 330px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+body:has(.planning-workspace) .mf-shell.mf-travel-view {
+  grid-template-columns: minmax(0, 1fr);
+}
+body:has(.planning-workspace) .mf-map-viewer.is-open {
+  position: fixed;
+  inset: 130px 20px 20px;
+  width: auto;
+  z-index: 80;
+}
+body:has(.planning-workspace) .mf-map-fab {
+  display: none;
+}
+/* Exploration: its own scrollable card column beside the existing singleton map. */
+@media (min-width: 1024px) {
+  body:has(.mf-map-viewer.is-open) .mf-shell.mf-travel-view:has(.explore-page) {
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  }
+  .mf-shell:has(.explore-page) > .app-main {
+    height: 100dvh;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .mf-shell .explore-page .place-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .mf-shell .explore-page .discovery-place {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+  }
+  .mf-shell .explore-page .place-photo {
+    width: 100%;
+    height: 170px;
+  }
+  .mf-shell .explore-page .place-card-copy {
+    padding: 14px;
+  }
+}
+.discuss-place {
+  min-height: 44px;
+}
+.explore-map-open {
+  display: none !important;
+}
+@media (max-width: 1023px) {
+  .planning-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .mf-shell .planning-workspace .workspace-plan-preview {
+    height: auto;
+    max-height: 640px;
+  }
+}
+@media (max-width: 767px) {
+  .planning-workspace {
+    --planning-height: 620px;
+  }
+  .mf-shell .app-main .new-planner {
+    padding: 24px 12px 40px;
+  }
+  .planning-workspace .conversation-input {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .planning-inspiration-photo {
+    height: 230px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .planning-workspace *,
+  .planning-workspace *::before,
+  .planning-workspace *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.planning-composer-actions .voice-controls button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--tp-line);
+  border-radius: 10px;
+  background: var(--tp-selected);
+  color: var(--tp-action);
+  font-size: 14px;
+}
+.planning-workspace .conversation-input {
+  max-height: 60%;
+}
+.planning-workspace .chat-history {
+  min-height: 80px;
+}

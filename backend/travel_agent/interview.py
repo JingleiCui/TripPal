@@ -62,6 +62,9 @@ def _next_question(
         return "destination"
     if not _has(user_details, "duration"):
         return "duration"
+    # 日期影响每周闭馆/开放规则，与目的地、天数一样是硬条件，不能跳过。
+    if not _has(user_details, "travel_dates") or user_details.get("travel_dates") == "declined":
+        return "travel_dates"
     if force_ready or user_turns >= MAX_INTERVIEW_TURNS:
         return None
     if user_details.get("needs_accommodation") is None and "accommodation" not in asked:

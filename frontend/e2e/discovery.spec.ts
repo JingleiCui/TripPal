@@ -1,5 +1,10 @@
 import { test, expect, Page } from "@playwright/test";
 
+// Dispose interceptors before the page closes; route.fetch can outlive an assertion.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 async function register(page: Page) {
   await page.goto("/");
   await page.getByLabel("用户名", { exact: true }).fill("discover-" + Date.now());
@@ -23,6 +28,10 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
   await expect(
     page.getByRole("heading", { name: "演示·北京餐厅 1", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".mf-map-viewer.is-open")).toBeVisible();
+  const cardsBox = await page.locator(".explore-results").boundingBox();
+  const mapBox = await page.locator(".mf-map-viewer.is-open").boundingBox();
+  expect(cardsBox && mapBox && mapBox.x >= cardsBox.x + cardsBox.width).toBeTruthy();
   await page.getByRole("button", { name: "查看演示·北京餐厅 1", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "演示·北京餐厅 1详情" })).toBeVisible();
   await page.getByRole("button", { name: "加入旅行收藏", exact: true }).click();
@@ -71,6 +80,8 @@ test("discovery: search, detail, save, collections, planning and assistant prefe
   await expect(page.getByLabel("天数", { exact: true })).toHaveValue("4");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/explore");
+  // 工作区状态会保留上一步的「餐厅美食」筛选，先回到全部地点再校验移动端布局。
+  await page.getByRole("button", { name: "为你发现", exact: true }).click();
   await page.getByLabel("合成资料体验", { exact: true }).check();
   await expect(
     page.getByRole("heading", { name: "演示·城市博物馆", exact: true }),

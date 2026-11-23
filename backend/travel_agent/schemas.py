@@ -1,11 +1,12 @@
+from functools import lru_cache
 from datetime import date
 from typing import Literal
-from pydantic import BaseModel, Field, field_validator, EmailStr, model_validator
+from pydantic import create_model, BaseModel, Field, field_validator, EmailStr, model_validator
 
 
 class Credentials(BaseModel):
     name: str = Field(min_length=2, max_length=60, pattern=r"^[\w\-\u4e00-\u9fff]+$")
-    password: str = Field(min_length=10, max_length=100)
+    password: str = Field(min_length=6, max_length=100)
     email: EmailStr | None = None
 
 
@@ -67,6 +68,7 @@ class RunRequest(BaseModel):
     allow_undated_draft: bool = False
     compare: bool = False
     regenerate: bool = False
+    attachment_ids: list[str] = Field(default_factory=list, max_length=5)
     capabilities: list[str] = Field(default_factory=list)
 
 
@@ -77,6 +79,17 @@ class ResumeRequest(BaseModel):
 class PlanSelection(BaseModel):
     days: list[list[str]] = Field(description="每日候选地点 ID，不能新增 ID")
     rationale: str = Field(max_length=2000, description="安排理由、取舍与尚未确认的条件")
+
+
+@lru_cache(maxsize=32)
+def plan_selection_schema(days):
+    """Constrain generation itself to the requested number of days; never pad model output."""
+    return create_model(
+        f"PlanSelection{days}Days",
+        __base__=PlanSelection,
+        days=(list[list[str]], Field(min_length=days, max_length=days,
+              description=f"恰好 {days} 个每日候选 ID 数组，顺序对应 day_cities；禁止新增 ID")),
+    )
 
 
 class DelegateSelection(BaseModel):

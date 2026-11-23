@@ -10,6 +10,7 @@ import type { Day, Hotel, Stop } from "../types";
 
 export type MapScene = {
   kind?: "explore" | "itinerary";
+  defaultOpen?: boolean;
   viewKey?: string;
   day?: Day;
   allDays?: Day[];
@@ -53,7 +54,7 @@ export function publishMapScene(id: string, scene: MapScene | null) {
   if (scene) scenes.set(id, scene);
   // 进入新的有地图页面时恢复默认展开：不能让上一次手动收起的状态
   // 延续到下一页，否则用户会觉得「地图要点开才能看到」。
-  if (wasEmpty && scene) viewerOpen = true;
+  if (wasEmpty && scene) viewerOpen = scene.defaultOpen ?? true;
   recompute();
 }
 

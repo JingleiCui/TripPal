@@ -1,7 +1,11 @@
 """Integration tests use a separate MySQL database; never reset the application DB."""
 
 import os
+
 import pytest
+
+# Tests own optional channels; an enabled local/cloud user profile must not leak into fixtures.
+os.environ["TRAVEL_ACTIVE_MODEL_PROFILE"] = ""
 
 os.environ["TRAVEL_DATABASE_URL"] = (
     "mysql+pymysql://travel:travel_local_only@127.0.0.1:13316/travel_agent_test?charset=utf8mb4"
@@ -25,6 +29,7 @@ def client():
 @pytest.fixture
 def account(client):
     import uuid
+
     import redis
     from travel_agent.config import settings
 

@@ -1,0 +1,2094 @@
+{
+  "A": {
+    "title": "北京 · 3 日城市行程",
+    "transfers": [],
+    "requirements": {
+      "city_stays": [],
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 1,
+      "budget": null,
+      "transport": "public_transit",
+      "style": "city",
+      "max_walk_meters": 8000,
+      "interests": "历史文化、公园与街区",
+      "locked_ids": [],
+      "excluded_ids": [],
+      "indoor_only": false,
+      "needs_accommodation": true
+    },
+    "days": [
+      {
+        "day": 1,
+        "city": "北京",
+        "date": "2027-05-01",
+        "stops": [
+          {
+            "id": "fixture:0",
+            "city": "北京",
+            "name": "演示·城市博物馆",
+            "lon": 116.407,
+            "lat": 39.908,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:1",
+            "city": "北京",
+            "name": "演示·古城公园",
+            "lon": 116.41,
+            "lat": 39.925,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:0",
+            "to_id": "fixture:1",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.407,
+                39.908
+              ],
+              [
+                116.41,
+                39.925
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      },
+      {
+        "day": 2,
+        "city": "北京",
+        "date": "2027-05-02",
+        "stops": [
+          {
+            "id": "fixture:2",
+            "city": "北京",
+            "name": "演示·历史街区",
+            "lon": 116.395,
+            "lat": 39.933,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:3",
+            "city": "北京",
+            "name": "演示·艺术展馆",
+            "lon": 116.43,
+            "lat": 39.94,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:2",
+            "to_id": "fixture:3",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.395,
+                39.933
+              ],
+              [
+                116.43,
+                39.94
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      },
+      {
+        "day": 3,
+        "city": "北京",
+        "date": "2027-05-03",
+        "stops": [
+          {
+            "id": "fixture:4",
+            "city": "北京",
+            "name": "演示·滨水公园",
+            "lon": 116.385,
+            "lat": 39.945,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:5",
+            "city": "北京",
+            "name": "演示·科学馆",
+            "lon": 116.398,
+            "lat": 39.97,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:4",
+            "to_id": "fixture:5",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.385,
+                39.945
+              ],
+              [
+                116.398,
+                39.97
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      }
+    ],
+    "warnings": [],
+    "budget": {
+      "known_subtotal_cny": 12.0,
+      "limit_cny": null,
+      "unknown_items": [
+        "住宿及返程接驳",
+        "住宿费用",
+        "出发位置至首个地点的交通",
+        "景点内部步行",
+        "餐饮费用"
+      ],
+      "status": "费用不完整，不能保证总预算"
+    },
+    "verification": "needs_review",
+    "fixture": true,
+    "booking_status": "未预订",
+    "rationale": ""
+  },
+  "B": {
+    "title": "北京 · 3 日城市行程",
+    "transfers": [],
+    "requirements": {
+      "city_stays": [],
+      "city": "北京",
+      "origin": "北京站",
+      "start_date": "2027-05-01",
+      "days": 3,
+      "people": 1,
+      "budget": null,
+      "transport": "public_transit",
+      "style": "city",
+      "max_walk_meters": 8000,
+      "interests": "历史文化、公园与街区",
+      "locked_ids": [],
+      "excluded_ids": [],
+      "indoor_only": false,
+      "needs_accommodation": true
+    },
+    "days": [
+      {
+        "day": 1,
+        "city": "北京",
+        "date": "2027-05-01",
+        "stops": [
+          {
+            "id": "fixture:1",
+            "city": "北京",
+            "name": "演示·古城公园",
+            "lon": 116.41,
+            "lat": 39.925,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:0",
+            "city": "北京",
+            "name": "演示·城市博物馆",
+            "lon": 116.407,
+            "lat": 39.908,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:1",
+            "to_id": "fixture:0",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.41,
+                39.925
+              ],
+              [
+                116.407,
+                39.908
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      },
+      {
+        "day": 2,
+        "city": "北京",
+        "date": "2027-05-02",
+        "stops": [
+          {
+            "id": "fixture:3",
+            "city": "北京",
+            "name": "演示·艺术展馆",
+            "lon": 116.43,
+            "lat": 39.94,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:2",
+            "city": "北京",
+            "name": "演示·历史街区",
+            "lon": 116.395,
+            "lat": 39.933,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:3",
+            "to_id": "fixture:2",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.43,
+                39.94
+              ],
+              [
+                116.395,
+                39.933
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      },
+      {
+        "day": 3,
+        "city": "北京",
+        "date": "2027-05-03",
+        "stops": [
+          {
+            "id": "fixture:5",
+            "city": "北京",
+            "name": "演示·科学馆",
+            "lon": 116.398,
+            "lat": 39.97,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": true,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "09:00",
+            "planned_end": "10:30",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          },
+          {
+            "id": "fixture:4",
+            "city": "北京",
+            "name": "演示·滨水公园",
+            "lon": 116.385,
+            "lat": 39.945,
+            "coordinate_system": "GCJ-02",
+            "address": "合成测试地点，不代表真实营业场所",
+            "category": "合成资料",
+            "photos": [],
+            "description": "仅用于验证流程，不可据此出游。",
+            "opening_text": "测试窗口 09:00–17:00",
+            "opening_minutes": [
+              540,
+              1020
+            ],
+            "price_text": "测试费用 0 元",
+            "price_cny": 0,
+            "indoor": false,
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            },
+            "planned_start": "11:10",
+            "planned_end": "12:40",
+            "visit_minutes": 90,
+            "visit_duration_basis": "计划停留时间，非平台事实",
+            "lunch_before": false,
+            "locked": false
+          }
+        ],
+        "routes": [
+          {
+            "from_id": "fixture:5",
+            "to_id": "fixture:4",
+            "mode": "public_transit",
+            "minutes": 25,
+            "distance_meters": 3000,
+            "walking_meters": 400,
+            "cost_cny": 4,
+            "polyline": [
+              [
+                116.398,
+                39.97
+              ],
+              [
+                116.385,
+                39.945
+              ]
+            ],
+            "instructions": [
+              "合成测试线路"
+            ],
+            "source": {
+              "provider": "合成测试夹具",
+              "url": null,
+              "retrieved_at": "2026-11-12T00:00:00Z",
+              "synthetic": true
+            }
+          }
+        ],
+        "arrival_route": null,
+        "known_route_walking_meters": 400,
+        "walking_note": "不包含景点内部步行，不能视为全天总步行量"
+      }
+    ],
+    "warnings": [],
+    "budget": {
+      "known_subtotal_cny": 12.0,
+      "limit_cny": null,
+      "unknown_items": [
+        "住宿及返程接驳",
+        "住宿费用",
+        "出发位置至首个地点的交通",
+        "景点内部步行",
+        "餐饮费用"
+      ],
+      "status": "费用不完整，不能保证总预算"
+    },
+    "verification": "needs_review",
+    "fixture": true,
+    "booking_status": "未预订",
+    "rationale": ""
+  },
+  "details": {
+    "day": 1,
+    "date": "2027-05-01",
+    "city": "北京",
+    "fixture": true,
+    "mode": "public_transit",
+    "meals": [
+      {
+        "slot": "breakfast",
+        "label": "早餐",
+        "place": {
+          "id": "fixture-service:北京:breakfast:0",
+          "name": "演示·早餐铺",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.40899999999999,
+          "lat": 39.909,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414373+00:00",
+            "url": null
+          }
+        },
+        "alternatives": [
+          {
+            "id": "fixture-service:北京:breakfast:0",
+            "name": "演示·早餐铺",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.40899999999999,
+            "lat": 39.909,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414373+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:breakfast:1",
+            "name": "演示·豆浆烧饼店",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.411,
+            "lat": 39.910000000000004,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414499+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:breakfast:2",
+            "name": "演示·包子铺",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.413,
+            "lat": 39.911,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414501+00:00",
+              "url": null
+            }
+          }
+        ],
+        "user_selected": false,
+        "anchor_name": "演示·城市博物馆",
+        "planned_start": "08:35"
+      },
+      {
+        "slot": "lunch",
+        "label": "午餐",
+        "place": {
+          "id": "fixture-service:北京:food:0",
+          "name": "演示·本地家常菜馆",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.41199999999999,
+          "lat": 39.925999999999995,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414506+00:00",
+            "url": null
+          }
+        },
+        "alternatives": [
+          {
+            "id": "fixture-service:北京:food:0",
+            "name": "演示·本地家常菜馆",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.41199999999999,
+            "lat": 39.925999999999995,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414506+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:food:1",
+            "name": "演示·街角面馆",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.414,
+            "lat": 39.927,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414507+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:food:2",
+            "name": "演示·风味小吃店",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.416,
+            "lat": 39.928,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414509+00:00",
+              "url": null
+            }
+          }
+        ],
+        "user_selected": false,
+        "anchor_name": "演示·古城公园",
+        "planned_start": "12:00"
+      },
+      {
+        "slot": "dinner",
+        "label": "晚餐",
+        "place": {
+          "id": "fixture-service:北京:food:1",
+          "name": "演示·街角面馆",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.414,
+          "lat": 39.927,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414515+00:00",
+            "url": null
+          }
+        },
+        "alternatives": [
+          {
+            "id": "fixture-service:北京:food:1",
+            "name": "演示·街角面馆",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.414,
+            "lat": 39.927,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414515+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:food:2",
+            "name": "演示·风味小吃店",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.416,
+            "lat": 39.928,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414519+00:00",
+              "url": null
+            }
+          },
+          {
+            "id": "fixture-service:北京:food:0",
+            "name": "演示·本地家常菜馆",
+            "city": "北京",
+            "address": "合成测试地址，不代表真实营业场所",
+            "lon": 116.41199999999999,
+            "lat": 39.925999999999995,
+            "coordinate_system": "GCJ-02",
+            "category": "合成测试餐厅",
+            "photos": [],
+            "description": "仅供流程验证，不可据此出游。",
+            "phone": "",
+            "rating": null,
+            "opening_text": "合成营业时间 07:00–22:00",
+            "price_text": "合成参考费用，非真实价格",
+            "source": {
+              "provider": "合成测试资料",
+              "synthetic": true,
+              "retrieved_at": "2026-11-22T13:59:12.414513+00:00",
+              "url": null
+            }
+          }
+        ],
+        "user_selected": false,
+        "anchor_name": "演示·古城公园",
+        "planned_start": "18:00"
+      }
+    ],
+    "hotel": {
+      "id": "fixture-service:北京:stays:0",
+      "name": "演示·城市旅居酒店",
+      "city": "北京",
+      "address": "合成测试地址，不代表真实营业场所",
+      "lon": 116.40899999999999,
+      "lat": 39.909,
+      "coordinate_system": "GCJ-02",
+      "category": "合成测试酒店",
+      "photos": [],
+      "description": "仅供流程验证，不可据此出游。",
+      "phone": "",
+      "rating": null,
+      "opening_text": "合成营业时间 07:00–22:00",
+      "price_text": "合成参考费用，非真实价格",
+      "source": {
+        "provider": "合成测试资料",
+        "synthetic": true,
+        "retrieved_at": "2026-11-22T13:59:12.414523+00:00",
+        "url": null
+      }
+    },
+    "hotels": [
+      {
+        "id": "fixture-service:北京:stays:0",
+        "name": "演示·城市旅居酒店",
+        "city": "北京",
+        "address": "合成测试地址，不代表真实营业场所",
+        "lon": 116.40899999999999,
+        "lat": 39.909,
+        "coordinate_system": "GCJ-02",
+        "category": "合成测试酒店",
+        "photos": [],
+        "description": "仅供流程验证，不可据此出游。",
+        "phone": "",
+        "rating": null,
+        "opening_text": "合成营业时间 07:00–22:00",
+        "price_text": "合成参考费用，非真实价格",
+        "source": {
+          "provider": "合成测试资料",
+          "synthetic": true,
+          "retrieved_at": "2026-11-22T13:59:12.414523+00:00",
+          "url": null
+        }
+      },
+      {
+        "id": "fixture-service:北京:stays:1",
+        "name": "演示·街区精品酒店",
+        "city": "北京",
+        "address": "合成测试地址，不代表真实营业场所",
+        "lon": 116.411,
+        "lat": 39.910000000000004,
+        "coordinate_system": "GCJ-02",
+        "category": "合成测试酒店",
+        "photos": [],
+        "description": "仅供流程验证，不可据此出游。",
+        "phone": "",
+        "rating": null,
+        "opening_text": "合成营业时间 07:00–22:00",
+        "price_text": "合成参考费用，非真实价格",
+        "source": {
+          "provider": "合成测试资料",
+          "synthetic": true,
+          "retrieved_at": "2026-11-22T13:59:12.414525+00:00",
+          "url": null
+        }
+      },
+      {
+        "id": "fixture-service:北京:stays:2",
+        "name": "演示·便捷酒店",
+        "city": "北京",
+        "address": "合成测试地址，不代表真实营业场所",
+        "lon": 116.413,
+        "lat": 39.911,
+        "coordinate_system": "GCJ-02",
+        "category": "合成测试酒店",
+        "photos": [],
+        "description": "仅供流程验证，不可据此出游。",
+        "phone": "",
+        "rating": null,
+        "opening_text": "合成营业时间 07:00–22:00",
+        "price_text": "合成参考费用，非真实价格",
+        "source": {
+          "provider": "合成测试资料",
+          "synthetic": true,
+          "retrieved_at": "2026-11-22T13:59:12.414526+00:00",
+          "url": null
+        }
+      }
+    ],
+    "stay": {
+      "checkin": "2027-05-01",
+      "checkout": "2027-05-03",
+      "nights": 2,
+      "people": 1,
+      "selected": false
+    },
+    "timeline": [
+      {
+        "kind": "origin",
+        "slot": null,
+        "label": "从出发位置开始",
+        "place": {
+          "id": "fixture-origin",
+          "city": "北京",
+          "name": "北京站",
+          "lon": 116.407,
+          "lat": 39.908,
+          "coordinate_system": "GCJ-02",
+          "address": "合成测试地点，不代表真实营业场所",
+          "category": "合成资料",
+          "photos": [],
+          "description": "仅用于验证流程，不可据此出游。",
+          "opening_text": "测试窗口 09:00–17:00",
+          "opening_minutes": [
+            540,
+            1020
+          ],
+          "price_text": "测试费用 0 元",
+          "price_cny": 0,
+          "indoor": true,
+          "source": {
+            "provider": "合成测试夹具",
+            "url": null,
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "synthetic": true
+          },
+          "planned_start": "09:00",
+          "planned_end": "10:30",
+          "visit_minutes": 90,
+          "visit_duration_basis": "计划停留时间，非平台事实",
+          "lunch_before": false,
+          "locked": false
+        },
+        "start": "08:00",
+        "end": "08:00",
+        "duration": 0,
+        "timing_verified": true
+      },
+      {
+        "kind": "meal",
+        "slot": "breakfast",
+        "label": "早餐",
+        "place": {
+          "id": "fixture-service:北京:breakfast:0",
+          "name": "演示·早餐铺",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.40899999999999,
+          "lat": 39.909,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414373+00:00",
+            "url": null
+          }
+        },
+        "start": "08:35",
+        "end": "09:15",
+        "duration": 40,
+        "timing_verified": true
+      },
+      {
+        "kind": "place",
+        "slot": null,
+        "label": "游览",
+        "place": {
+          "id": "fixture:0",
+          "city": "北京",
+          "name": "演示·城市博物馆",
+          "lon": 116.407,
+          "lat": 39.908,
+          "coordinate_system": "GCJ-02",
+          "address": "合成测试地点，不代表真实营业场所",
+          "category": "合成资料",
+          "photos": [],
+          "description": "仅用于验证流程，不可据此出游。",
+          "opening_text": "测试窗口 09:00–17:00",
+          "opening_minutes": [
+            540,
+            1020
+          ],
+          "price_text": "测试费用 0 元",
+          "price_cny": 0,
+          "indoor": true,
+          "source": {
+            "provider": "合成测试夹具",
+            "url": null,
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "synthetic": true
+          },
+          "planned_start": "09:00",
+          "planned_end": "10:30",
+          "visit_minutes": 90,
+          "visit_duration_basis": "计划停留时间，非平台事实",
+          "lunch_before": false,
+          "locked": false
+        },
+        "start": "09:50",
+        "end": "11:20",
+        "duration": 90,
+        "timing_verified": true
+      },
+      {
+        "kind": "meal",
+        "slot": "lunch",
+        "label": "午餐",
+        "place": {
+          "id": "fixture-service:北京:food:0",
+          "name": "演示·本地家常菜馆",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.41199999999999,
+          "lat": 39.925999999999995,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414506+00:00",
+            "url": null
+          }
+        },
+        "start": "12:00",
+        "end": "13:00",
+        "duration": 60,
+        "timing_verified": true
+      },
+      {
+        "kind": "place",
+        "slot": null,
+        "label": "游览",
+        "place": {
+          "id": "fixture:1",
+          "city": "北京",
+          "name": "演示·古城公园",
+          "lon": 116.41,
+          "lat": 39.925,
+          "coordinate_system": "GCJ-02",
+          "address": "合成测试地点，不代表真实营业场所",
+          "category": "合成资料",
+          "photos": [],
+          "description": "仅用于验证流程，不可据此出游。",
+          "opening_text": "测试窗口 09:00–17:00",
+          "opening_minutes": [
+            540,
+            1020
+          ],
+          "price_text": "测试费用 0 元",
+          "price_cny": 0,
+          "indoor": false,
+          "source": {
+            "provider": "合成测试夹具",
+            "url": null,
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "synthetic": true
+          },
+          "planned_start": "11:10",
+          "planned_end": "12:40",
+          "visit_minutes": 90,
+          "visit_duration_basis": "计划停留时间，非平台事实",
+          "lunch_before": false,
+          "locked": false
+        },
+        "start": "13:35",
+        "end": "15:05",
+        "duration": 90,
+        "timing_verified": true
+      },
+      {
+        "kind": "meal",
+        "slot": "dinner",
+        "label": "晚餐",
+        "place": {
+          "id": "fixture-service:北京:food:1",
+          "name": "演示·街角面馆",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.414,
+          "lat": 39.927,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试餐厅",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414515+00:00",
+            "url": null
+          }
+        },
+        "start": "18:00",
+        "end": "19:00",
+        "duration": 60,
+        "timing_verified": true
+      },
+      {
+        "kind": "hotel",
+        "slot": null,
+        "label": "回到住宿",
+        "place": {
+          "id": "fixture-service:北京:stays:0",
+          "name": "演示·城市旅居酒店",
+          "city": "北京",
+          "address": "合成测试地址，不代表真实营业场所",
+          "lon": 116.40899999999999,
+          "lat": 39.909,
+          "coordinate_system": "GCJ-02",
+          "category": "合成测试酒店",
+          "photos": [],
+          "description": "仅供流程验证，不可据此出游。",
+          "phone": "",
+          "rating": null,
+          "opening_text": "合成营业时间 07:00–22:00",
+          "price_text": "合成参考费用，非真实价格",
+          "source": {
+            "provider": "合成测试资料",
+            "synthetic": true,
+            "retrieved_at": "2026-11-22T13:59:12.414523+00:00",
+            "url": null
+          }
+        },
+        "start": "19:35",
+        "end": "19:35",
+        "duration": 0,
+        "timing_verified": true
+      }
+    ],
+    "legs": [
+      {
+        "from_id": "fixture-origin",
+        "to_id": "fixture-service:北京:breakfast:0",
+        "mode": "walk",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.407,
+            39.908
+          ],
+          [
+            116.40899999999999,
+            39.909
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "北京站",
+        "to_name": "演示·早餐铺",
+        "before_index": 1,
+        "arrival": "08:35"
+      },
+      {
+        "from_id": "fixture-service:北京:breakfast:0",
+        "to_id": "fixture:0",
+        "mode": "walk",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.40899999999999,
+            39.909
+          ],
+          [
+            116.407,
+            39.908
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "演示·早餐铺",
+        "to_name": "演示·城市博物馆",
+        "before_index": 2,
+        "arrival": "09:50"
+      },
+      {
+        "from_id": "fixture:0",
+        "to_id": "fixture-service:北京:food:0",
+        "mode": "public_transit",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.407,
+            39.908
+          ],
+          [
+            116.41199999999999,
+            39.925999999999995
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "演示·城市博物馆",
+        "to_name": "演示·本地家常菜馆",
+        "before_index": 3,
+        "arrival": "11:55"
+      },
+      {
+        "from_id": "fixture-service:北京:food:0",
+        "to_id": "fixture:1",
+        "mode": "walk",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.41199999999999,
+            39.925999999999995
+          ],
+          [
+            116.41,
+            39.925
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "演示·本地家常菜馆",
+        "to_name": "演示·古城公园",
+        "before_index": 4,
+        "arrival": "13:35"
+      },
+      {
+        "from_id": "fixture:1",
+        "to_id": "fixture-service:北京:food:1",
+        "mode": "walk",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.41,
+            39.925
+          ],
+          [
+            116.414,
+            39.927
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "演示·古城公园",
+        "to_name": "演示·街角面馆",
+        "before_index": 5,
+        "arrival": "15:40"
+      },
+      {
+        "from_id": "fixture-service:北京:food:1",
+        "to_id": "fixture-service:北京:stays:0",
+        "mode": "public_transit",
+        "minutes": 25,
+        "distance_meters": 3000,
+        "walking_meters": 400,
+        "cost_cny": 4,
+        "polyline": [
+          [
+            116.414,
+            39.927
+          ],
+          [
+            116.40899999999999,
+            39.909
+          ]
+        ],
+        "instructions": [
+          "合成测试线路"
+        ],
+        "source": {
+          "provider": "合成测试夹具",
+          "url": null,
+          "retrieved_at": "2026-11-12T00:00:00Z",
+          "synthetic": true
+        },
+        "from_name": "演示·街角面馆",
+        "to_name": "演示·城市旅居酒店",
+        "before_index": 6,
+        "arrival": "19:35"
+      }
+    ],
+    "walking_meters": 2400,
+    "known_transport_cny_per_person": 24.0,
+    "warnings": [],
+    "retrieved_at": "2026-11-22T13:59:12.414810+00:00",
+    "notice": "合成流程资料，不能用于出游。",
+    "version": 1
+  },
+  "budget": {
+    "version": 1,
+    "daily_limits": {},
+    "days": [
+      {
+        "day": 1,
+        "date": "2027-05-01",
+        "city": "北京",
+        "rows": [
+          {
+            "key": "meal:1:breakfast",
+            "day": 1,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "早餐 · 演示·早餐铺",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "fixture-service:北京:breakfast:0",
+            "source": "合成测试资料",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:1:lunch",
+            "day": 1,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "午餐 · 演示·本地家常菜馆",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "fixture-service:北京:food:0",
+            "source": "合成测试资料",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:1:dinner",
+            "day": 1,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "晚餐 · 演示·街角面馆",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "fixture-service:北京:food:1",
+            "source": "合成测试资料",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "ticket:1:fixture:0",
+            "day": 1,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·城市博物馆 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:0",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "ticket:1:fixture:1",
+            "day": 1,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·古城公园 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:1",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "hotel:1",
+            "day": 1,
+            "category": "hotel",
+            "category_name": "住宿",
+            "label": "演示·城市旅居酒店 · 当晚",
+            "unit_price_cny": null,
+            "unit": "per_room_night",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "fixture-service:北京:stays:0",
+            "source": "",
+            "note": "每晚房价×房间数；脱敏报价不换算为确定金额，离店日不重复计房费"
+          },
+          {
+            "key": "route:1:0:fixture-origin:fixture-service:北京:breakfast:0",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "北京站 → 演示·早餐铺",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "walk",
+            "source": "合成测试夹具",
+            "note": "步行本身无票价"
+          },
+          {
+            "key": "route:1:1:fixture-service:北京:breakfast:0:fixture:0",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "演示·早餐铺 → 演示·城市博物馆",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "walk",
+            "source": "合成测试夹具",
+            "note": "步行本身无票价"
+          },
+          {
+            "key": "route:1:2:fixture:0:fixture-service:北京:food:0",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "演示·城市博物馆 → 演示·本地家常菜馆",
+            "unit_price_cny": 4.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 4.0,
+            "confidence": "reference",
+            "fingerprint": "public_transit",
+            "source": "合成测试夹具",
+            "note": "票价按出行人数计算"
+          },
+          {
+            "key": "route:1:3:fixture-service:北京:food:0:fixture:1",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "演示·本地家常菜馆 → 演示·古城公园",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "walk",
+            "source": "合成测试夹具",
+            "note": "步行本身无票价"
+          },
+          {
+            "key": "route:1:4:fixture:1:fixture-service:北京:food:1",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "演示·古城公园 → 演示·街角面馆",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "walk",
+            "source": "合成测试夹具",
+            "note": "步行本身无票价"
+          },
+          {
+            "key": "route:1:5:fixture-service:北京:food:1:fixture-service:北京:stays:0",
+            "day": 1,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "演示·街角面馆 → 演示·城市旅居酒店",
+            "unit_price_cny": 4.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 4.0,
+            "confidence": "reference",
+            "fingerprint": "public_transit",
+            "source": "合成测试夹具",
+            "note": "票价按出行人数计算"
+          },
+          {
+            "key": "extra:1",
+            "day": 1,
+            "category": "other",
+            "category_name": "其他",
+            "label": "其他消费 / 机动预留",
+            "unit_price_cny": 0.0,
+            "unit": "group",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "estimated",
+            "fingerprint": "",
+            "source": "未安排额外消费",
+            "note": "可填写零食、购物、行李寄存及机动金额"
+          }
+        ],
+        "limit_basis": "全程预算的日均参考，不是单独日预算",
+        "priced_subtotal_cny": 8.0,
+        "limit_cny": null,
+        "unpriced_count": 4,
+        "unpriced_labels": [
+          "早餐 · 演示·早餐铺",
+          "午餐 · 演示·本地家常菜馆",
+          "晚餐 · 演示·街角面馆",
+          "演示·城市旅居酒店 · 当晚"
+        ],
+        "is_complete": false,
+        "status": "no_budget",
+        "overrun_cny": null,
+        "remaining_cny": null,
+        "confirmed_subtotal_cny": 0.0
+      },
+      {
+        "day": 2,
+        "date": "2027-05-02",
+        "city": "北京",
+        "rows": [
+          {
+            "key": "meal:2:breakfast",
+            "day": 2,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "早餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:2:lunch",
+            "day": 2,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "午餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:2:dinner",
+            "day": 2,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "晚餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "ticket:2:fixture:2",
+            "day": 2,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·历史街区 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:2",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "ticket:2:fixture:3",
+            "day": 2,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·艺术展馆 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:3",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "hotel:2",
+            "day": 2,
+            "category": "hotel",
+            "category_name": "住宿",
+            "label": "北京住宿 · 当晚",
+            "unit_price_cny": null,
+            "unit": "per_room_night",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "每晚房价×房间数；脱敏报价不换算为确定金额，离店日不重复计房费"
+          },
+          {
+            "key": "local-transport:2",
+            "day": 2,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "当天市内接驳 · 路线尚未完整核算",
+            "unit_price_cny": null,
+            "unit": "group",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": ""
+          },
+          {
+            "key": "extra:2",
+            "day": 2,
+            "category": "other",
+            "category_name": "其他",
+            "label": "其他消费 / 机动预留",
+            "unit_price_cny": 0.0,
+            "unit": "group",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "estimated",
+            "fingerprint": "",
+            "source": "未安排额外消费",
+            "note": "可填写零食、购物、行李寄存及机动金额"
+          }
+        ],
+        "limit_basis": "全程预算的日均参考，不是单独日预算",
+        "priced_subtotal_cny": 0.0,
+        "limit_cny": null,
+        "unpriced_count": 5,
+        "unpriced_labels": [
+          "早餐 · 餐厅待核实",
+          "午餐 · 餐厅待核实",
+          "晚餐 · 餐厅待核实",
+          "北京住宿 · 当晚",
+          "当天市内接驳 · 路线尚未完整核算"
+        ],
+        "is_complete": false,
+        "status": "no_budget",
+        "overrun_cny": null,
+        "remaining_cny": null,
+        "confirmed_subtotal_cny": 0.0
+      },
+      {
+        "day": 3,
+        "date": "2027-05-03",
+        "city": "北京",
+        "rows": [
+          {
+            "key": "meal:3:breakfast",
+            "day": 3,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "早餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:3:lunch",
+            "day": 3,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "午餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "meal:3:dinner",
+            "day": 3,
+            "category": "food",
+            "category_name": "餐饮",
+            "label": "晚餐 · 餐厅待核实",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "地图参考人均，非实际结账金额"
+          },
+          {
+            "key": "ticket:3:fixture:4",
+            "day": 3,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·滨水公园 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:4",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "ticket:3:fixture:5",
+            "day": 3,
+            "category": "tickets",
+            "category_name": "门票",
+            "label": "演示·科学馆 · 门票",
+            "unit_price_cny": 0.0,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "reference",
+            "fingerprint": "fixture:5",
+            "source": "合成测试夹具",
+            "note": "未查到票价时需核对预约平台；不能按免费处理"
+          },
+          {
+            "key": "local-transport:3",
+            "day": 3,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "当天市内接驳 · 路线尚未完整核算",
+            "unit_price_cny": null,
+            "unit": "group",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": ""
+          },
+          {
+            "key": "return-travel",
+            "day": 3,
+            "category": "transport",
+            "category_name": "交通",
+            "label": "返程 / 离开最后一站的交通",
+            "unit_price_cny": null,
+            "unit": "per_person",
+            "quantity": 1,
+            "subtotal_cny": null,
+            "confidence": "unknown",
+            "fingerprint": "",
+            "source": "",
+            "note": "含必要的机场或车站接驳；如不需要，可填写 0"
+          },
+          {
+            "key": "extra:3",
+            "day": 3,
+            "category": "other",
+            "category_name": "其他",
+            "label": "其他消费 / 机动预留",
+            "unit_price_cny": 0.0,
+            "unit": "group",
+            "quantity": 1,
+            "subtotal_cny": 0.0,
+            "confidence": "estimated",
+            "fingerprint": "",
+            "source": "未安排额外消费",
+            "note": "可填写零食、购物、行李寄存及机动金额"
+          }
+        ],
+        "limit_basis": "全程预算的日均参考，不是单独日预算",
+        "priced_subtotal_cny": 0.0,
+        "limit_cny": null,
+        "unpriced_count": 5,
+        "unpriced_labels": [
+          "早餐 · 餐厅待核实",
+          "午餐 · 餐厅待核实",
+          "晚餐 · 餐厅待核实",
+          "当天市内接驳 · 路线尚未完整核算",
+          "返程 / 离开最后一站的交通"
+        ],
+        "is_complete": false,
+        "status": "no_budget",
+        "overrun_cny": null,
+        "remaining_cny": null,
+        "confirmed_subtotal_cny": 0.0
+      }
+    ],
+    "trip": {
+      "priced_subtotal_cny": 8.0,
+      "limit_cny": null,
+      "unpriced_count": 14,
+      "unpriced_labels": [
+        "早餐 · 演示·早餐铺",
+        "午餐 · 演示·本地家常菜馆",
+        "晚餐 · 演示·街角面馆",
+        "演示·城市旅居酒店 · 当晚",
+        "早餐 · 餐厅待核实",
+        "午餐 · 餐厅待核实",
+        "晚餐 · 餐厅待核实",
+        "北京住宿 · 当晚",
+        "当天市内接驳 · 路线尚未完整核算",
+        "早餐 · 餐厅待核实",
+        "午餐 · 餐厅待核实",
+        "晚餐 · 餐厅待核实",
+        "当天市内接驳 · 路线尚未完整核算",
+        "返程 / 离开最后一站的交通"
+      ],
+      "is_complete": false,
+      "status": "no_budget",
+      "overrun_cny": null,
+      "remaining_cny": null,
+      "confirmed_subtotal_cny": 0.0
+    },
+    "people": 1,
+    "rooms": 1,
+    "rooms_estimated": true,
+    "source_times": [
+      "2026-11-22T13:59:12.414810+00:00"
+    ],
+    "notice": "金额均为人民币。已计小计不代表完整花费；缺失费用不按 0 元处理。餐厅参考价不等于实际结账，平台脱敏房价需另行确认。"
+  }
+}

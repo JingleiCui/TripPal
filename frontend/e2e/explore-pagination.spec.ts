@@ -1,5 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// Dispose interceptors before the page closes; route.fetch can outlive an assertion.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 async function openExplore(page: Page) {
   await page.goto("/");
   await page.getByLabel("用户名", { exact: true }).fill(`browse-${Date.now()}`);

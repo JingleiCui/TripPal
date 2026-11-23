@@ -15,15 +15,30 @@ router = APIRouter(prefix="/api/v1")
 
 
 def view(db, trip):
-    snapshots = db.scalars(
-        select(DailyDetailSnapshot)
-        .where(DailyDetailSnapshot.trip_id == trip.id)
-        .order_by(DailyDetailSnapshot.created.desc())
-    ).all()
+    from .services_api import market_quotes, plan_details
+
+    snapshots = list(
+        db.scalars(
+            select(DailyDetailSnapshot)
+            .where(DailyDetailSnapshot.trip_id == trip.id)
+            .order_by(DailyDetailSnapshot.created.desc())
+        ).all()
+    )
+    # 方案生成后首次查看费用时自动逐日补齐吃住行快照，不再等用户点「查询并核算全程」。
+    for day in trip.plan.get("days", []):
+        mode = day.get("transport_mode") or trip.plan["requirements"]["transport"]
+        if any(compatible_snapshot(trip.plan, day, s) for s in snapshots):
+            continue
+        try:
+            snapshots.append(
+                plan_details(trip.plan, trip.id, trip.version, trip.owner, day["day"], mode, persist=True)
+            )
+        except Exception:
+            continue
     return {
         "version": trip.version,
         "daily_limits": trip.plan.get("budget_settings", {}).get("daily_limits", {}),
-        **calculate_budget(trip.plan, snapshots),
+        **calculate_budget(trip.plan, snapshots, market_quotes(trip.owner, trip.id)),
     }
 
 

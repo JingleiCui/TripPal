@@ -51,7 +51,7 @@ def compatible_snapshot(plan, day, snapshot):
     return not chosen or (data.get("hotel") or {}).get("id") == chosen["id"]
 
 
-def calculate_budget(plan, snapshots):
+def calculate_budget(plan, snapshots, market_quotes=None):
     req = plan["requirements"]
     days = plan.get("days", [])
     people = req.get("people", 1)
@@ -59,6 +59,17 @@ def calculate_budget(plan, snapshots):
     rooms = settings.get("rooms", max(1, (people + 1) // 2))
     overrides = settings.get("overrides", {})
     total_limit = amount(req.get("budget"))
+    quotes = market_quotes or []
+
+    def quote_for(day_number, place_id, kind):
+        if not place_id:
+            return None
+        matches = [
+            q for q in quotes
+            if q.get("day") == day_number and q.get("kind") == kind and q.get("place_id") == place_id
+        ]
+        return min(matches, key=lambda q: q.get("price_cny", 0)) if matches else None
+
     rows_by_day = {}
     source_times = []
     for day in days:
@@ -82,6 +93,7 @@ def calculate_budget(plan, snapshots):
             source="",
             note="",
             confidence="reference",
+            quote=None,
         ):
             override = overrides.get(key)
             if override and override.get("fingerprint", "") == fingerprint:
@@ -92,6 +104,13 @@ def calculate_budget(plan, snapshots):
                 note = override.get("note", "")
             else:
                 unit_price = amount(unit_price)
+                if unit_price is None and quote:
+                    unit_price = amount(quote.get("price_cny"))
+                    source = "美团酒旅"
+                    note = (
+                        f"{quote.get('price_basis', '参考')} {quote.get('price_text', '')}；"
+                        "仅供参考，不代表最终成交价。" + note
+                    )
                 if override:
                     note = "地点或路线已变更，未继续套用旧手填金额。" + note
             quantity = people if unit == "per_person" else rooms if unit == "per_room_night" else 1
@@ -125,6 +144,7 @@ def calculate_budget(plan, snapshots):
                 fingerprint=place["id"] if place else "",
                 source=(place or {}).get("source", {}).get("provider", ""),
                 note="地图参考人均，非实际结账金额",
+                quote=quote_for(n, place["id"] if place else "", "food"),
             )
         for stop in day.get("stops", []):
             add(
@@ -135,6 +155,7 @@ def calculate_budget(plan, snapshots):
                 fingerprint=stop["id"],
                 source=stop.get("source", {}).get("provider", ""),
                 note="未查到票价时需核对预约平台；不能按免费处理",
+                quote=quote_for(n, stop["id"], "ticket"),
             )
         hotel = (snapshot or {}).get("hotel") or next(
             (h for h in plan.get("hotels", []) if h.get("city") == city), None
@@ -151,6 +172,7 @@ def calculate_budget(plan, snapshots):
                 unit="per_room_night",
                 fingerprint=(hotel or {}).get("id", ""),
                 note="每晚房价×房间数；脱敏报价不换算为确定金额，离店日不重复计房费",
+                quote=quote_for(n, (hotel or {}).get("id", ""), "hotel"),
             )
         legs = (snapshot or {}).get("legs", [])
         if legs:

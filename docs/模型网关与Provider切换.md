@@ -38,12 +38,12 @@ config.local.json / TRAVEL_* 环境变量
 
 | 新增文件 | 职责 |
 |---|---|
-| `backend/travel_agent/models/specs.py` | 内置 9 个供应商预设、自定义 Provider 构造与校验 |
+| `backend/travel_agent/models/specs.py` | 内置供应商预设（含本地语音）、自定义 Provider 构造与校验 |
 | `backend/travel_agent/models/registry.py` | 槽位解析、凭证隔离、结构化方式决策、`status()` 脱敏视图 |
 | `backend/travel_agent/models/gateway.py` | 实例/连接池缓存、统一鉴权、URL 拼接、响应解析、HTTP 错误映射 |
 | `scripts/check_providers.py` | 配置自检 + 真实最小调用探测 + profile 批量检查 |
 | `config.openrouter.example.json` | 复制即用的 OpenRouter 配置模板 |
-| `backend/tests/test_model_gateway.py` | 19 条离线单测 |
+| `backend/tests/unit/test_model_gateway.py` | 19 条离线单测 |
 
 `models/__init__.py` 刻意保持为空，避免 `config.py` 引用 `specs` 时产生导入环。
 
@@ -97,7 +97,7 @@ config.local.json / TRAVEL_* 环境变量
 
 ### 3.5 内置供应商
 
-`openrouter`、`dashscope`、`openai`（泛指 OpenAI-compatible）、`siliconflow`、`deepseek`、`gemini`（官方 SDK）、`ollama`（本地）、`dashscope_native`（ASR/TTS 专用）、`local`（embedding/rerank）。
+`openrouter`、`dashscope`、`openai`（泛指 OpenAI-compatible）、`siliconflow`、`deepseek`、`gemini`（官方 SDK）、`ollama`（本地）、`local_speech`（离线 Whisper/macOS 朗读）、`dashscope_native`（ASR/TTS 专用）、`local`（embedding/rerank）。
 
 ---
 
@@ -243,8 +243,8 @@ npm --prefix frontend run build
 模型探测通过后，跑一次非 fixture 的真实规划任务（在**独立测试库**执行，不触碰业务数据；需要 `amap_key` 与本地 MySQL / Redis / ES）：
 
 ```sh
-.venv/bin/python scripts/smoke_plan.py
-TRAVEL_ACTIVE_MODEL_PROFILE=openrouter_free .venv/bin/python scripts/smoke_plan.py
+.venv/bin/python scripts/validation/plan.py
+TRAVEL_ACTIVE_MODEL_PROFILE=openrouter_free .venv/bin/python scripts/validation/plan.py
 ```
 
 脚本会注册临时账户、创建任务、同步执行 worker、自动推进 LangGraph 的 `waiting_input` interrupt（最多 3 轮），并打印最终状态与行程版本。退出码 0 = `completed` 或到达正常的人工确认点；1 = 失败。
@@ -307,3 +307,6 @@ TRAVEL_ACTIVE_MODEL_PROFILE=openrouter_free .venv/bin/python scripts/smoke_plan.
 - `configured_not_verified` / `ready` 只表示配置齐备，不是调用成功证据。
 - 本地 Ollama（`current`）仍是当前默认 profile；填入的 OpenRouter key 只影响 `openrouter_free`，切换 profile 不会自动迁移 `amap_key` 等无关配置。
 - `embedding` / `rerank` 仍是本地模型，不受本网关的供应商切换影响；`asr` / `tts` 仍需百炼凭证，OpenRouter 免费模型不提供这两项。
+
+
+本地完整配置与语音补齐见 [本地模型一键准备与验收](本地模型一键准备与验收.md)。

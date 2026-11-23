@@ -40,6 +40,7 @@ from .budget_api import router as budget_router
 from .budgeting import calculate_budget, compatible_snapshot
 from .pending_api import router as pending_router
 from .attachments_api import router as attachments_router
+from .notes.api import router as notes_router
 
 
 def owned(db, model, ident, owner):
@@ -80,6 +81,11 @@ def dispatcher(stop):
     while not stop.wait(10):
         # SQL remains the outbox: a failed tick is retried on the next one.
         # Each job is isolated so one failure cannot silently skip the others.
+        try:
+            from .notes.jobs import dispatch_pending as dispatch_notes
+            dispatch_notes()
+        except Exception:
+            logger.exception("dispatch_notes_failed")
         try:
             dispatch_pending()
         except Exception:
@@ -355,6 +361,10 @@ def create_task(body: RunRequest, owner=Depends(require_user)):
     if body.fixture and not settings.fixture_enabled:
         raise HTTPException(403, "当前环境禁用合成数据")
     canonical = body.model_dump(mode="json")
+    if body.attachment_ids:
+        from .notes.api import confirmed_context
+        with Session() as note_db:
+            canonical["note_sources"] = confirmed_context(note_db, owner, body.attachment_ids)
     digest = hash_token(json.dumps(canonical, sort_keys=True, ensure_ascii=False))
     try:
         with Session.begin() as db:
@@ -560,7 +570,8 @@ def export(ident: str, kind: str, owner=Depends(require_user)):
             if snapshot:
                 day["daily_details"] = snapshot.data
         if plan.get("days"):
-            plan["expense_ledger"] = calculate_budget(plan, snapshots)
+            from .services_api import market_quotes
+            plan["expense_ledger"] = calculate_budget(plan, snapshots, market_quotes(owner, ident))
     if not plan:
         raise HTTPException(409, "尚无可导出的行程")
     if kind == "md":
@@ -798,6 +809,7 @@ app.include_router(services_router)
 app.include_router(budget_router)
 app.include_router(pending_router)
 app.include_router(attachments_router)
+app.include_router(notes_router)
 
 # 统一 HTTPException / RequestValidationError 响应契约（保留 detail 兼容旧调用）。
 install_observability(app)

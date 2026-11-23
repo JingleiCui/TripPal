@@ -1,5 +1,5 @@
 import { BRAND } from "./brand";
-import type { FormEvent } from "react";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -47,107 +47,25 @@ const DESTINATIONS = [
 ];
 
 export function HomeDiscovery({
-  idea,
-  setIdea,
-  onPlan,
-  starting,
-  error,
-  city,
+  workspace,
   onOpenBrief,
+  city,
 }: {
-  idea: string;
-  setIdea: (value: string) => void;
-  onPlan: (event: FormEvent) => void;
-  starting: boolean;
-  error: string;
-  city: string;
+  workspace: ReactNode;
   onOpenBrief: () => void;
+  city: string;
 }) {
   const navigate = useNavigate();
   return (
     <section className="discovery-home travel-home" aria-label="旅行灵感">
-      <div className="travel-home-hero">
-        <div className="travel-home-intro">
-          <p className="travel-home-role">
-            <Sparkles size={16} aria-hidden="true" /> AI 旅行规划智能体助手
-          </p>
-          <h1>一句话，安排好下一程。</h1>
-          <p className="travel-home-description">
-            说出目的地、时间和偏好，
-            <br />
-            把想去的地方，变成每天的安排。
-          </p>
-          <form className="home-composer" onSubmit={onPlan}>
-            <label htmlFor="home-trip-idea">这一次，想怎么旅行？</label>
-            <textarea
-              id="home-trip-idea"
-              aria-label="旅行想法"
-              value={idea}
-              onChange={(event) => setIdea(event.target.value)}
-              rows={3}
-              maxLength={4000}
-              required
-              placeholder="比如：杭州三天，逛西湖、喝好茶，安排轻松一点。"
-            />
-            <div className="home-composer-bottom">
-              <span>景点、美食、住宿与路线，一起安排。</span>
-              <button
-                type="submit"
-                aria-label="开始规划旅行"
-                disabled={starting || !idea.trim()}
-              >
-                {starting ? (
-                  <Loader2 size={17} className="spin" />
-                ) : (
-                  <Sparkles size={17} />
-                )}
-                {starting ? "准备中…" : "开始规划"}
-              </button>
-            </div>
-            {error && (
-              <p className="notice error" role="alert">
-                {error}
-              </p>
-            )}
-          </form>
-          <div className="home-ideas">
-            <button
-              onClick={() =>
-                setIdea("周末去上海两天，想吃本地美食，找一家交通方便的酒店。")
-              }
-            >
-              周末吃好住好
-            </button>
-            <button
-              onClick={() =>
-                setIdea("想去北京玩三天，带父母，少走路，景点之间交通方便，直接规划。")
-              }
-            >
-              带父母轻松走走
-            </button>
-            <button className="home-brief-link" onClick={onOpenBrief}>
-              <SlidersHorizontal size={14} /> 按条件规划
-            </button>
-          </div>
-        </div>
-        <figure className="travel-home-postcard">
-          <img
-            src="/images/hangzhou.jpg"
-            alt="杭州旅行灵感：湖山与茶园风景"
-            fetchPriority="high"
-          />
-          <figcaption>
-            <MapPin size={15} /> 灵感目的地 · 杭州
-          </figcaption>
-          <div className="travel-home-ticket">
-            <TripalMark size={96} />
-            <div>
-              <b>想法交给 {BRAND.name}，</b>
-              <span>行程按你的节奏安排。</span>
-            </div>
-          </div>
-        </figure>
-      </div>
+      <header className="planning-home-heading">
+        <h1>一句话，安排好下一程。</h1>
+        <p>边聊边完善计划，灵感和方案都留在这里。</p>
+      </header>
+      {workspace}
+      <button className="planning-brief-link text-link" onClick={onOpenBrief}>
+        <SlidersHorizontal size={16} /> 按条件规划
+      </button>
 
       <div className="travel-home-discover">
         <div className="discovery-section-title">

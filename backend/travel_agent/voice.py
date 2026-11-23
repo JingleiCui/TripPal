@@ -101,6 +101,8 @@ def transcribe(raw):
         spec = resolve("asr")
     except ConfigurationError as exc:
         raise ProviderError("configuration", str(exc)) from exc
+    if spec.protocol == "local":
+        return gateway.transcribe_local(wav, spec)
     body = {
         "model": spec.model,
         "messages": [
@@ -136,6 +138,8 @@ def synthesize(text):
         spec = resolve("tts")
     except ConfigurationError as exc:
         raise ProviderError("configuration", str(exc)) from exc
+    if spec.protocol == "local":
+        return gateway.synthesize_local(text, spec)
     payload = gateway.post_json(
         "tts",
         TTS_PATH,

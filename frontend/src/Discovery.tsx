@@ -20,6 +20,8 @@ import { safeHref } from "./lib/safeUrl";
 import { Button } from "./components/ui/button";
 import { PlacePhoto } from "./PlacePhoto";
 import { MapPanel } from "./MapPanel";
+import { openMapViewer } from "./lib/mapScene";
+import { useWorkspaceState, readWorkspace, writeWorkspace } from "./lib/workspace";
 import type { Stop, Source } from "./types";
 
 export type DiscoveryPlace = Omit<
@@ -71,7 +73,15 @@ function ErrorNotice({ error }: { error: unknown }) {
   ) : null;
 }
 
-export function ExplorePage() {
+export function ExplorePage({
+  storageKey = "explore",
+  onDiscuss,
+  mapActive = true,
+}: {
+  storageKey?: string;
+  mapActive?: boolean;
+  onDiscuss?: (place: DiscoveryPlace) => void;
+}) {
   const client = useQueryClient();
   const [searchParams] = useSearchParams();
   const initialCity = searchParams.get("city") || "北京";
@@ -80,14 +90,28 @@ export function ExplorePage() {
   )
     ? searchParams.get("category")!
     : "all";
-  const [city, setCity] = useState(initialCity),
-    [query, setQuery] = useState("");
-  const [params, setParams] = useState({
+  const [city, setCity] = useWorkspaceState(storageKey + ":city", initialCity),
+    [query, setQuery] = useWorkspaceState(storageKey + ":query", "");
+  const [params, setParams] = useWorkspaceState(storageKey + ":params", {
     city: initialCity,
     query: "",
     category: initialCategory,
     fixture: false,
   });
+  useEffect(() => {
+    const urlCity = searchParams.get("city");
+    const urlCategory = searchParams.get("category");
+    if (urlCity || urlCategory) {
+      if (urlCity) setCity(urlCity);
+      setParams((old) => ({
+        ...old,
+        ...(urlCity ? { city: urlCity } : {}),
+        ...(categories.some(([key]) => key === urlCategory)
+          ? { category: urlCategory! }
+          : {}),
+      }));
+    }
+  }, [searchParams.get("city"), searchParams.get("category")]);
   const [selected, setSelected] = useState<DiscoveryPlace | null>(null),
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
@@ -95,6 +119,11 @@ export function ExplorePage() {
   const results = useInfiniteQuery({
     queryKey: ["explore", params],
     initialPageParam: 1,
+    initialData: () =>
+      readWorkspace<{ pages: DiscoveryPage[]; pageParams: number[] } | undefined>(
+        storageKey + ":results:" + JSON.stringify(params),
+        undefined,
+      ),
     queryFn: ({ pageParam, signal }) =>
       api<DiscoveryPage>(
         "/explore?" +
@@ -109,6 +138,10 @@ export function ExplorePage() {
     getNextPageParam: (lastPage) => lastPage.next_page ?? undefined,
     retry: false,
   });
+  useEffect(() => {
+    if (results.data)
+      writeWorkspace(storageKey + ":results:" + JSON.stringify(params), results.data);
+  }, [results.data, JSON.stringify(params)]);
   const { fetchNextPage, hasNextPage, isFetching, isFetchNextPageError } = results;
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -196,6 +229,15 @@ export function ExplorePage() {
           </Link>
         </Button>
       </div>
+      <Button
+        className="explore-map-open"
+        variant="secondary"
+        size="sm"
+        onClick={openMapViewer}
+      >
+        <MapPin size={16} />
+        查看地点地图
+      </Button>
       <form
         className="explore-search"
         onSubmit={(e) => {
@@ -347,6 +389,15 @@ export function ExplorePage() {
                       </button>
                       <span>{p.source?.provider || p.source_label || "未知来源"}</span>
                     </div>
+                    {onDiscuss && (
+                      <button
+                        className="text-link discuss-place"
+                        onClick={() => onDiscuss(p)}
+                        aria-label={"带到开始规划：" + p.name}
+                      >
+                        带到开始规划
+                      </button>
+                    )}
                     {p.source_label === "美团" && safeHref(p.url) && (
                       <a
                         className="text-link meituan-link"
@@ -398,6 +449,8 @@ export function ExplorePage() {
           <MapPanel
             day={mapDay}
             kind="explore"
+            defaultOpen={true}
+            active={mapActive}
             viewKey={JSON.stringify(params)}
             highlightId={selected?.id}
             fixture={params.fixture}
@@ -412,6 +465,14 @@ export function ExplorePage() {
           saved={!!saved.data?.some((s) => s.place.id === selected.id)}
           saving={!!busy}
           save={() => save(selected)}
+          discuss={
+            onDiscuss
+              ? () => {
+                  onDiscuss(selected);
+                  setSelected(null);
+                }
+              : undefined
+          }
         />
       )}
     </div>
@@ -424,7 +485,9 @@ function PlaceDialog({
   saved,
   saving,
   save,
+  discuss,
 }: {
+  discuss?: () => void;
   place: DiscoveryPlace;
   close: () => void;
   saved: boolean;
@@ -480,6 +543,11 @@ function PlaceDialog({
           </dd>
         </dl>
         <div className="discovery-detail-actions">
+          {discuss && (
+            <Button variant="secondary" onClick={discuss}>
+              带到开始规划
+            </Button>
+          )}
           {place.source_label === "美团" ? (
             safeHref(place.url) && (
               <Button asChild variant="secondary">

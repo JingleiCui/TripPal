@@ -82,12 +82,32 @@ function verdict(summary: Summary, basis = "") {
           : "已记录金额在预算内";
 }
 
-export function BudgetPanel({ trip, dayNumber }: { trip: Trip; dayNumber: number }) {
+export function BudgetPanel({
+  trip,
+  dayNumber,
+  draft,
+}: {
+  trip: Trip;
+  dayNumber: number;
+  draft?: { taskId: string; variant: string; revision: number };
+}) {
   const client = useQueryClient(),
     plan = trip.plan as Plan;
   const ledger = useQuery({
-    queryKey: ["budget", trip.id, trip.version],
-    queryFn: () => api<Ledger>(`/trips/${trip.id}/budget`),
+    queryKey: [
+      "budget",
+      trip.id,
+      trip.version,
+      draft?.taskId,
+      draft?.variant,
+      draft?.revision,
+    ],
+    queryFn: () =>
+      api<Ledger>(
+        draft
+          ? `/tasks/${draft.taskId}/variants/${draft.variant}/budget`
+          : `/trips/${trip.id}/budget`,
+      ),
     retry: false,
   });
   const [total, setTotal] = useState(""),
@@ -110,9 +130,9 @@ export function BudgetPanel({ trip, dayNumber }: { trip: Trip; dayNumber: number
       setDaily(data.daily_limits[String(dayNumber)] || "");
     }
   }, [data?.version, dayNumber]);
-  const editable = trip.role !== "viewer";
+  const editable = trip.role !== "viewer" && !draft;
   async function save(extra: Record<string, unknown> = {}) {
-    if (!data) return;
+    if (!data || !editable) return;
     setBusy(true);
     setError("");
     try {
@@ -145,7 +165,11 @@ export function BudgetPanel({ trip, dayNumber }: { trip: Trip; dayNumber: number
     try {
       for (const day of plan.days) {
         setProgress(`正在核算第 ${day.day} 天的餐厅、住宿与接驳…`);
-        await api(`/trips/${trip.id}/daily-details?day=${day.day}`);
+        await api(
+          draft
+            ? `/tasks/${draft.taskId}/variants/${draft.variant}/daily-details?day=${day.day}`
+            : `/trips/${trip.id}/daily-details?day=${day.day}`,
+        );
       }
       await ledger.refetch();
     } catch (e) {
@@ -174,10 +198,18 @@ export function BudgetPanel({ trip, dayNumber }: { trip: Trip; dayNumber: number
     return (
       <div className="notice error" role="alert">
         {ledger.error?.message || "费用明细暂不可用"}
+        <Button variant="secondary" size="sm" onClick={() => void ledger.refetch()}>
+          重新查询费用
+        </Button>
       </div>
     );
   return (
     <div className="budget-panel">
+      {draft && (
+        <p className="notice">
+          草稿费用预览 · 可继续和 AI 调整预算；逐项记账在确认行程后开放。
+        </p>
+      )}
       <div className="service-section-title">
         <h2>今天的花费，逐项算清。</h2>
         <p>

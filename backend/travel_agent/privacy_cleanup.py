@@ -1,6 +1,8 @@
 """Durable cleanup after SQL account removal, safe to replay after ES outages."""
 
 from pathlib import Path
+import shutil
+import re
 from sqlalchemy import select
 from .db import Session, PrivacyCleanup
 from .config import settings
@@ -18,6 +20,10 @@ def process_pending(limit=10):
             if not item or item.status != "pending":
                 continue
             try:
+                if not re.fullmatch(r"[A-Za-z0-9_-]+", item.owner):
+                    raise ValueError("invalid owner ID")
+                shutil.rmtree(Path(settings.data_dir) / "note-imports" / item.owner, ignore_errors=False) if (
+                    Path(settings.data_dir) / "note-imports" / item.owner).exists() else None
                 for index in [settings.elastic_index, settings.semantic_cache_index]:
                     es(
                         "POST",

@@ -15,6 +15,7 @@ import "./tripal.css";
 import "./travel-workspace.css";
 // 每日规划模块视觉精修层最后引入，统一五个视图的排版、间距与动效。
 import "./daily-planner.css";
+import "./explore-workspace.css";
 
 const client = new QueryClient({
   defaultOptions: {

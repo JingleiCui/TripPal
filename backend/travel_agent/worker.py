@@ -1,6 +1,7 @@
 """Durable SQL receipts + leased workers. Broker delivery is at least once."""
 
 import threading
+import copy
 from datetime import timedelta
 from celery import Celery
 from langgraph.checkpoint.mysql.pymysql import PyMySQLSaver
@@ -78,6 +79,10 @@ def execute(task_id):
         with Session() as db:
             task = db.get(Task, task_id)
             trip = db.get(Trip, task.trip_id)
+            from .notes.api import confirmed_context
+            current_notes = confirmed_context(db, task.owner, payload.get("attachment_ids", []))
+            if current_notes != payload.get("note_sources", []):
+                raise ProviderError("source_changed", "攻略资料已变化，请重新确认后规划")
             state = {
                 "owner": task.owner,
                 "requirements": payload["requirements"],
@@ -85,14 +90,16 @@ def execute(task_id):
                 "fixture": payload["fixture"],
                 "fixture_model": payload.get("fixture_model", False),
                 "strategy": payload["strategy"],
-                "old_plan": trip.plan,
+                "old_plan": payload.get("draft_plan") or trip.plan,
                 "context": {
                     **trip.context,
+                    "note_sources": current_notes,
                     "confirmed_preferences": db.get(User, task.owner).preferences,
                     "advisory_portrait": advisory(db, task.owner),
                 },
                 "allow_undated_draft": payload.get("allow_undated_draft", False),
                 "compare": payload.get("compare", False),
+                "conversation_draft": bool(payload.get("conversation_id")),
                 "regenerate": payload.get("regenerate", False),
             }
         harness = Harness(task_id, lease, capabilities=payload.get("capabilities"))
@@ -107,6 +114,9 @@ def execute(task_id):
             output = graph.invoke(value, config)
             pending = graph.get_state(config)
         harness.check()
+        with Session() as note_db:
+            if confirmed_context(note_db, state["owner"], payload.get("attachment_ids", [])) != current_notes:
+                raise ProviderError("source_changed", "攻略资料已变化，本次结果未写入")
         with Session.begin() as db:
             task = db.get(Task, task_id, with_for_update=True)
             if not task or task.lease != lease or task.status != "running" or task.lease_until < now():
@@ -122,10 +132,32 @@ def execute(task_id):
                 elif trip.version != payload["base_version"]:
                     task.status = "conflict"
                     task.result = {"error": "行程已有新版本，结果没有覆盖当前行程，请重新加载后修改"}
-                elif output.get("variants"):
+                elif output.get("variants") or payload.get("conversation_id"):
+                    variants = output.get("variants") or {"A": output["plan"]}
+                    # Explicit meal/hotel selections survive conversational edits in the same city.
+                    old = payload.get("draft_plan") or trip.plan
+                    for candidate in variants.values():
+                        if old.get("budget_settings"):
+                            candidate["budget_settings"] = copy.deepcopy(old["budget_settings"])
+                        selected_hotels = [h for h in old.get("hotels", []) if h.get("user_selected")]
+                        if candidate["requirements"].get("needs_accommodation") is not False:
+                            cities = {d.get("city") or candidate["requirements"]["city"] for d in candidate["days"]}
+                            selected_hotels = [h for h in selected_hotels if h.get("city") in cities]
+                            candidate["hotels"] = [h for h in candidate.get("hotels", []) if h.get("city") not in {p.get("city") for p in selected_hotels}] + copy.deepcopy(selected_hotels)
+                        for day in candidate["days"]:
+                            old_day = next((d for d in old.get("days", []) if d["day"] == day["day"] and
+                                            (d.get("city") or old.get("requirements", {}).get("city")) ==
+                                            (day.get("city") or candidate["requirements"]["city"])), None)
+                            if old_day:
+                                day["meals"] = copy.deepcopy(old_day.get("meals", []))
+                                if old.get("requirements", {}).get("transport") == candidate["requirements"].get("transport") and old_day.get("transport_mode"):
+                                    day["transport_mode"] = old_day["transport_mode"]
                     task.status = "waiting_choice"
                     task.result = {
-                        "variants": output["variants"],
+                        "variants": variants,
+                        "draft_revision": 1,
+                        "requested_count": 2 if payload.get("compare") else 1,
+                        "missing_variant_reason": output.get("missing_variant_reason"),
                         "trip_id": trip.id,
                         "base_version": trip.version,
                     }
@@ -170,11 +202,16 @@ def execute(task_id):
                         )
                     task.status = "completed"
                     task.result = {"trip_id": trip.id, "version": trip.version, "warnings": plan["warnings"]}
+                if task.status == "waiting_choice" and payload.get("previous_draft_task_id"):
+                    previous = db.get(Task, payload["previous_draft_task_id"], with_for_update=True)
+                    if previous and previous.status == "waiting_choice":
+                        previous.status = "superseded"
+                        previous.result = {**previous.result, "superseded_by": task.id}
                 if payload.get("conversation_id"):
                     conv = db.get(Conversation, payload["conversation_id"])
                     if conv:
                         reply = output.get("assistant_reply") or (
-                            "两个方案已准备好，请选择后保存。"
+                            "草稿已准备好，可继续修改或确认保存。"
                             if task.status == "waiting_choice"
                             else "行程已生成；请查看地图、每日安排和待确认事项。"
                             if task.status == "completed"
@@ -208,6 +245,16 @@ def execute(task_id):
                 task.status = "awaiting_credentials" if code == "credentials" else "failed"
                 task.result = {"code": code, "error": message}
                 task.lease, task.lease_until, task.updated = None, None, now()
+                conv_id = payload.get("conversation_id")
+                if conv_id and (conv := db.get(Conversation, conv_id, with_for_update=True)):
+                    previous = db.get(Task, payload.get("previous_draft_task_id")) if payload.get("previous_draft_task_id") else None
+                    if conv.state.get("task_id") == task.id and previous and previous.status == "waiting_choice":
+                        conv.state = {**conv.state, "task_id": previous.id}
+                    conv.version += 1
+                    conv.updated = now()
+                    db.add(Message(conversation_id=conv_id, owner=task.owner, request_key="error:" + task.id,
+                                   role="assistant", content=message + ("。上一份草稿已保留，可继续修改。" if previous else "。请重试。"),
+                                   meta={"task_id": task.id, "status": task.status}))
         event(task_id, "error", code=code, error=message)
     finally:
         stop.set()

@@ -144,6 +144,11 @@ BUILTIN_PROVIDERS: dict[str, ProviderSpec] = {
         capabilities=frozenset({"asr", "tts"}),
         notes="ASR 走 /compatible-mode/v1/chat/completions；TTS 走原生 generation 端点，两者协议不同但共用凭证。",
     ),
+    "local_speech": ProviderSpec(
+        name="local_speech", label="离线 Whisper / macOS 系统朗读",
+        protocol=PROTOCOL_LOCAL, capabilities=frozenset({"asr", "tts"}),
+        requires_key=False,
+    ),
     "local": ProviderSpec(
         name="local",
         label="进程内本地模型（BGE embedding / reranker）",

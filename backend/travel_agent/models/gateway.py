@@ -269,3 +269,13 @@ def local_model(slot):
     configuration = model_settings_snapshot()
     spec = resolve(slot, configuration)
     return _local_model(slot, spec.model, configuration.embedding_local_only)
+
+
+def transcribe_local(wav, spec):
+    from .local_speech import transcribe
+    return transcribe(wav, spec)
+
+
+def synthesize_local(text, spec):
+    from .local_speech import synthesize
+    return synthesize(text, spec)

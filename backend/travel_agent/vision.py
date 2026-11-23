@@ -112,14 +112,14 @@ def _extract_json(text):
         raise ValueError("视觉模型返回的 JSON 无法解析") from exc
 
 
-def recognize(raw, mime):
+def recognize(raw, mime, spec=None):
     """调用视觉模型。HTTP、鉴权、状态映射和响应解析统一由 models.gateway 承担。"""
-    if not available():
-        raise ProviderError("disabled", "截图识别尚未启用或缺少视觉模型凭证")
     try:
-        spec = resolve("vision")
+        spec = spec if spec is not None else resolve("vision")
     except ConfigurationError as exc:
         raise ProviderError("configuration", str(exc)) from exc
+    if not spec.ready:
+        raise ProviderError("disabled", "截图识别尚未启用或缺少视觉模型凭证")
     encoded = base64.b64encode(raw).decode("ascii")
     body = {
         "model": spec.model,
@@ -174,8 +174,9 @@ def read_screenshot(raw, mime="image/jpeg"):
             "source": {"provider": "none"},
             "note": "未启用截图识别（需配置 vision_enabled 与 vision_api_key），请手动录入关键信息。",
         }
+    spec = resolve("vision")
     try:
-        fields, unknowns = recognize(raw, mime)
+        fields, unknowns = recognize(raw, mime, spec=spec)
     except ProviderError as exc:
         return {
             "status": "error",
@@ -183,7 +184,7 @@ def read_screenshot(raw, mime="image/jpeg"):
             "unknowns": list(FIELD_LABELS.values()),
             "requires_confirmation": True,
             "synthetic": False,
-            "source": {"provider": "vision_model", "model": settings.vision_model},
+            "source": {"provider": spec.provider, "model": spec.model},
             "error": str(exc),
         }
     return {
@@ -192,5 +193,5 @@ def read_screenshot(raw, mime="image/jpeg"):
         "unknowns": unknowns,
         "requires_confirmation": True,
         "synthetic": False,
-        "source": {"provider": "vision_model", "model": settings.vision_model, "retrieved_at": _timestamp()},
+        "source": {"provider": spec.provider, "model": spec.model, "retrieved_at": _timestamp()},
     }

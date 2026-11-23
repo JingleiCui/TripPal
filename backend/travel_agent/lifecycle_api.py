@@ -49,7 +49,7 @@ class TokenInput(BaseModel):
 
 
 class ResetInput(TokenInput):
-    password: str = Field(min_length=10, max_length=100)
+    password: str = Field(min_length=6, max_length=100)
 
 
 def valid_token(db, value, purpose):
@@ -241,9 +241,19 @@ def export_personal_data(actor=Depends(require_user)):
                 {"id": d.id, "name": d.name, "digest": d.digest, "version": d.version} for d in docs
             ],
         }
+        from .db import Attachment
+        notes = db.scalars(select(Attachment).where(Attachment.owner == actor, Attachment.kind == "travel_note")).all()
+        data["note_imports"] = [{"id": n.id, "name": n.name, "parsed": n.parsed} for n in notes]
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("personal-data.json", json.dumps(data, ensure_ascii=False, indent=2))
+            from .notes.jobs import directory
+            for note in notes:
+                for image in note.parsed.get("images", []):
+                    if image.get("file"):
+                        image_path = directory(actor, note.id) / image["file"]
+                        if image_path.is_file():
+                            archive.write(image_path, arcname=f"notes/{note.id}/{image['id']}")
             for doc in docs:
                 path = Path(settings.data_dir) / "uploads" / doc.id
                 if path.is_file():
